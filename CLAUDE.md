@@ -8,11 +8,11 @@ Sidereal is in **active implementation**. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
 - Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md`
-- **Phases 0-2 complete**: Go module, all 8 CRD types, controller skeleton with health/metrics
+- **Phases 0-6 complete** (tagged `v0.1.0-alpha`): Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework. 72 tests.
 
 **Repo**: `primaris-tech/sidereal` on GitHub (private).
 
-**Current phase**: Phase 3 (HMAC key derivation and result signing) is next on the critical path.
+**Current phase**: Phase 7 (RBAC probe runner — first real probe) is next. All phases after 6 can be developed in parallel.
 
 ## What Sidereal Is
 
