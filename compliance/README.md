@@ -1,12 +1,12 @@
-# Gauntlet Compliance Documentation
+# Sidereal Compliance Documentation
 
-This directory contains the Phase 1 ATO documentation package for Gauntlet.
+This directory contains the Phase 1 ATO documentation package for Sidereal.
 It is structured to give deploying agencies everything needed to run their own
 ATO with minimal authoring effort.
 
 ## Deployment Profiles
 
-Gauntlet's compliance documentation references **abstract capabilities** (e.g.,
+Sidereal's compliance documentation references **abstract capabilities** (e.g.,
 "admission enforcement layer", "detection backend", "CNI observability") rather
 than specific tools. Each deployment has a **profile** that binds these abstract
 capabilities to concrete tools.
@@ -39,8 +39,8 @@ compliance/
   trestle-workspace/          # Trestle project root — author here
     .trestle/                 # Trestle configuration
     md_component_definitions/ # Human-readable markdown (edit these)
-      gauntlet/
-        gauntlet/
+      sidereal/
+        sidereal/
           nist_sp_800-53_rev5_HIGH/
             ac/               # Access Control implementations
             au/               # Audit and Accountability
@@ -59,8 +59,8 @@ compliance/
     component-definitions/    # Compiled OSCAL output (generated — do not edit)
     system-security-plans/    # SSP template (generated)
     assessment-plans/         # SAP template (generated)
-    assessment-results/       # Runtime output from GauntletProbeResult (generated)
-    plan-of-action-and-milestones/ # POA&M (generated from GauntletIncident)
+    assessment-results/       # Runtime output from SiderealProbeResult (generated)
+    plan-of-action-and-milestones/ # POA&M (generated from SiderealIncident)
   oscal/                      # Final compiled OSCAL artifacts for distribution
   plans/                      # Supporting plans (standalone markdown)
   diagrams/                   # Architecture, boundary, and data flow diagrams
@@ -69,8 +69,8 @@ compliance/
 ## Authoring Workflow
 
 1. Edit markdown files in `trestle-workspace/md_component_definitions/`
-2. Compile: `trestle assemble component-definition -n gauntlet`
-3. Validate: `oscal-cli component-definition validate -f trestle-workspace/component-definitions/gauntlet/component-definition.json`
+2. Compile: `trestle assemble component-definition -n sidereal`
+3. Validate: `oscal-cli component-definition validate -f trestle-workspace/component-definitions/sidereal/component-definition.json`
 4. Copy compiled artifact to `oscal/` for distribution
 
 CI runs steps 2 and 3 automatically on every commit.

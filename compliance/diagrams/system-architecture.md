@@ -1,6 +1,6 @@
 # System Architecture Diagram
 
-**Purpose**: Illustrates the internal architecture of the Gauntlet operator —
+**Purpose**: Illustrates the internal architecture of the Sidereal operator —
 component relationships, probe execution lifecycle, result storage tiers, and
 the separation of identity between the controller and probe runners.
 
@@ -10,7 +10,7 @@ the separation of identity between the controller and probe runners.
 
 ```mermaid
 flowchart TB
-    subgraph GAUNTLET ["Gauntlet System — gauntlet-system namespace"]
+    subgraph SIDEREAL ["Sidereal System — sidereal-system namespace"]
         direction TB
 
         subgraph CONTROLLER_BOX ["Controller Manager (Deployment — always running)"]
@@ -26,13 +26,13 @@ flowchart TB
 
         subgraph SA_BOX ["Per-Probe ServiceAccounts (pre-provisioned at install)"]
             direction LR
-            SA_CTRL["gauntlet-controller\n(Job create/watch\nCRD read/write)"]
-            SA_RBAC["gauntlet-probe-rbac\n(RBAC read + test operations)"]
-            SA_NET["gauntlet-probe-netpol\n(NetworkPolicy read)"]
-            SA_ADM["gauntlet-probe-admission\n(test resource create/delete)"]
-            SA_SEC["gauntlet-probe-secret\n(Secret GET attempts)"]
-            SA_DET["gauntlet-probe-detection\n(no API access)"]
-            SA_DISC["gauntlet-discovery\n(cluster-wide read-only)"]
+            SA_CTRL["sidereal-controller\n(Job create/watch\nCRD read/write)"]
+            SA_RBAC["sidereal-probe-rbac\n(RBAC read + test operations)"]
+            SA_NET["sidereal-probe-netpol\n(NetworkPolicy read)"]
+            SA_ADM["sidereal-probe-admission\n(test resource create/delete)"]
+            SA_SEC["sidereal-probe-secret\n(Secret GET attempts)"]
+            SA_DET["sidereal-probe-detection\n(no API access)"]
+            SA_DISC["sidereal-discovery\n(cluster-wide read-only)"]
         end
 
         subgraph JOBS_BOX ["Probe Runner Jobs (ephemeral — one per execution)"]
@@ -45,16 +45,16 @@ flowchart TB
         end
 
         subgraph TIER1 ["Tier 1 — Operational (mutable)"]
-            STATUS["GauntletProbe.status\n(last N results\nconsecutiveFailures)"]
+            STATUS["SiderealProbe.status\n(last N results\nconsecutiveFailures)"]
         end
 
         subgraph TIER2 ["Tier 2 — Audit Log (append-only, admission-enforced)"]
-            GPR["GauntletProbeResult\n• HMAC-verified\n• Multi-framework controlMappings\n• controlEffectiveness\n• Impact-level TTL"]
-            GI["GauntletIncident\n• Failure details\n• Multi-framework controls\n• MITRE technique\n• enforce mode only"]
-            GSA["GauntletSystemAlert\n• Degraded state\n• Acknowledgment gate"]
-            GAO["GauntletAOAuthorization\n• AO name + scope\n• Expiry window"]
-            GPR_REC["GauntletProbeRecommendation\n• Discovery-generated\n• pending/promoted/dismissed"]
-            G_RPT["GauntletReport\n• Scheduled reports\n• ConMon/POA&M/Evidence"]
+            GPR["SiderealProbeResult\n• HMAC-verified\n• Multi-framework controlMappings\n• controlEffectiveness\n• Impact-level TTL"]
+            GI["SiderealIncident\n• Failure details\n• Multi-framework controls\n• MITRE technique\n• enforce mode only"]
+            GSA["SiderealSystemAlert\n• Degraded state\n• Acknowledgment gate"]
+            GAO["SiderealAOAuthorization\n• AO name + scope\n• Expiry window"]
+            GPR_REC["SiderealProbeRecommendation\n• Discovery-generated\n• pending/promoted/dismissed"]
+            G_RPT["SiderealReport\n• Scheduled reports\n• ConMon/POA&M/Evidence"]
         end
 
         subgraph ADMISSION_BOX ["Admission Controls (Admission Enforcement Policies)"]
@@ -125,12 +125,12 @@ sequenceDiagram
     RECONCILE->>RECONCILE: Verify HMAC signature
 
     alt Signature valid
-        RECONCILE->>K8S: Create GauntletProbeResult (append-only)
+        RECONCILE->>K8S: Create SiderealProbeResult (append-only)
         RECONCILE->>K8S: Delete result ConfigMap
         RECONCILE->>SIEM: Export ProbeResult record
     else Signature invalid
-        RECONCILE->>K8S: Create GauntletProbeResult (TamperedResult outcome)
-        RECONCILE->>K8S: Create GauntletSystemAlert (TamperedResult)
+        RECONCILE->>K8S: Create SiderealProbeResult (TamperedResult outcome)
+        RECONCILE->>K8S: Create SiderealSystemAlert (TamperedResult)
         RECONCILE->>SIEM: Export TamperedResult alert
         RECONCILE->>RECONCILE: Suspend probe surface pending acknowledgment
     end
@@ -149,7 +149,7 @@ flowchart LR
 
     RECONCILE -->|"Mutable\nOperational view"| TIER1
 
-    subgraph TIER1 ["Tier 1 — GauntletProbe.status"]
+    subgraph TIER1 ["Tier 1 — SiderealProbe.status"]
         OP1["lastExecutedAt"]
         OP2["lastOutcome"]
         OP3["consecutiveFailures"]
@@ -158,7 +158,7 @@ flowchart LR
 
     RECONCILE -->|"Append-only\nAudit record\n(admission-enforced)"| TIER2
 
-    subgraph TIER2 ["Tier 2 — GauntletProbeResult CR"]
+    subgraph TIER2 ["Tier 2 — SiderealProbeResult CR"]
         AU1["probeType + outcome\n+ controlEffectiveness"]
         AU2["probeStartTime / probeEndTime"]
         AU3["result.controlMappings\n(multi-framework)"]
@@ -189,13 +189,13 @@ and CA-2 independence requirements.
 
 | Identity | Can Do | Cannot Do |
 |---|---|---|
-| `gauntlet-controller` SA | Create Jobs; read/write CRDs; read HMAC Secret | Perform any probe operation; access target namespace resources |
-| `gauntlet-probe-rbac` SA | RBAC test operations in target namespace | Access other namespaces; modify any resource |
-| `gauntlet-probe-netpol` SA | Read NetworkPolicy objects | Any write; cross-namespace access |
-| `gauntlet-probe-admission` SA | Create/delete test resources (specific types) | Access Secrets; persistent resource creation |
-| `gauntlet-probe-secret` SA | Attempt GET on test Secret names | Write Secrets; cross-namespace read (expects 403) |
-| `gauntlet-probe-detection` SA | None — no Kubernetes API access | Any Kubernetes API operation |
-| `gauntlet-discovery` SA | Read-only cluster-wide: list/get NetworkPolicies, WebhookConfigs, RoleBindings, Secrets (metadata), Falco/Tetragon rules | Any write operation; access to Secret data |
+| `sidereal-controller` SA | Create Jobs; read/write CRDs; read HMAC Secret | Perform any probe operation; access target namespace resources |
+| `sidereal-probe-rbac` SA | RBAC test operations in target namespace | Access other namespaces; modify any resource |
+| `sidereal-probe-netpol` SA | Read NetworkPolicy objects | Any write; cross-namespace access |
+| `sidereal-probe-admission` SA | Create/delete test resources (specific types) | Access Secrets; persistent resource creation |
+| `sidereal-probe-secret` SA | Attempt GET on test Secret names | Write Secrets; cross-namespace read (expects 403) |
+| `sidereal-probe-detection` SA | None — no Kubernetes API access | Any Kubernetes API operation |
+| `sidereal-discovery` SA | Read-only cluster-wide: list/get NetworkPolicies, WebhookConfigs, RoleBindings, Secrets (metadata), Falco/Tetragon rules | Any write operation; access to Secret data |
 
 **Key property**: The controller cannot perform the operations the probes
 perform. A compromised controller cannot produce a falsified probe result

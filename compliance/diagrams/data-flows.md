@@ -1,6 +1,6 @@
 # Data Flow Diagrams
 
-**Purpose**: Documents the data flows between Gauntlet and each external system.
+**Purpose**: Documents the data flows between Sidereal and each external system.
 Each diagram shows what data flows, in which direction, and what security controls
 protect the flow. Required for ATO boundary analysis and ISA/MOU documentation.
 
@@ -13,8 +13,8 @@ the Kubernetes API server to execute its probe action and write its result.
 
 ```mermaid
 flowchart LR
-    subgraph GAUNTLET ["Gauntlet Authorization Boundary"]
-        CTRL["Controller Manager\ngauntlet-controller SA"]
+    subgraph SIDEREAL ["Sidereal Authorization Boundary"]
+        CTRL["Controller Manager\nsidereal-controller SA"]
         JOB["Probe Runner Job\nprobe-specific SA\n(1-hr bound token)"]
         HMAC_SEC["Per-execution\nHMAC Secret\n(tmpfs mount)"]
     end
@@ -22,14 +22,14 @@ flowchart LR
     subgraph K8S ["Kubernetes API Server (External)"]
         JOBS_API["Jobs API"]
         SECRETS_API["Secrets API"]
-        CRD_API["CRD API\n(GauntletProbeResult\nGauntletIncident\netc.)"]
+        CRD_API["CRD API\n(SiderealProbeResult\nSiderealIncident\netc.)"]
         RBAC_API["RBAC API\n(probe test target)"]
         AUDIT_LOG["Kubernetes\nAudit Log"]
     end
 
     CTRL -->|"CREATE Job\nmTLS · SA token\nFIPS cipher"| JOBS_API
     CTRL -->|"CREATE/DELETE\nHMAC Secret\nmTLS · SA token"| SECRETS_API
-    CTRL -->|"CREATE/READ\nGauntletProbeResult\nmTLS · SA token"| CRD_API
+    CTRL -->|"CREATE/READ\nSiderealProbeResult\nmTLS · SA token"| CRD_API
     JOB -->|"Test operation\n(e.g., GET Secret — expects 403)\nmTLS · probe SA token"| RBAC_API
     JOB -->|"WRITE result ConfigMap\n(HMAC-signed payload)\nmTLS · probe SA token"| SECRETS_API
     CTRL -->|"READ result ConfigMap\nverify HMAC\nmTLS · SA token"| SECRETS_API
@@ -49,7 +49,7 @@ flowchart LR
 | Job creation | Job spec (SA reference, HMAC Secret ref, labels) | Outbound | mTLS, RBAC |
 | Probe test operation | API request (verb, resource, namespace) | Outbound | mTLS, probe SA token (1hr) |
 | Result ConfigMap write | HMAC-signed probe result payload | Outbound | mTLS, HMAC |
-| GauntletProbeResult create | Structured audit record | Outbound | mTLS, admission enforcement append-only |
+| SiderealProbeResult create | Structured audit record | Outbound | mTLS, admission enforcement append-only |
 | Kubernetes audit log | All API operations | Internal to K8s | K8s audit log controls |
 
 ---
@@ -62,13 +62,13 @@ queries whether it was detected.
 
 ```mermaid
 flowchart TB
-    subgraph GAUNTLET ["Gauntlet Authorization Boundary"]
+    subgraph SIDEREAL ["Sidereal Authorization Boundary"]
         CTRL["Controller Manager"]
         DET_JOB["Detection Probe Runner\n(Rust / FIPS)\n• No network\n• Custom seccomp\n• No mounts"]
-        GAO["GauntletAOAuthorization\n(required before execution)"]
+        GAO["SiderealAOAuthorization\n(required before execution)"]
     end
 
-    subgraph CLUSTER ["Cluster Runtime (External to Gauntlet Boundary)"]
+    subgraph CLUSTER ["Cluster Runtime (External to Sidereal Boundary)"]
         KERNEL["Linux Kernel\n(syscall layer)"]
         DET_BACKEND_A["Detection Backend\n(profile A)\n(gRPC Output API)"]
         DET_BACKEND_B["Detection Backend\n(profile B)\n(gRPC Event API)"]
@@ -107,12 +107,12 @@ two separate identities, two separate actions, independent of each other.
 
 **Outcomes and responses:**
 
-| Outcome | Meaning | GauntletIncident? |
+| Outcome | Meaning | SiderealIncident? |
 |---|---|---|
 | `Detected` (Effective) | Alert raised within 60s window | No |
 | `Undetected` (Ineffective) | No alert within 60s window | Yes — detection gap (enforce mode only) |
 | `Blocked` (Effective) | Syscall blocked by detection backend enforcement mode (e.g., Tetragon) | No |
-| `BackendUnreachable` (Degraded) | gRPC query failed | GauntletSystemAlert |
+| `BackendUnreachable` (Degraded) | gRPC query failed | SiderealSystemAlert |
 
 ---
 
@@ -124,12 +124,12 @@ decided — rather than inferring from TCP behavior.
 
 ```mermaid
 flowchart LR
-    subgraph GAUNTLET ["Gauntlet Authorization Boundary"]
+    subgraph SIDEREAL ["Sidereal Authorization Boundary"]
         CTRL["Controller Manager"]
         NET_JOB["NetworkPolicy Probe Runner\n(Go)\nprobe-id label applied"]
     end
 
-    subgraph CLUSTER ["Cluster Network (External to Gauntlet Boundary)"]
+    subgraph CLUSTER ["Cluster Network (External to Sidereal Boundary)"]
         CNI_ENFORCE["CNI Enforcement Plane\n(Cilium / Calico)"]
         TARGET_SVC["Target ClusterIP\n(probe destination)"]
 
@@ -177,15 +177,15 @@ CNI flow verdict is unambiguous: it is the enforcement decision.
 
 ## DF-4: Audit Export → SIEM Targets
 
-All `GauntletProbeResult` and `GauntletIncident` records are exported to
+All `SiderealProbeResult` and `SiderealIncident` records are exported to
 the configured SIEM immediately on creation. SIEM export is a first-class
 feature — it is not optional for federal deployments.
 
 ```mermaid
 flowchart TB
-    subgraph GAUNTLET ["Gauntlet Authorization Boundary"]
-        GPR_STORE["GauntletProbeResult\n(in-cluster, append-only)"]
-        GI_STORE["GauntletIncident\n(in-cluster, append-only)"]
+    subgraph SIDEREAL ["Sidereal Authorization Boundary"]
+        GPR_STORE["SiderealProbeResult\n(in-cluster, append-only)"]
+        GI_STORE["SiderealIncident\n(in-cluster, append-only)"]
         EXPORT["Audit Export Pipeline\n• Configurable format\n  (JSON/CEF/LEEF/Syslog/OCSF)\n• Exponential backoff retry\n• Fail-closed option"]
     end
 
@@ -217,8 +217,8 @@ flowchart TB
     S3_API --> S3_BUCKET
 
     subgraph FAILURE ["Export Failure Response"]
-        F1["gauntlet_siem_export_failures_total\n(Prometheus metric)"]
-        F2["GauntletSystemAlert\nreason: SIEMExportDegraded"]
+        F1["sidereal_siem_export_failures_total\n(Prometheus metric)"]
+        F2["SiderealSystemAlert\nreason: SIEMExportDegraded"]
         F3["Probe scheduling halted\n(if failClosedOnExportFailure: true)"]
     end
 

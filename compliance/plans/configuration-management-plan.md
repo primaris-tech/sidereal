@@ -1,4 +1,4 @@
-# Gauntlet Configuration Management Plan
+# Sidereal Configuration Management Plan
 
 **Document Type**: Supporting Plan — NIST 800-53 CM Family  
 **Baseline**: NIST SP 800-53 Rev 5 High  
@@ -9,13 +9,13 @@
 ## 1. Purpose and Scope
 
 This Configuration Management Plan (CMP) defines the configuration management
-policies, procedures, and technical controls that govern the Gauntlet
-continuous monitoring operator. It covers the Gauntlet software components,
+policies, procedures, and technical controls that govern the Sidereal
+continuous monitoring operator. It covers the Sidereal software components,
 their runtime configuration, and the processes by which configuration changes
 are authorized, implemented, and audited.
 
 This plan satisfies NIST 800-53 CM-1 through CM-14 requirements for the
-Gauntlet component. The deploying agency must integrate this plan into their
+Sidereal component. The deploying agency must integrate this plan into their
 organization-wide CM program and supplement it with agency-specific
 procedures for their infrastructure and personnel.
 
@@ -25,8 +25,8 @@ procedures for their infrastructure and personnel.
 
 ### 2.1 Configuration Baseline Document
 
-The authoritative Gauntlet baseline configuration document is the Helm chart
-`values.yaml` file, stored in version control alongside the Gauntlet Helm
+The authoritative Sidereal baseline configuration document is the Helm chart
+`values.yaml` file, stored in version control alongside the Sidereal Helm
 chart at the versioned release tag. The baseline captures:
 
 - Global execution mode (`global.executionMode`: `observe` or `enforce`)
@@ -37,7 +37,7 @@ chart at the versioned release tag. The baseline captures:
 - Container image references (SHA-256 digest-pinned)
 - FIPS mode flags (`fips.enabled`)
 - Audit record retention TTLs (minimum 365 days; default cascades from `global.impactLevel`)
-- ResourceQuota limits for `gauntlet-system`
+- ResourceQuota limits for `sidereal-system`
 - RBAC role bindings for per-probe ServiceAccounts
 - Deployment profile selection (six pre-built profiles available)
 
@@ -54,9 +54,9 @@ unambiguously identifies the exact binary deployed at each release.
 
 | Component | Reference | Notes |
 |---|---|---|
-| Gauntlet Helm chart | `gauntlet:<chart-version>` | Semantic version; tagged in git |
-| Site values override | `<agency-gitops-repo>/gauntlet/values-override.yaml` | Agency-maintained |
-| Trestle workspace | `compliance/trestle-workspace/` | In Gauntlet source repo |
+| Sidereal Helm chart | `sidereal:<chart-version>` | Semantic version; tagged in git |
+| Site values override | `<agency-gitops-repo>/sidereal/values-override.yaml` | Agency-maintained |
+| Trestle workspace | `compliance/trestle-workspace/` | In Sidereal source repo |
 
 *[Agency: Insert specific chart version, image digests, and GitOps repository path here.]*
 
@@ -64,7 +64,7 @@ unambiguously identifies the exact binary deployed at each release.
 
 The controller performs a startup reconciliation check and continuously
 compares running configuration against the Helm-rendered expected state.
-Configuration drift produces a `GauntletSystemAlert` with
+Configuration drift produces a `SiderealSystemAlert` with
 `reason: BaselineConfigurationDrift`, exported to the SIEM.
 
 ---
@@ -75,23 +75,23 @@ Configuration drift produces a `GauntletSystemAlert` with
 
 | Change Type | Authorization Required | Mechanism |
 |---|---|---|
-| Probe schedule modification | `gauntlet-operator` role | `kubectl edit GauntletProbe` via GitOps |
-| Transition execution mode | `gauntlet-live-executor` role | `executionMode: observe` or `executionMode: enforce` in GauntletProbe spec |
-| Modify SIEM endpoints | `gauntlet-security-override` role | Helm upgrade |
-| Change retention TTLs | `gauntlet-security-override` role | Helm upgrade |
-| Modify FIPS mode setting | `gauntlet-security-override` role | Helm upgrade (requires new images) |
-| Enable detection probes | `gauntlet-approver` + `GauntletAOAuthorization` | AO-signed authorization CR |
-| Change impact level | `gauntlet-security-override` role | Helm upgrade (`global.impactLevel`); cascades cadence, retention, fail-closed defaults |
-| Modify control frameworks | `gauntlet-security-override` role | Helm upgrade (`global.controlFrameworks`) |
-| Change audit export format | `gauntlet-security-override` role | Helm upgrade (`audit.exportFormat`) |
-| Register custom probes | `gauntlet-operator` + ISSO approval | Custom `GauntletProbe` with non-default probe type |
-| Modify framework crosswalk | `gauntlet-security-override` role | Security-relevant change; requires ISSO review |
-| Disable admission controller check | `gauntlet-security-override` + AO approval | `global.requireAdmissionController: false` |
+| Probe schedule modification | `sidereal-operator` role | `kubectl edit SiderealProbe` via GitOps |
+| Transition execution mode | `sidereal-live-executor` role | `executionMode: observe` or `executionMode: enforce` in SiderealProbe spec |
+| Modify SIEM endpoints | `sidereal-security-override` role | Helm upgrade |
+| Change retention TTLs | `sidereal-security-override` role | Helm upgrade |
+| Modify FIPS mode setting | `sidereal-security-override` role | Helm upgrade (requires new images) |
+| Enable detection probes | `sidereal-approver` + `SiderealAOAuthorization` | AO-signed authorization CR |
+| Change impact level | `sidereal-security-override` role | Helm upgrade (`global.impactLevel`); cascades cadence, retention, fail-closed defaults |
+| Modify control frameworks | `sidereal-security-override` role | Helm upgrade (`global.controlFrameworks`) |
+| Change audit export format | `sidereal-security-override` role | Helm upgrade (`audit.exportFormat`) |
+| Register custom probes | `sidereal-operator` + ISSO approval | Custom `SiderealProbe` with non-default probe type |
+| Modify framework crosswalk | `sidereal-security-override` role | Security-relevant change; requires ISSO review |
+| Disable admission controller check | `sidereal-security-override` + AO approval | `global.requireAdmissionController: false` |
 
 ### 3.2 Change Control Process
 
 1. **Request**: Change initiator submits a pull request to the GitOps
-   repository modifying `values-override.yaml` or a `GauntletProbe` manifest
+   repository modifying `values-override.yaml` or a `SiderealProbe` manifest
 2. **Review**: Designated reviewer (ISSO or delegate) reviews the security
    impact of the proposed change
 3. **Approval**: Change control authority approves or rejects
@@ -107,13 +107,13 @@ Configuration drift produces a `GauntletSystemAlert` with
 ### 3.3 Rollback Procedure
 
 Every Helm upgrade creates a versioned release record. Rollback is performed
-via `helm rollback gauntlet <revision>`. The Kubernetes audit log records
+via `helm rollback sidereal <revision>`. The Kubernetes audit log records
 the rollback event.
 
 ### 3.4 Emergency Changes
 
 Emergency changes (e.g., responding to an active security event) follow the
-same process with expedited review. The `gauntlet-security-override` role
+same process with expedited review. The `sidereal-security-override` role
 requirement is not waivable. Changes made outside the GitOps pipeline must
 be reconciled by a subsequent GitOps deployment within 24 hours.
 
@@ -129,7 +129,7 @@ The `values.schema.json` in the Helm chart enforces the following constraints:
 
 | Parameter | Constraint | Rationale |
 |---|---|---|
-| `global.executionMode` | Default `observe` | Blast radius default; `enforce` requires `gauntlet-live-executor` role |
+| `global.executionMode` | Default `observe` | Blast radius default; `enforce` requires `sidereal-live-executor` role |
 | `global.impactLevel` | `low`, `moderate`, or `high` | Cascades defaults for cadence, retention, and fail-closed behavior |
 | `global.controlFrameworks` | Array of framework identifiers | Determines active control crosswalks |
 | `probe.intervalSeconds` (High impact) | Maximum 21,600 (6 hours) | NIST 800-137 High monitoring cadence |
@@ -152,10 +152,10 @@ Any deviation from default configuration settings requires:
 
 ## 5. Least Functionality (CM-7)
 
-Gauntlet components expose only essential capabilities:
+Sidereal components expose only essential capabilities:
 - No shell in probe runner images (distroless/scratch base)
 - No debug endpoints in production builds (`/debug/pprof` disabled)
-- NetworkPolicy restricts `gauntlet-system` egress to explicitly listed endpoints
+- NetworkPolicy restricts `sidereal-system` egress to explicitly listed endpoints
 - Pod security context enforces: non-root, read-only filesystem, all capabilities dropped
 
 The agency must not add sidecars, init containers, or additional network
@@ -167,15 +167,15 @@ policies that introduce capabilities not present in the baseline deployment.
 
 ### 6.1 SBOM as Component Inventory
 
-A CycloneDX SBOM is generated and cosign-attested for every Gauntlet release.
-The SBOM serves as the CM-8 component inventory for Gauntlet. It is queryable via:
+A CycloneDX SBOM is generated and cosign-attested for every Sidereal release.
+The SBOM serves as the CM-8 component inventory for Sidereal. It is queryable via:
 
 ```
 cosign verify-attestation --type cyclonedx <image@sha256:digest>
 ```
 
-The agency must integrate the Gauntlet SBOM into their organization's software
-asset management system and document Gauntlet's component inventory in the SSP.
+The agency must integrate the Sidereal SBOM into their organization's software
+asset management system and document Sidereal's component inventory in the SSP.
 
 ### 6.2 Inventory Update Procedure
 
@@ -187,11 +187,11 @@ No manual inventory update is required.
 
 ## 7. Signed Components (CM-14)
 
-All Gauntlet container images are cosign-signed at build time. The admission
-enforcement policy `gauntlet-image-signature-required` enforces signature verification
+All Sidereal container images are cosign-signed at build time. The admission
+enforcement policy `sidereal-image-signature-required` enforces signature verification
 at every Pod admission. The agency must:
 
-1. Ensure the admission controller (e.g., Kyverno or OPA/Gatekeeper) is deployed before Gauntlet installation
+1. Ensure the admission controller (e.g., Kyverno or OPA/Gatekeeper) is deployed before Sidereal installation
 2. Not disable or create exceptions to the image signature policy
 3. For air-gapped deployments: re-sign mirrored images per the documented
    procedure and update the admission enforcement policy with the agency's signing key
@@ -205,7 +205,7 @@ at every Pod admission. The agency must:
 | ISSO | Approve security-relevant configuration changes; maintain deviation register |
 | Authorizing Official | Approve deviations from default security configuration; authorize detection probe campaigns |
 | System Administrator | Execute approved changes via GitOps pipeline |
-| Change Control Board | Review and approve changes to security-relevant Gauntlet configuration |
+| Change Control Board | Review and approve changes to security-relevant Sidereal configuration |
 
 *[Agency: Map these responsibilities to named individuals or positions here.]*
 
@@ -217,7 +217,7 @@ at every Pod admission. The agency must:
 - **CM-3** change control → this plan, Section 3
 - **CM-6** configuration settings → `values.schema.json`; deviations in SSP
 - **CM-7** least functionality → OSCAL Component Definition cm-7.md
-- **CM-8** inventory → Gauntlet SBOM OCI artifact
+- **CM-8** inventory → Sidereal SBOM OCI artifact
 - **CM-14** signed components → OSCAL Component Definition cm-14.md
 - **SC-12** key management → Key Management Plan (if separate)
-- **SI-2** flaw remediation → Gauntlet release channel; 30-day critical CVE SLA
+- **SI-2** flaw remediation → Sidereal release channel; 30-day critical CVE SLA

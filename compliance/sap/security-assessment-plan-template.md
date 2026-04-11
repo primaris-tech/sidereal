@@ -1,5 +1,5 @@
 # Security Assessment Plan (SAP) Template
-## Gauntlet Continuous Security Control Validation Operator
+## Sidereal Continuous Security Control Validation Operator
 
 **Classification**: [Agency: Insert applicable classification marking]
 **Version**: 1.0
@@ -9,16 +9,16 @@
 
 > **How to use this template**: This SAP contains two types of content:
 >
-> 1. **Pre-written test procedures** — documented by the Gauntlet team; describe how to
+> 1. **Pre-written test procedures** — documented by the Sidereal team; describe how to
 >    execute and interpret each test. Do not alter these procedures without consulting your
->    Gauntlet representative, as changes may invalidate the OSCAL Component Definition mapping.
+>    Sidereal representative, as changes may invalidate the OSCAL Component Definition mapping.
 >
 > 2. **Agency fill-in sections** — marked `[Agency: ...]`; require assessor-specific input
 >    (schedule, team, environment details, actual results, findings).
 >
-> **Key concept**: Gauntlet generates continuous assessment evidence automatically.
-> For controls covered by Gauntlet probes, the assessor's primary task is to
-> **verify that Gauntlet is operating correctly** and **review the probe result record**
+> **Key concept**: Sidereal generates continuous assessment evidence automatically.
+> For controls covered by Sidereal probes, the assessor's primary task is to
+> **verify that Sidereal is operating correctly** and **review the probe result record**
 > for the assessment period — not to re-execute the same tests manually.
 > Section 4 defines this evidence review methodology.
 
@@ -30,7 +30,7 @@
 2. [Assessment Team](#2-assessment-team)
 3. [Assessment Scope and Boundaries](#3-assessment-scope-and-boundaries)
 4. [Evidence Review Methodology](#4-evidence-review-methodology)
-5. [Test Procedures — Gauntlet System Integrity](#5-test-procedures--gauntlet-system-integrity)
+5. [Test Procedures — Sidereal System Integrity](#5-test-procedures--sidereal-system-integrity)
 6. [Test Procedures — Access Control (AC)](#6-test-procedures--access-control-ac)
 7. [Test Procedures — Audit and Accountability (AU)](#7-test-procedures--audit-and-accountability-au)
 8. [Test Procedures — Configuration Management (CM)](#8-test-procedures--configuration-management-cm)
@@ -52,7 +52,7 @@
 ### 1.1 Purpose
 
 This Security Assessment Plan defines the test procedures, schedule, and methodology for
-assessing the security controls implemented by the Gauntlet Continuous Security Control
+assessing the security controls implemented by the Sidereal Continuous Security Control
 Validation Operator. The assessment supports the [Agency: insert assessment type and
 associated authorization package].
 
@@ -60,24 +60,24 @@ associated authorization package].
 
 | Field | Value |
 |---|---|
-| System Name | Gauntlet Continuous Security Control Validation Operator |
-| Helm Chart Version | [Agency: Insert deployed version, e.g., `gauntlet-1.2.0`] |
+| System Name | Sidereal Continuous Security Control Validation Operator |
+| Helm Chart Version | [Agency: Insert deployed version, e.g., `sidereal-1.2.0`] |
 | Assessment Period | [Agency: Insert start date] through [Agency: Insert end date] |
 | Target Environment | [Agency: Insert cluster name / environment] |
 | Associated SSP | `compliance/ssp/system-security-plan-template.md` |
-| OSCAL Component Definition | `compliance/trestle-workspace/component-definitions/gauntlet/component-definition.json` |
+| OSCAL Component Definition | `compliance/trestle-workspace/component-definitions/sidereal/component-definition.json` |
 
 ### 1.3 Assessment Basis
 
 This assessment uses:
 - **NIST SP 800-53A Rev 5** — assessment procedures for the High baseline
 - **NIST SP 800-53 Rev 5** — control requirement definitions
-- **Gauntlet OSCAL Component Definition** — authoritative source of control implementations
+- **Sidereal OSCAL Component Definition** — authoritative source of control implementations
 
 ### 1.4 Prior Assessment Findings
 
 [Agency: List any open findings from prior assessments that this assessment should revisit,
-with references to their POA&M entries and the `GauntletIncident` CRs that documented them.]
+with references to their POA&M entries and the `SiderealIncident` CRs that documented them.]
 
 | POA&M Item | Control | Description | Status |
 |---|---|---|---|
@@ -94,7 +94,7 @@ with references to their POA&M entries and the `GauntletIncident` CRs that docum
 | Name | [Agency: Insert name] |
 | Organization | [Agency: Insert organization] |
 | Certification(s) | [Agency: CISSP / CAP / etc.] |
-| Independence | [Agency: Document independence from Gauntlet deployment team] |
+| Independence | [Agency: Document independence from Sidereal deployment team] |
 | Phone | [Agency: Insert phone] |
 | Email | [Agency: Insert email] |
 
@@ -110,9 +110,9 @@ with references to their POA&M entries and the `GauntletIncident` CRs that docum
 ### 2.3 Assessor Independence Statement
 
 [Agency: Document how the assessment team is independent of the personnel who operate
-Gauntlet. Per CA-2(1), assessors must be independent of the system they are assessing.
-For Gauntlet, this means the assessment team must be independent of the team that deployed
-and configured the Gauntlet Helm chart and the team that created the GauntletProbe resources.]
+Sidereal. Per CA-2(1), assessors must be independent of the system they are assessing.
+For Sidereal, this means the assessment team must be independent of the team that deployed
+and configured the Sidereal Helm chart and the team that created the SiderealProbe resources.]
 
 ---
 
@@ -120,7 +120,7 @@ and configured the Gauntlet Helm chart and the team that created the GauntletPro
 
 ### 3.1 Controls In Scope
 
-The following controls are within scope for this assessment. All are implemented by Gauntlet
+The following controls are within scope for this assessment. All are implemented by Sidereal
 as documented in the OSCAL Component Definition.
 
 | Control | Title | Test Sections |
@@ -174,7 +174,7 @@ and are assessed as part of the cluster ATO, not this assessment:
 - Physical and Environmental Protection (PE)
 - Personnel Security (PS)
 - Media Protection (MP)
-- Contingency Planning (CP) — assessed at the cluster level; see `compliance/plans/contingency-plan.md` for Gauntlet-specific procedures
+- Contingency Planning (CP) — assessed at the cluster level; see `compliance/plans/contingency-plan.md` for Sidereal-specific procedures
 
 ### 3.3 Assessment Environment
 
@@ -186,7 +186,7 @@ or document the differences and their impact on assessment validity.]
 |---|---|
 | Cluster | [Agency: Cluster name] |
 | Kubernetes version | [Agency: Version] |
-| Gauntlet namespace | `gauntlet-system` |
+| Sidereal namespace | `sidereal-system` |
 | CNI in use | [Agency: Cilium / Calico / other] |
 | Detection backends | [Agency: detection backend in use, e.g., Falco / Tetragon / none] |
 | SIEM target(s) | [Agency: Splunk / Elasticsearch / S3] |
@@ -201,28 +201,28 @@ or document the differences and their impact on assessment validity.]
 
 This assessment uses a two-track approach:
 
-**Track 1 — Gauntlet System Integrity** (Section 5): The assessor verifies that Gauntlet
+**Track 1 — Sidereal System Integrity** (Section 5): The assessor verifies that Sidereal
 itself is operating correctly, its controls are implemented as described, and its output
-is trustworthy. This track uses traditional examiner/interview/test methods against Gauntlet's
+is trustworthy. This track uses traditional examiner/interview/test methods against Sidereal's
 own components.
 
-**Track 2 — Continuous Evidence Review** (Sections 6–13): For controls covered by Gauntlet
+**Track 2 — Continuous Evidence Review** (Sections 6–13): For controls covered by Sidereal
 probes, the assessor reviews the accumulated probe result record rather than re-executing
 the same tests manually. The assessor verifies the evidence is complete, unbroken, and
 shows no failures during the assessment period.
 
-Track 2 is valid only if Track 1 confirms Gauntlet's integrity. If Track 1 produces any
+Track 2 is valid only if Track 1 confirms Sidereal's integrity. If Track 1 produces any
 findings, Track 2 evidence for controls tested by the affected probe surface must be
-treated as unconfirmed until Gauntlet's integrity is restored and re-verified.
+treated as unconfirmed until Sidereal's integrity is restored and re-verified.
 
 ### 4.2 Track 2 Evidence Review Procedure
 
-For each control tested by Gauntlet probes, the assessor executes this standard procedure:
+For each control tested by Sidereal probes, the assessor executes this standard procedure:
 
 **Step 1 — Retrieve probe results for the assessment period:**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=<PROBE_TYPE>' \
   -o json \
   | jq '[.items[] | select(.spec.execution.timestamp >= "<START_DATE>")]
@@ -232,18 +232,18 @@ kubectl get gauntletproberesults -n gauntlet-system \
 **Step 2 — Check for any Failure or Undetected outcomes:**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | select(.spec.result.outcome != "Pass" and
                             .spec.result.outcome != "Blocked")] | length'
 ```
 
 A count of `0` indicates no failures during the period. Any non-zero count requires
-investigation of the corresponding `GauntletIncident` CRs.
+investigation of the corresponding `SiderealIncident` CRs.
 
 **Step 2a — Check for any non-Effective control effectiveness assessments:**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | select(.spec.result.controlEffectiveness != "Effective")] | length'
 ```
 
@@ -253,7 +253,7 @@ Any `Ineffective`, `Degraded`, or `Compromised` results require investigation.
 **Step 3 — Verify HMAC integrity status:**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | select(.spec.result.integrityStatus != "Verified")] | length'
 ```
 
@@ -263,7 +263,7 @@ significant finding.
 **Step 4 — Verify SIEM export status:**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | select(.spec.audit.exportStatus == "Failed")] | length'
 ```
 
@@ -273,7 +273,7 @@ investigation.
 **Step 5 — Verify coverage gap (no scheduling gaps > 2× interval):**
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=<PROBE_TYPE>' \
   -o json \
   | jq '[.items | sort_by(.spec.execution.timestamp) | to_entries[]
@@ -287,7 +287,7 @@ kubectl get gauntletproberesults -n gauntlet-system \
 **Step 6 — Verify SIEM export format:**
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep -A5 'siem\|export'
+helm get values sidereal -n sidereal-system | grep -A5 'siem\|export'
 ```
 
 Confirm the configured export format (JSON, CEF, LEEF, Syslog, or OCSF) matches the
@@ -296,7 +296,7 @@ agency's SIEM ingestion requirements.
 **Step 7 — Cross-reference with SIEM:**
 
 Pull the same date range from the SIEM and confirm the record counts match the
-in-cluster `GauntletProbeResult` count. A mismatch indicates an export or retention gap.
+in-cluster `SiderealProbeResult` count. A mismatch indicates an export or retention gap.
 
 ### 4.3 Evidence Rating Scale
 
@@ -312,26 +312,26 @@ Track 2 review:
 
 ---
 
-## 5. Test Procedures — Gauntlet System Integrity
+## 5. Test Procedures — Sidereal System Integrity
 
-These tests verify Gauntlet's own controls. They must be completed before Track 2 evidence
+These tests verify Sidereal's own controls. They must be completed before Track 2 evidence
 reviews begin.
 
 ---
 
 ### TEST-SYS-01 — Image Signature Verification (CM-14, SR-11)
 
-**Objective**: Confirm that all running Gauntlet containers were admitted through admission
+**Objective**: Confirm that all running Sidereal containers were admitted through admission
 enforcement policy cosign signature verification and that their digests match the signed images.
 
 **Method**: Test
 
 **Procedure**:
 
-1. List all running Gauntlet pods and their image digests:
+1. List all running Sidereal pods and their image digests:
 
 ```bash
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq '.items[].spec.containers[].image'
 ```
 
@@ -339,7 +339,7 @@ kubectl get pods -n gauntlet-system -o json \
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+  --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   <image>@<digest>
 ```
@@ -347,7 +347,7 @@ cosign verify \
 3. Confirm the admission enforcement policy is active:
 
 ```bash
-kubectl get clusterpolicy gauntlet-image-signature-required -o yaml \
+kubectl get clusterpolicy sidereal-image-signature-required -o yaml \
   | grep 'validationFailureAction'
 ```
 
@@ -360,7 +360,7 @@ Expected: `validationFailureAction: Enforce` (not `Audit`)
 ```bash
 kubectl run test-unsigned \
   --image=nginx:latest \
-  --overrides='{"metadata":{"namespace":"gauntlet-system"}}' \
+  --overrides='{"metadata":{"namespace":"sidereal-system"}}' \
   --dry-run=server 2>&1
 ```
 
@@ -387,16 +387,16 @@ tamper event would be detected and flagged.
 1. Confirm no `TamperedResult` records exist:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | select(.spec.result.integrityStatus == "TamperedResult")]'
 ```
 
 Expected: empty array `[]`
 
-2. Retrieve a recent `GauntletProbeResult` and confirm `integrityStatus: Verified` is present:
+2. Retrieve a recent `SiderealProbeResult` and confirm `integrityStatus: Verified` is present:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --sort-by=.metadata.creationTimestamp -o yaml \
   | tail -50
 ```
@@ -406,17 +406,17 @@ Expected: `integrityStatus: Verified` in the most recent result.
 3. Confirm the HMAC root Secret exists and is accessible only to the controller SA:
 
 ```bash
-kubectl get secret gauntlet-hmac-root -n gauntlet-system -o yaml \
+kubectl get secret sidereal-hmac-root -n sidereal-system -o yaml \
   | grep 'annotations\|labels'
-kubectl get rolebinding -n gauntlet-system -o yaml \
-  | grep -A5 'gauntlet-hmac'
+kubectl get rolebinding -n sidereal-system -o yaml \
+  | grep -A5 'sidereal-hmac'
 ```
 
-4. Attempt to modify a `GauntletProbeResult` directly; confirm the admission controller blocks it:
+4. Attempt to modify a `SiderealProbeResult` directly; confirm the admission controller blocks it:
 
 ```bash
-RESULT=$(kubectl get gauntletproberesults -n gauntlet-system -o name | head -1)
-kubectl patch $RESULT -n gauntlet-system \
+RESULT=$(kubectl get siderealproberesults -n sidereal-system -o name | head -1)
+kubectl patch $RESULT -n sidereal-system \
   --type='merge' \
   -p '{"spec":{"result":{"outcome":"Pass"}}}' \
   --dry-run=server 2>&1
@@ -435,7 +435,7 @@ access is restricted. Modification of ProbeResult records is blocked by admissio
 
 ### TEST-SYS-03 — Append-Only Enforcement (AU-9, AU-10)
 
-**Objective**: Confirm that `GauntletProbeResult` and `GauntletIncident` CRs cannot be
+**Objective**: Confirm that `SiderealProbeResult` and `SiderealIncident` CRs cannot be
 deleted or modified after creation.
 
 **Method**: Test
@@ -445,7 +445,7 @@ deleted or modified after creation.
 1. Confirm the admission enforcement policy for append-only is in Enforce mode:
 
 ```bash
-kubectl get clusterpolicy gauntlet-proberesult-immutable -o yaml \
+kubectl get clusterpolicy sidereal-proberesult-immutable -o yaml \
   | grep 'validationFailureAction'
 ```
 
@@ -453,21 +453,21 @@ kubectl get clusterpolicy gauntlet-proberesult-immutable -o yaml \
 
 Expected: `validationFailureAction: Enforce`
 
-2. Attempt to delete a `GauntletProbeResult` and confirm it is blocked:
+2. Attempt to delete a `SiderealProbeResult` and confirm it is blocked:
 
 ```bash
-RESULT=$(kubectl get gauntletproberesults -n gauntlet-system -o name | head -1)
-kubectl delete $RESULT -n gauntlet-system --dry-run=server 2>&1
+RESULT=$(kubectl get siderealproberesults -n sidereal-system -o name | head -1)
+kubectl delete $RESULT -n sidereal-system --dry-run=server 2>&1
 ```
 
 Expected: admission webhook error.
 
-3. Attempt to patch a `GauntletIncident` and confirm it is blocked:
+3. Attempt to patch a `SiderealIncident` and confirm it is blocked:
 
 ```bash
-INCIDENT=$(kubectl get gauntletincidents -n gauntlet-system -o name | head -1)
+INCIDENT=$(kubectl get siderealincidents -n sidereal-system -o name | head -1)
 if [ -n "$INCIDENT" ]; then
-  kubectl patch $INCIDENT -n gauntlet-system \
+  kubectl patch $INCIDENT -n sidereal-system \
     --type='merge' -p '{"spec":{"outcome":"Pass"}}' \
     --dry-run=server 2>&1
 fi
@@ -486,7 +486,7 @@ enforcement policy in Enforce mode.
 
 ### TEST-SYS-04 — NetworkPolicy Default-Deny Enforcement (SC-7)
 
-**Objective**: Confirm that the `gauntlet-system` namespace has a default-deny
+**Objective**: Confirm that the `sidereal-system` namespace has a default-deny
 NetworkPolicy and that non-permitted traffic is blocked.
 
 **Method**: Test + Examine
@@ -496,7 +496,7 @@ NetworkPolicy and that non-permitted traffic is blocked.
 1. Confirm the NetworkPolicy exists:
 
 ```bash
-kubectl get networkpolicy -n gauntlet-system -o yaml
+kubectl get networkpolicy -n sidereal-system -o yaml
 ```
 
 Expected: at least one policy with `podSelector: {}` (applies to all pods) and either
@@ -506,7 +506,7 @@ diagram.
 2. Verify no unexpected egress is permitted by reviewing the policy spec:
 
 ```bash
-kubectl get networkpolicy -n gauntlet-system -o json \
+kubectl get networkpolicy -n sidereal-system -o json \
   | jq '.items[].spec.egress[].ports'
 ```
 
@@ -516,7 +516,7 @@ Expected: only ports 443, 50051, 54321, 4245, 5443, and 8443 appear (matching
 3. Review the NetworkPolicy probe's most recent result to confirm self-validation is active:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml \
   | tail -30
@@ -545,7 +545,7 @@ capability-dropped, and cleaned up after execution.
 1. Review the security context of a recently completed Job's pod spec (or the Job template):
 
 ```bash
-kubectl get jobs -n gauntlet-system -o json \
+kubectl get jobs -n sidereal-system -o json \
   | jq '.items[0].spec.template.spec.containers[0].securityContext'
 ```
 
@@ -555,16 +555,16 @@ Expected: `runAsNonRoot: true`, `readOnlyRootFilesystem: true`,
 2. Confirm probe Jobs are cleaned up by TTL controller:
 
 ```bash
-kubectl get jobs -n gauntlet-system \
+kubectl get jobs -n sidereal-system \
   -o custom-columns='NAME:.metadata.name,AGE:.metadata.creationTimestamp,TTL:.spec.ttlSecondsAfterFinished'
 ```
 
 Expected: `ttlSecondsAfterFinished` is set (not null) on all Jobs.
 
-3. Confirm no PersistentVolumeClaim exists in `gauntlet-system`:
+3. Confirm no PersistentVolumeClaim exists in `sidereal-system`:
 
 ```bash
-kubectl get pvc -n gauntlet-system
+kubectl get pvc -n sidereal-system
 ```
 
 Expected: `No resources found`
@@ -572,7 +572,7 @@ Expected: `No resources found`
 4. Confirm the admission enforcement policy for no-PVC is in Enforce mode:
 
 ```bash
-kubectl get clusterpolicy gauntlet-no-writable-pvc -o yaml \
+kubectl get clusterpolicy sidereal-no-writable-pvc -o yaml \
   | grep 'validationFailureAction'
 ```
 
@@ -583,12 +583,12 @@ Expected: `validationFailureAction: Enforce`
 5. Confirm probe Jobs use the expected pre-provisioned ServiceAccounts only:
 
 ```bash
-kubectl get jobs -n gauntlet-system -o json \
+kubectl get jobs -n sidereal-system -o json \
   | jq '.items[].spec.template.spec.serviceAccountName' | sort -u
 ```
 
-Expected: only `gauntlet-probe-rbac`, `gauntlet-probe-netpol`, `gauntlet-probe-admission`,
-`gauntlet-probe-secret`, `gauntlet-probe-detection`, `gauntlet-probe-discovery` (not `gauntlet-controller` or `default`).
+Expected: only `sidereal-probe-rbac`, `sidereal-probe-netpol`, `sidereal-probe-admission`,
+`sidereal-probe-secret`, `sidereal-probe-detection`, `sidereal-probe-discovery` (not `sidereal-controller` or `default`).
 
 **Pass Criteria**: All Jobs run non-root, read-only, all-caps-dropped. TTL cleanup is configured.
 No PVCs exist. Admission enforcement PVC policy enforces. Only pre-approved probe SAs are used.
@@ -611,16 +611,16 @@ cannot be reached at runtime.
 1. Confirm deployed images carry the FIPS image digest (not the standard variant):
 
 ```bash
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq '.items[].spec.containers[].image'
 ```
 
-Compare each digest against the FIPS variant digests published in the Gauntlet release manifest.
+Compare each digest against the FIPS variant digests published in the Sidereal release manifest.
 
 2. Confirm `global.fips: true` is set in the deployed Helm values:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep fips
+helm get values sidereal -n sidereal-system | grep fips
 ```
 
 Expected: `fips: true`
@@ -628,7 +628,7 @@ Expected: `fips: true`
 3. Confirm the controller log does not contain any non-FIPS cipher suite negotiation events:
 
 ```bash
-kubectl logs deployment/gauntlet-controller -n gauntlet-system \
+kubectl logs deployment/sidereal-controller -n sidereal-system \
   | grep -i 'cipher\|tls\|fips' | head -20
 ```
 
@@ -658,7 +658,7 @@ SAs cannot write CRDs.
 1. Confirm the admission enforcement policy for Job constraints is in Enforce mode:
 
 ```bash
-kubectl get clusterpolicy gauntlet-job-constraints -o yaml \
+kubectl get clusterpolicy sidereal-job-constraints -o yaml \
   | grep 'validationFailureAction'
 ```
 
@@ -670,10 +670,10 @@ Expected: `validationFailureAction: Enforce`
 
 ```bash
 for SA in rbac netpol admission secret detection discovery; do
-  echo "=== gauntlet-probe-$SA ==="
-  kubectl auth can-i create gauntletproberesults \
-    --as=system:serviceaccount:gauntlet-system:gauntlet-probe-$SA \
-    -n gauntlet-system
+  echo "=== sidereal-probe-$SA ==="
+  kubectl auth can-i create siderealproberesults \
+    --as=system:serviceaccount:sidereal-system:sidereal-probe-$SA \
+    -n sidereal-system
 done
 ```
 
@@ -683,7 +683,7 @@ Expected: `no` for all probe SAs.
 
 ```bash
 kubectl auth can-i get secrets \
-  --as=system:serviceaccount:gauntlet-system:gauntlet-controller \
+  --as=system:serviceaccount:sidereal-system:sidereal-controller \
   -n [Agency: target namespace]
 ```
 
@@ -695,8 +695,8 @@ Expected: `no`
 ```bash
 kubectl create job test-escalation \
   --image=nginx:latest \
-  --overrides='{"spec":{"template":{"spec":{"serviceAccountName":"gauntlet-controller"}}}}' \
-  -n gauntlet-system \
+  --overrides='{"spec":{"template":{"spec":{"serviceAccountName":"sidereal-controller"}}}}' \
+  -n sidereal-system \
   --dry-run=server 2>&1
 ```
 
@@ -713,17 +713,17 @@ Admission controller blocks Job creation with unapproved SAs.
 
 ### TEST-SYS-08 — Bootstrap Verification and Alert Generation (SI-6, AU-5)
 
-**Objective**: Confirm that Gauntlet's bootstrap verifier is active and that degraded-state
-conditions generate `GauntletSystemAlert` CRs.
+**Objective**: Confirm that Sidereal's bootstrap verifier is active and that degraded-state
+conditions generate `SiderealSystemAlert` CRs.
 
 **Method**: Examine + Interview
 
 **Procedure**:
 
-1. Confirm no open `GauntletSystemAlert` CRs exist (or review any that do):
+1. Confirm no open `SiderealSystemAlert` CRs exist (or review any that do):
 
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system -o yaml
+kubectl get siderealsystemalerts -n sidereal-system -o yaml
 ```
 
 Expected: no unacknowledged alerts; if alerts exist, review and document.
@@ -731,20 +731,20 @@ Expected: no unacknowledged alerts; if alerts exist, review and document.
 2. Review controller logs for bootstrap verification messages:
 
 ```bash
-kubectl logs deployment/gauntlet-controller -n gauntlet-system \
+kubectl logs deployment/sidereal-controller -n sidereal-system \
   | grep -i 'bootstrap\|prerequisite\|verify' | head -20
 ```
 
 Expected: bootstrap verification completion messages with no failures logged.
 
 3. Interview the ISSO or operations team:
-   - How are `GauntletSystemAlert` CRs monitored?
+   - How are `SiderealSystemAlert` CRs monitored?
    - What is the alert acknowledgment procedure?
    - Has any alert been received and acknowledged in the past 12 months?
 
 [Agency: Document interview responses]
 
-**Pass Criteria**: No unacknowledged `GauntletSystemAlert` CRs. Bootstrap verification completes
+**Pass Criteria**: No unacknowledged `SiderealSystemAlert` CRs. Bootstrap verification completes
 without errors in controller logs. Monitoring and acknowledgment procedure is documented and known
 to operations staff.
 
@@ -763,7 +763,7 @@ to operations staff.
 **Control**: AC-3, AC-3(7)
 **Track**: Track 2 (Evidence Review)
 
-**Objective**: Confirm that Gauntlet's RBAC probe is continuously verifying that unauthorized
+**Objective**: Confirm that Sidereal's RBAC probe is continuously verifying that unauthorized
 operations are denied by Kubernetes RBAC in the target namespace(s).
 
 **Procedure**: Execute the Track 2 evidence review (§4.2) for `spec.probe.type=rbac`.
@@ -771,7 +771,7 @@ operations are denied by Kubernetes RBAC in the target namespace(s).
 Additionally, examine one recent probe result in detail:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=rbac' \
   --sort-by=.metadata.creationTimestamp \
   -o yaml | tail -60
@@ -809,14 +809,14 @@ Secret access is denied.
 Examine one recent probe result:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=secret' \
   --sort-by=.metadata.creationTimestamp \
   -o yaml | tail -60
 ```
 
 Confirm: `result.outcome: Pass` and that the probe tested cross-namespace access
-(i.e., `probe.targetNamespace` is different from `gauntlet-system`).
+(i.e., `probe.targetNamespace` is different from `sidereal-system`).
 
 **Pass Criteria**: No probe failures during assessment period. All cross-namespace Secret access
 attempts returned 403 as expected. SIEM export complete.
@@ -842,7 +842,7 @@ of traffic flow rules, reading verdicts from the authoritative CNI observability
 Examine one recent probe result and confirm it includes CNI verdict metadata:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp \
   -o yaml | tail -60
@@ -903,7 +903,7 @@ probe verifies expired token rejection.
 2. Confirm token expiry setting in probe Job templates:
 
 ```bash
-kubectl get jobs -n gauntlet-system -o json \
+kubectl get jobs -n sidereal-system -o json \
   | jq '.items[0].spec.template.spec.volumes[]
         | select(.projected != null)
         | .projected.sources[]
@@ -931,7 +931,7 @@ expired token rejection. No probe failures.
 **Control**: AU-2, AU-3, AU-12
 **Track**: Track 1 (Direct Examination)
 
-**Objective**: Confirm that `GauntletProbeResult` records contain all required AU-3 fields.
+**Objective**: Confirm that `SiderealProbeResult` records contain all required AU-3 fields.
 
 **Procedure**:
 
@@ -940,7 +940,7 @@ expired token rejection. No probe failures.
 ```bash
 for TYPE in rbac netpol admission secret detection discovery; do
   echo "=== $TYPE ==="
-  kubectl get gauntletproberesults -n gauntlet-system \
+  kubectl get siderealproberesults -n sidereal-system \
     --field-selector="spec.probe.type=$TYPE" \
     --sort-by=.metadata.creationTimestamp \
     -o json | jq '.items[-1]'
@@ -981,10 +981,10 @@ that SIEM export is delivering records off-cluster.
 
 **Procedure**:
 
-1. Confirm 365-day TTL is set on `GauntletProbeResult` CRs:
+1. Confirm 365-day TTL is set on `SiderealProbeResult` CRs:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '.items[0].metadata.annotations["kubectl.kubernetes.io/ttl"]'
 ```
 
@@ -992,7 +992,7 @@ kubectl get gauntletproberesults -n gauntlet-system -o json \
    is set on recent results:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[-10:][].spec.audit.exportStatus] | group_by(.) | map({(.[0]): length})'
 ```
 
@@ -1025,23 +1025,23 @@ SIEM storage is sized for 3-year retention. S3 Object Lock is in COMPLIANCE mode
 **Control**: AU-5
 **Track**: Track 1 (Direct Examination) + Interview
 
-**Objective**: Confirm that SIEM export failures generate `GauntletSystemAlert` CRs and
+**Objective**: Confirm that SIEM export failures generate `SiderealSystemAlert` CRs and
 that fail-closed posture is configured if required.
 
 **Procedure**:
 
-1. Confirm no `GauntletSystemAlert` records with `reason: SIEMExportDegraded` are open:
+1. Confirm no `SiderealSystemAlert` records with `reason: SIEMExportDegraded` are open:
 
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system -o json \
+kubectl get siderealsystemalerts -n sidereal-system -o json \
   | jq '.items[] | select(.spec.reason == "SIEMExportDegraded")'
 ```
 
 2. Confirm Prometheus metric is exposed:
 
 ```bash
-kubectl port-forward deployment/gauntlet-controller 8080:8080 -n gauntlet-system &
-curl -s http://localhost:8080/metrics | grep 'gauntlet_siem_export_failures_total'
+kubectl port-forward deployment/sidereal-controller 8080:8080 -n sidereal-system &
+curl -s http://localhost:8080/metrics | grep 'sidereal_siem_export_failures_total'
 ```
 
 Expected: metric is present (value of 0 indicates no failures since last restart).
@@ -1049,12 +1049,12 @@ Expected: metric is present (value of 0 indicates no failures since last restart
 3. Confirm `failClosedOnExportFailure` setting:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep failClosed
+helm get values sidereal -n sidereal-system | grep failClosed
 ```
 
 For High baseline systems, expected: `failClosedOnExportFailure: true`
 
-4. Interview ISSO: Is there an alert rule configured for `gauntlet_siem_export_failures_total > 0`?
+4. Interview ISSO: Is there an alert rule configured for `sidereal_siem_export_failures_total > 0`?
 
 [Agency: Document alert rule configuration]
 
@@ -1080,7 +1080,7 @@ precision and are accurate to within NTP synchronization tolerance.
 1. Verify timestamp format in recent probe results:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --sort-by=.metadata.creationTimestamp -o json \
   | jq '.items[-3:][].spec.execution.timestamp'
 ```
@@ -1090,7 +1090,7 @@ Expected: format `2026-01-15T14:30:45.123456789Z` (RFC 3339 UTC, nanosecond prec
 2. Compare a probe result timestamp to the node's current time:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --sort-by=.metadata.creationTimestamp -o json \
   | jq '.items[-1].spec.execution.timestamp'
 date -u +"%Y-%m-%dT%H:%M:%S.%NZ"
@@ -1123,7 +1123,7 @@ are accurate to within NTP tolerance.
 1. Confirm in-cluster retention is set to 365 days minimum:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep retention
+helm get values sidereal -n sidereal-system | grep retention
 ```
 
 Expected: `retentionDays: 365` or higher.
@@ -1131,7 +1131,7 @@ Expected: `retentionDays: 365` or higher.
 2. Check that older records have not been deleted ahead of TTL:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --sort-by=.metadata.creationTimestamp -o json \
   | jq '.items[0].metadata.creationTimestamp'
 ```
@@ -1173,7 +1173,7 @@ is version-controlled.
 2. Confirm the deployed values match the committed baseline:
 
 ```bash
-helm get values gauntlet -n gauntlet-system > /tmp/deployed-values.yaml
+helm get values sidereal -n sidereal-system > /tmp/deployed-values.yaml
 diff /tmp/deployed-values.yaml [Agency: path to committed values-override.yaml]
 ```
 
@@ -1205,7 +1205,7 @@ CMP is current and accurate.
 1. Attempt to install or upgrade with a value that violates schema constraints (dry-run):
 
 ```bash
-helm upgrade gauntlet . -n gauntlet-system \
+helm upgrade sidereal . -n sidereal-system \
   --set probe.intervalSeconds=60 \
   --dry-run 2>&1 | grep -i 'schema\|invalid\|error'
 ```
@@ -1215,7 +1215,7 @@ Expected: schema validation error for `intervalSeconds` below minimum (300).
 2. Confirm `global.impactLevel` is set appropriately for the system categorization:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep impactLevel
+helm get values sidereal -n sidereal-system | grep impactLevel
 ```
 
 Expected: `impactLevel: high` (for NIST 800-53 High baseline systems).
@@ -1223,7 +1223,7 @@ Expected: `impactLevel: high` (for NIST 800-53 High baseline systems).
 3. Attempt to set `tls.required: false`:
 
 ```bash
-helm upgrade gauntlet . -n gauntlet-system \
+helm upgrade sidereal . -n sidereal-system \
   --set tls.required=false \
   --dry-run 2>&1 | grep -i 'schema\|invalid\|error'
 ```
@@ -1249,12 +1249,12 @@ deployed image.
 
 **Procedure**:
 
-For each distinct image digest deployed in `gauntlet-system`:
+For each distinct image digest deployed in `sidereal-system`:
 
 ```bash
 cosign verify-attestation \
   --type cyclonedx \
-  --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+  --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   <image>@<digest> \
   | jq '.payload | @base64d | fromjson | .predicate.metadata'
@@ -1279,7 +1279,7 @@ Expected: CycloneDX SBOM metadata is returned, including component list.
 **Control**: IA-3, IA-3(1)
 **Track**: Track 1 (Examine + Test)
 
-**Objective**: Confirm that Gauntlet authenticates all external systems with SAN-validated
+**Objective**: Confirm that Sidereal authenticates all external systems with SAN-validated
 mTLS before establishing connections.
 
 **Procedure**:
@@ -1287,7 +1287,7 @@ mTLS before establishing connections.
 1. Confirm TLS configuration for detection backends (e.g., Falco, Tetragon) if deployed:
 
 ```bash
-helm get values gauntlet -n gauntlet-system \
+helm get values sidereal -n sidereal-system \
   | grep -A10 'falco\|tetragon'
 ```
 
@@ -1296,7 +1296,7 @@ Expected: TLS cert references present; `insecureSkipVerify` is absent or `false`
 2. Review controller logs for TLS handshake completions:
 
 ```bash
-kubectl logs deployment/gauntlet-controller -n gauntlet-system \
+kubectl logs deployment/sidereal-controller -n sidereal-system \
   | grep -i 'tls\|handshake\|certificate' | head -20
 ```
 
@@ -1305,7 +1305,7 @@ Expected: successful TLS handshake messages; no certificate errors.
 3. Confirm `tlsInsecureSkipVerify` is not set for any connection:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep -i insecure
+helm get values sidereal -n sidereal-system | grep -i insecure
 ```
 
 Expected: no output, or explicit `false` values.
@@ -1332,7 +1332,7 @@ causes process exit (not silent continuation).
 1. Review controller startup logs for FIPS KAT evidence:
 
 ```bash
-kubectl logs deployment/gauntlet-controller -n gauntlet-system \
+kubectl logs deployment/sidereal-controller -n sidereal-system \
   | head -50 | grep -i 'fips\|kat\|boring\|crypto'
 ```
 
@@ -1360,7 +1360,7 @@ from https://csrc.nist.gov/projects/cryptographic-module-validation-program]
 **Control**: CA-2, CA-2(1), CA-7
 **Track**: Track 2 (Evidence Review — all probe types)
 
-**Objective**: Confirm that Gauntlet is continuously assessing all five built-in probe surfaces
+**Objective**: Confirm that Sidereal is continuously assessing all five built-in probe surfaces
 (plus any custom probes) and that the assessment record is complete for the assessment period.
 
 **Procedure**:
@@ -1393,15 +1393,15 @@ complete for all records.
 **Track**: Track 1 (Examine)
 
 **Objective**: Confirm that detection probes execute only with a valid, non-expired
-`GauntletAOAuthorization` CR and that the AO has explicitly authorized the techniques
+`SiderealAOAuthorization` CR and that the AO has explicitly authorized the techniques
 and namespace scope.
 
 **Procedure**:
 
-1. Retrieve the current `GauntletAOAuthorization` CR:
+1. Retrieve the current `SiderealAOAuthorization` CR:
 
 ```bash
-kubectl get gauntletaoauthorizations -n gauntlet-system -o yaml
+kubectl get siderealaoauthorizations -n sidereal-system -o yaml
 ```
 
 Verify:
@@ -1413,19 +1413,19 @@ Verify:
 2. Confirm detection probe results reference the authorization:
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=detection' \
   -o json | jq '.items[0].spec.probe.aoAuthorizationRef'
 ```
 
-Expected: reference to the `GauntletAOAuthorization` CR name.
+Expected: reference to the `SiderealAOAuthorization` CR name.
 
 3. Confirm that probe scheduling halts when no valid authorization exists:
 
 [Agency: If the authorization has been allowed to expire at any point, confirm that
 detection probes show `outcome: Blocked` or are absent from the result list during that period.]
 
-**Pass Criteria**: A valid, non-expired `GauntletAOAuthorization` exists with named AO,
+**Pass Criteria**: A valid, non-expired `SiderealAOAuthorization` exists with named AO,
 scoped techniques, and scoped namespaces. All detection probe results reference the authorization.
 
 **Rating**: [ ] Satisfied  [ ] Other Than Satisfied — Low  [ ] Moderate  [ ] High
@@ -1443,16 +1443,16 @@ scoped techniques, and scoped namespaces. All detection probe results reference 
 **Control**: SC-7 and enhancements
 **Track**: Track 1 (Test) + Track 2 (Evidence Review)
 
-**Objective**: Confirm the `gauntlet-system` default-deny boundary and that the NetworkPolicy
+**Objective**: Confirm the `sidereal-system` default-deny boundary and that the NetworkPolicy
 probe validates it continuously.
 
 **Procedure**: Execute TEST-SYS-04 (§5) for the Track 1 component, then execute the Track 2
 evidence review for `spec.probe.type=netpol` for the Track 2 component.
 
-Additionally, confirm Gauntlet has no public-facing services:
+Additionally, confirm Sidereal has no public-facing services:
 
 ```bash
-kubectl get svc -n gauntlet-system
+kubectl get svc -n sidereal-system
 ```
 
 Expected: all services are `ClusterIP` type; no `LoadBalancer` or `NodePort` services.
@@ -1471,7 +1471,7 @@ period. No public-facing services.
 **Control**: SC-8, SC-8(1), SC-8(2)
 **Track**: Track 1 (Examine + Test)
 
-**Objective**: Confirm that all Gauntlet transmissions use TLS 1.2+ with FIPS cipher suites
+**Objective**: Confirm that all Sidereal transmissions use TLS 1.2+ with FIPS cipher suites
 and that HMAC provides transport-independent integrity.
 
 **Procedure**:
@@ -1479,7 +1479,7 @@ and that HMAC provides transport-independent integrity.
 1. Confirm TLS minimum version configuration:
 
 ```bash
-helm get values gauntlet -n gauntlet-system | grep -i 'tls\|cipher\|version'
+helm get values sidereal -n sidereal-system | grep -i 'tls\|cipher\|version'
 ```
 
 Expected: `tls.minVersion: TLS12` or `TLS13`.
@@ -1487,7 +1487,7 @@ Expected: `tls.minVersion: TLS12` or `TLS13`.
 2. Test TLS negotiation to the metrics endpoint:
 
 ```bash
-kubectl port-forward deployment/gauntlet-controller 8080:8080 -n gauntlet-system &
+kubectl port-forward deployment/sidereal-controller 8080:8080 -n sidereal-system &
 openssl s_client -connect localhost:8443 -tls1_1 2>&1 | grep -i 'alert\|error\|cipher'
 ```
 
@@ -1517,7 +1517,7 @@ protected, and that FIPS-approved algorithms are used exclusively.
 1. Confirm the HMAC root Secret is KMS-encrypted (IL4/IL5):
 
 ```bash
-kubectl get secret gauntlet-hmac-root -n gauntlet-system -o yaml \
+kubectl get secret sidereal-hmac-root -n sidereal-system -o yaml \
   | grep 'annotations'
 ```
 
@@ -1525,7 +1525,7 @@ Expected: KMS key ARN or reference in annotations (if KMS integration is configu
 
 2. Confirm mTLS certificate expiry dates are within the approved key rotation schedule:
 
-[Agency: List all TLS certificates in use by Gauntlet and their expiry dates. Confirm
+[Agency: List all TLS certificates in use by Sidereal and their expiry dates. Confirm
 expiry is within the approved key rotation window.]
 
 3. Interview the operations team: What is the procedure for rotating the cosign signing key?
@@ -1558,10 +1558,10 @@ being met for the deployed image digests.
 
 **Procedure**:
 
-1. Run Trivy against the deployed Gauntlet image digests:
+1. Run Trivy against the deployed Sidereal image digests:
 
 ```bash
-for IMAGE in $(kubectl get pods -n gauntlet-system -o json \
+for IMAGE in $(kubectl get pods -n sidereal-system -o json \
   | jq -r '.items[].spec.containers[].image'); do
   echo "=== $IMAGE ==="
   trivy image --severity CRITICAL,HIGH $IMAGE 2>&1 | grep -E 'Total|CRITICAL|HIGH'
@@ -1573,11 +1573,11 @@ remediation timelines in the POA&M).
 
 2. Confirm CI pipeline CVE gates are in place:
 
-[Agency: Review the Gauntlet CI pipeline configuration or release notes to confirm
+[Agency: Review the Sidereal CI pipeline configuration or release notes to confirm
 Critical/High CVEs block builds]
 
 3. Interview the operations team: What is the procedure for responding to a CVE advisory
-   for a deployed Gauntlet image? Has any advisory required a response during the past year?
+   for a deployed Sidereal image? Has any advisory required a response during the past year?
 
 [Agency: Document CVE response history and SLA compliance]
 
@@ -1595,7 +1595,7 @@ documented in CI pipeline. CVE response procedure is known to operations staff.
 **Control**: SI-6
 **Track**: Track 1 (Examine) + Track 2 (Evidence Review — all probe types)
 
-**Objective**: Confirm that Gauntlet verifies its own security functions at startup and
+**Objective**: Confirm that Sidereal verifies its own security functions at startup and
 continuously, and that failures halt operations.
 
 **Procedure**:
@@ -1609,7 +1609,7 @@ continuously, and that failures halt operations.
 3. Confirm the halt-on-failure posture:
 
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system -o json \
+kubectl get siderealsystemalerts -n sidereal-system -o json \
   | jq '.items[] | select(.spec.acknowledged == false)'
 ```
 
@@ -1661,7 +1661,7 @@ For each deployed image digest:
 ```bash
 cosign verify-attestation \
   --type slsaprovenance \
-  --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+  --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   <image>@<digest> \
   | jq '.payload | @base64d | fromjson | .predicate'
@@ -1669,7 +1669,7 @@ cosign verify-attestation \
 
 Verify:
 - `buildType` references the GitHub Actions workflow
-- `materials[].uri` references the gauntlet source repository
+- `materials[].uri` references the sidereal source repository
 - `materials[].digest.sha1` matches a known commit SHA
 
 **Pass Criteria**: Valid SLSA provenance attestation is retrievable for all deployed digests.
@@ -1694,7 +1694,7 @@ provide tamper resistance against component substitution.
 1. Confirm all running images are referenced by digest, not by tag:
 
 ```bash
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq '.items[].spec.containers[].image' \
   | grep -v '@sha256:'
 ```
@@ -1782,7 +1782,7 @@ Satisfied must have a corresponding POA&M entry.]
 ### 15.2 Findings Detail
 
 [Agency: For each Other Than Satisfied finding, complete one entry using the finding
-template in Appendix B. Reference the `GauntletIncident` CR if applicable.]
+template in Appendix B. Reference the `SiderealIncident` CR if applicable.]
 
 | Finding ID | Test ID | Control | Severity | Description | POA&M Reference |
 |---|---|---|---|---|---|
@@ -1845,66 +1845,66 @@ These commands produce output suitable for attachment as assessment evidence art
 ### Export all probe results for an assessment period
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
-  -o json > gauntlet-probe-results-$(date +%Y%m%d).json
+kubectl get siderealproberesults -n sidereal-system \
+  -o json > sidereal-probe-results-$(date +%Y%m%d).json
 ```
 
 ### Export all incidents
 
 ```bash
-kubectl get gauntletincidents -n gauntlet-system \
-  -o json > gauntlet-incidents-$(date +%Y%m%d).json
+kubectl get siderealincidents -n sidereal-system \
+  -o json > sidereal-incidents-$(date +%Y%m%d).json
 ```
 
 ### Export all system alerts
 
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system \
-  -o json > gauntlet-system-alerts-$(date +%Y%m%d).json
+kubectl get siderealsystemalerts -n sidereal-system \
+  -o json > sidereal-system-alerts-$(date +%Y%m%d).json
 ```
 
 ### Export all AO authorizations
 
 ```bash
-kubectl get gauntletaoauthorizations -n gauntlet-system \
-  -o json > gauntlet-ao-authorizations-$(date +%Y%m%d).json
+kubectl get siderealaoauthorizations -n sidereal-system \
+  -o json > sidereal-ao-authorizations-$(date +%Y%m%d).json
 ```
 
 ### Export all probe recommendations
 
 ```bash
-kubectl get gauntletproberecommendations -n gauntlet-system \
-  -o json > gauntlet-probe-recommendations-$(date +%Y%m%d).json
+kubectl get siderealproberecommendations -n sidereal-system \
+  -o json > sidereal-probe-recommendations-$(date +%Y%m%d).json
 ```
 
 ### Export all reports
 
 ```bash
-kubectl get gauntletreports -n gauntlet-system \
-  -o json > gauntlet-reports-$(date +%Y%m%d).json
+kubectl get siderealreports -n sidereal-system \
+  -o json > sidereal-reports-$(date +%Y%m%d).json
 ```
 
 ### Generate an assessment report via CLI
 
 ```bash
-gauntlet report \
-  --namespace gauntlet-system \
+sidereal report \
+  --namespace sidereal-system \
   --start-date [Agency: Insert start date] \
   --end-date [Agency: Insert end date] \
-  --output gauntlet-assessment-report-$(date +%Y%m%d).json
+  --output sidereal-assessment-report-$(date +%Y%m%d).json
 ```
 
 ### Export current Helm values (deployed configuration baseline)
 
 ```bash
-helm get values gauntlet -n gauntlet-system \
-  > gauntlet-helm-values-$(date +%Y%m%d).yaml
+helm get values sidereal -n sidereal-system \
+  > sidereal-helm-values-$(date +%Y%m%d).yaml
 ```
 
 ### Export probe result summary by type and outcome
 
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json \
+kubectl get siderealproberesults -n sidereal-system -o json \
   | jq '[.items[] | {type: .spec.probe.type, outcome: .spec.result.outcome,
           effectiveness: .spec.result.controlEffectiveness,
           integrity: .spec.result.integrityStatus, exported: .spec.audit.exportStatus,
@@ -1917,23 +1917,23 @@ kubectl get gauntletproberesults -n gauntlet-system -o json \
                exportFailed: map(select(.exported == "Failed")) | length})'
 ```
 
-### Check for any open GauntletSystemAlerts
+### Check for any open SiderealSystemAlerts
 
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system \
+kubectl get siderealsystemalerts -n sidereal-system \
   -o custom-columns='NAME:.metadata.name,REASON:.spec.reason,ACKNOWLEDGED:.spec.acknowledged,CREATED:.metadata.creationTimestamp'
 ```
 
 ### Verify cosign signatures for all deployed images
 
 ```bash
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq -r '.items[].spec.containers[].image' \
   | sort -u \
   | while read IMAGE; do
       echo "Verifying: $IMAGE"
       cosign verify \
-        --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+        --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
         --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
         "$IMAGE" 2>&1 | grep -E 'Verification|Error'
     done
@@ -1947,7 +1947,7 @@ Use this template for each Other Than Satisfied finding.
 
 ---
 
-**Finding ID**: [Agency: e.g., GAUNTLET-2026-001]
+**Finding ID**: [Agency: e.g., SIDEREAL-2026-001]
 
 **Test ID**: [Agency: Reference the test procedure that produced this finding]
 
@@ -1958,16 +1958,16 @@ Use this template for each Other Than Satisfied finding.
 **Description**:
 
 [Agency: Describe what was observed. Include specific commands run and output received.
-Reference any `GauntletIncident` CR names if applicable (e.g., `incident-ac3-2026-01-15`).]
+Reference any `SiderealIncident` CR names if applicable (e.g., `incident-ac3-2026-01-15`).]
 
 **Evidence Artifacts**:
 
 [Agency: List filenames or reference numbers for supporting evidence:
 - Kubectl output files
 - SIEM query results
-- GauntletProbeResult CR names
-- GauntletIncident CR names
-- GauntletReport CR names (if applicable)]
+- SiderealProbeResult CR names
+- SiderealIncident CR names
+- SiderealReport CR names (if applicable)]
 
 **Root Cause**:
 
@@ -1995,14 +1995,14 @@ Reference any `GauntletIncident` CR names if applicable (e.g., `incident-ac3-202
 **Closure Criteria**:
 
 [Agency: Define what constitutes closure. For probe-surface findings, closure requires
-`GauntletProbeResult` records showing `Pass` with `controlEffectiveness: Effective` for
+`SiderealProbeResult` records showing `Pass` with `controlEffectiveness: Effective` for
 a minimum of 3 consecutive executions after the remediation action. Review any
-`GauntletProbeRecommendation` CRs for remediation guidance.]
+`SiderealProbeRecommendation` CRs for remediation guidance.]
 
 ---
 
-*This document was prepared using the Gauntlet ATO Documentation Package.
-The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/gauntlet/component-definition.json`)
+*This document was prepared using the Sidereal ATO Documentation Package.
+The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/sidereal/component-definition.json`)
 is the machine-readable source of record for all control implementations referenced in this plan.
-Gauntlet defines 8 CRDs: GauntletProbe, GauntletProbeResult, GauntletIncident, GauntletSystemAlert,
-GauntletAOAuthorization, GauntletProbeRecommendation, GauntletReport, and 7 built-in ServiceAccounts.*
+Sidereal defines 8 CRDs: SiderealProbe, SiderealProbeResult, SiderealIncident, SiderealSystemAlert,
+SiderealAOAuthorization, SiderealProbeRecommendation, SiderealReport, and 7 built-in ServiceAccounts.*

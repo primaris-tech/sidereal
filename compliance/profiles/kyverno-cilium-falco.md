@@ -1,9 +1,9 @@
 # Deployment Profile: kyverno-cilium-falco
 
-> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
+> **Note**: This is one of six pre-built deployment profiles shipped with Sidereal. See also: `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
 
 **Profile ID**: `kyverno-cilium-falco`
-**Description**: Default Gauntlet deployment profile for Cilium-based clusters with Kyverno admission control and Falco runtime detection.
+**Description**: Default Sidereal deployment profile for Cilium-based clusters with Kyverno admission control and Falco runtime detection.
 
 ---
 
@@ -20,7 +20,7 @@
 ## Helm Profile Configuration
 
 ```yaml
-gauntlet:
+sidereal:
   profile:
     admissionController: kyverno
     signatureVerifier: kyverno
@@ -34,11 +34,11 @@ The Helm chart renders the following Kyverno ClusterPolicies for this profile:
 
 | Policy Name | Abstract Capability | What It Enforces |
 |---|---|---|
-| `gauntlet-image-signature-required` | Image Signature Verification | cosign signature verification on all Pods in `gauntlet-system` |
-| `gauntlet-proberesult-immutable` | Audit Record Immutability | Denies UPDATE and DELETE on `GauntletProbeResult` for all principals |
-| `gauntlet-job-constraints` | Job SA Constraints | Controller may only create Jobs referencing pre-approved probe ServiceAccounts |
-| `gauntlet-no-writable-pvc` | No Writable PVC | Denies writable PVC mounts on Pods in `gauntlet-system` |
-| `gauntlet-admission-probe-target` | Admission Probe Default | Rejects resources with label `gauntlet.io/admission-probe: "true"` |
+| `sidereal-image-signature-required` | Image Signature Verification | cosign signature verification on all Pods in `sidereal-system` |
+| `sidereal-proberesult-immutable` | Audit Record Immutability | Denies UPDATE and DELETE on `SiderealProbeResult` for all principals |
+| `sidereal-job-constraints` | Job SA Constraints | Controller may only create Jobs referencing pre-approved probe ServiceAccounts |
+| `sidereal-no-writable-pvc` | No Writable PVC | Denies writable PVC mounts on Pods in `sidereal-system` |
+| `sidereal-admission-probe-target` | Admission Probe Default | Rejects resources with label `sidereal.cloud/admission-probe: "true"` |
 
 ## Connection Parameters
 
@@ -56,7 +56,7 @@ For this profile, the bootstrap verifier checks:
 1. Kyverno CRDs (`clusterpolicies.kyverno.io`) exist
 2. All 5 Kyverno ClusterPolicies listed above are present with `validationFailureAction: Enforce`
 3. All 6 ServiceAccounts exist with expected RBAC bindings
-4. Default-deny NetworkPolicy is in place in `gauntlet-system`
+4. Default-deny NetworkPolicy is in place in `sidereal-system`
 5. HMAC root Secret is accessible
 6. Falco gRPC endpoint is reachable on port 50051
 7. Hubble Relay gRPC endpoint is reachable on port 4245
@@ -69,13 +69,13 @@ These are the profile-specific commands for the SAP test procedures. Replace the
 
 ```bash
 # Confirm Kyverno policy is in Enforce mode
-kubectl get clusterpolicy gauntlet-image-signature-required -o yaml \
+kubectl get clusterpolicy sidereal-image-signature-required -o yaml \
   | grep 'validationFailureAction'
 # Expected: validationFailureAction: Enforce
 
 # Attempt unsigned image — confirm Kyverno blocks it
 kubectl run test-unsigned --image=nginx:latest \
-  --overrides='{"metadata":{"namespace":"gauntlet-system"}}' \
+  --overrides='{"metadata":{"namespace":"sidereal-system"}}' \
   --dry-run=server 2>&1
 # Expected: admission webhook error citing signature requirement
 ```
@@ -83,9 +83,9 @@ kubectl run test-unsigned --image=nginx:latest \
 ### TEST-SYS-02 — HMAC Result Integrity
 
 ```bash
-# Attempt to modify a GauntletProbeResult — confirm Kyverno blocks it
-RESULT=$(kubectl get gauntletproberesults -n gauntlet-system -o name | head -1)
-kubectl patch $RESULT -n gauntlet-system \
+# Attempt to modify a SiderealProbeResult — confirm Kyverno blocks it
+RESULT=$(kubectl get siderealproberesults -n sidereal-system -o name | head -1)
+kubectl patch $RESULT -n sidereal-system \
   --type='merge' -p '{"spec":{"result":{"outcome":"Pass"}}}' \
   --dry-run=server 2>&1
 # Expected: admission webhook error citing immutability policy
@@ -95,7 +95,7 @@ kubectl patch $RESULT -n gauntlet-system \
 
 ```bash
 # Confirm append-only policy is in Enforce mode
-kubectl get clusterpolicy gauntlet-proberesult-immutable -o yaml \
+kubectl get clusterpolicy sidereal-proberesult-immutable -o yaml \
   | grep 'validationFailureAction'
 # Expected: validationFailureAction: Enforce
 ```
@@ -104,7 +104,7 @@ kubectl get clusterpolicy gauntlet-proberesult-immutable -o yaml \
 
 ```bash
 # Review the NetworkPolicy probe's most recent result
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml | tail -30
 # Expected: outcome: Pass (or Dropped), verificationMode: cni-verdict
@@ -114,7 +114,7 @@ kubectl get gauntletproberesults -n gauntlet-system \
 
 ```bash
 # Confirm Kyverno Job-constraints policy is in Enforce mode
-kubectl get clusterpolicy gauntlet-job-constraints -o yaml \
+kubectl get clusterpolicy sidereal-job-constraints -o yaml \
   | grep 'validationFailureAction'
 # Expected: validationFailureAction: Enforce
 ```
@@ -123,18 +123,18 @@ kubectl get clusterpolicy gauntlet-job-constraints -o yaml \
 
 ```bash
 # Verify cosign signatures for all deployed images
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq -r '.items[].spec.containers[].image' | sort -u \
   | while read IMAGE; do
       echo "Verifying: $IMAGE"
       cosign verify \
-        --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+        --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
         --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
         "$IMAGE" 2>&1 | grep -E 'Verification|Error'
     done
 
 # Export Kyverno policy admission events for the assessment period
-kubectl get events -n gauntlet-system \
+kubectl get events -n sidereal-system \
   --field-selector='reason=PolicyViolation' -o json \
   > kyverno-violations-$(date +%Y%m%d).json
 ```

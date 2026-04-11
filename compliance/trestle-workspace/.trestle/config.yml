@@ -1,5 +1,5 @@
 trestle:
   version: "3"
-  # Gauntlet OSCAL workspace
-  # Author in md_component_definitions/, compile with: trestle assemble component-definition -n gauntlet
-  # Validate compiled output with: oscal-cli component-definition validate -f component-definitions/gauntlet/component-definition.json
+  # Sidereal OSCAL workspace
+  # Author in md_component_definitions/, compile with: trestle assemble component-definition -n sidereal
+  # Validate compiled output with: oscal-cli component-definition validate -f component-definitions/sidereal/component-definition.json

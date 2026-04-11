@@ -1,10 +1,10 @@
-# Network Diagram — gauntlet-system Namespace Topology
+# Network Diagram — sidereal-system Namespace Topology
 
-**Purpose**: Documents the network topology of the `gauntlet-system` namespace,
+**Purpose**: Documents the network topology of the `sidereal-system` namespace,
 the NetworkPolicy rules that enforce the default-deny boundary, and the explicit
-egress paths permitted for each Gauntlet component. This diagram supports SC-7
+egress paths permitted for each Sidereal component. This diagram supports SC-7
 boundary protection documentation and is the reference topology tested by
-Gauntlet's own NetworkPolicy probe surface.
+Sidereal's own NetworkPolicy probe surface.
 
 ---
 
@@ -14,11 +14,11 @@ Gauntlet's own NetworkPolicy probe surface.
 flowchart TB
     subgraph CLUSTER ["Kubernetes Cluster Network"]
 
-        subgraph GAUNTLET_NS ["gauntlet-system namespace\n[NetworkPolicy: default-deny ingress + egress]"]
+        subgraph SIDEREAL_NS ["sidereal-system namespace\n[NetworkPolicy: default-deny ingress + egress]"]
             direction TB
 
             subgraph CTRL_POD ["Controller Manager Pod"]
-                CTRL_PROC["gauntlet-controller\nprocess\n:8080 metrics\n:8081 health"]
+                CTRL_PROC["sidereal-controller\nprocess\n:8080 metrics\n:8081 health"]
             end
 
             subgraph JOB_PODS ["Probe Runner Job Pods (ephemeral)"]
@@ -83,21 +83,21 @@ flowchart TB
     CLUSTER -.->|"Node-level NTP\n:123 UDP\n(infrastructure control)"| NTP_EXT
 
     style J_DET fill:#ffecec,stroke:#f44336
-    style GAUNTLET_NS fill:#e8f5e9,stroke:#4CAF50,stroke-width:3px
+    style SIDEREAL_NS fill:#e8f5e9,stroke:#4CAF50,stroke-width:3px
 ```
 
 ---
 
 ## NetworkPolicy Specification
 
-The following NetworkPolicy rules are deployed by the Gauntlet Helm chart
-for the `gauntlet-system` namespace. This is the reference policy that the
+The following NetworkPolicy rules are deployed by the Sidereal Helm chart
+for the `sidereal-system` namespace. This is the reference policy that the
 NetworkPolicy probe surface continuously validates is being enforced.
 
 ### Ingress Rules
 
 ```yaml
-# Applied to: all pods in gauntlet-system namespace
+# Applied to: all pods in sidereal-system namespace
 # Default: DENY ALL ingress not matched below
 ingress:
   - description: "Admission controller webhook callbacks to controller (e.g., Kyverno)"
@@ -125,7 +125,7 @@ ingress:
 ### Egress Rules — Controller Manager
 
 ```yaml
-# Applied to: pods with label app=gauntlet-controller
+# Applied to: pods with label app=sidereal-controller
 # Default: DENY ALL egress not matched below
 egress:
   - description: "Kubernetes API Server"
@@ -172,7 +172,7 @@ egress:
 ### Egress Rules — Probe Runner Jobs
 
 ```yaml
-# Applied to: pods with label gauntlet.io/probe-type=rbac|netpol|admission|secret
+# Applied to: pods with label sidereal.cloud/probe-type=rbac|netpol|admission|secret
 # Default: DENY ALL egress not matched below
 egress:
   - description: "Kubernetes API Server (all probe types)"
@@ -191,7 +191,7 @@ egress:
 ### Detection Probe — Network Isolation
 
 ```yaml
-# Applied to: pods with label gauntlet.io/probe-type=detection
+# Applied to: pods with label sidereal.cloud/probe-type=detection
 # No egress rules — detection probe pods have NO network egress permitted
 # The pod runs in an isolated network namespace
 egress: []   # empty — deny all
@@ -213,24 +213,24 @@ egress: []   # empty — deny all
 | Probe runners (non-detection) | 443 | TCP | Egress | Kubernetes API Server only |
 | Detection probe | — | — | None | Isolated — no network |
 
-*No ports below 1024 are opened by Gauntlet components. No UDP services.
+*No ports below 1024 are opened by Sidereal components. No UDP services.
 No LoadBalancer or NodePort Services are created by the Helm chart.*
 
 ---
 
 ## Topology Validation
 
-This network topology is continuously validated by Gauntlet's own NetworkPolicy
+This network topology is continuously validated by Sidereal's own NetworkPolicy
 probe surface. The probe tests:
 
-1. `gauntlet-system` → external internet (non-SIEM): **must be DROPPED**
-2. `gauntlet-system` → kube-system (non-API paths): **must be DROPPED**
-3. Other namespaces → `gauntlet-system` (non-permitted ingress): **must be DROPPED**
-4. `gauntlet-system` → SIEM endpoint on port 443: **must be FORWARDED**
-5. `gauntlet-system` → detection backend namespace on configured port: **must be FORWARDED**
+1. `sidereal-system` → external internet (non-SIEM): **must be DROPPED**
+2. `sidereal-system` → kube-system (non-API paths): **must be DROPPED**
+3. Other namespaces → `sidereal-system` (non-permitted ingress): **must be DROPPED**
+4. `sidereal-system` → SIEM endpoint on port 443: **must be FORWARDED**
+5. `sidereal-system` → detection backend namespace on configured port: **must be FORWARDED**
 
 A `Forwarded` verdict on tests 1–3 or a `Dropped` verdict on tests 4–5
-generates a `GauntletIncident` CR documenting the enforcement gap.
+generates a `SiderealIncident` CR documenting the enforcement gap.
 
-*[Agency: Configure `GauntletProbe` resources to test the specific flow paths
+*[Agency: Configure `SiderealProbe` resources to test the specific flow paths
 relevant to your deployment topology, using the above as a reference set.]*

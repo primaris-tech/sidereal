@@ -1,9 +1,9 @@
 # Deployment Profile: opa-aks
 
-> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
+> **Note**: This is one of six pre-built deployment profiles shipped with Sidereal. See also: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
 
 **Profile ID**: `opa-aks`
-**Description**: Gauntlet deployment profile for Azure AKS clusters with Azure CNI, OPA/Gatekeeper admission control, and Falco runtime detection.
+**Description**: Sidereal deployment profile for Azure AKS clusters with Azure CNI, OPA/Gatekeeper admission control, and Falco runtime detection.
 
 ---
 
@@ -20,7 +20,7 @@
 ## Helm Profile Configuration
 
 ```yaml
-gauntlet:
+sidereal:
   profile:
     admissionController: opa
     signatureVerifier: policy-controller
@@ -41,11 +41,11 @@ The Helm chart renders the following OPA/Gatekeeper resources for this profile:
 
 | Resource | Abstract Capability | What It Enforces |
 |---|---|---|
-| `ConstraintTemplate: GauntletImageSignature` + `Constraint: gauntlet-image-signature-required` | Image Signature Verification | cosign signature verification via Sigstore policy-controller webhook |
-| `ConstraintTemplate: GauntletImmutableResult` + `Constraint: gauntlet-proberesult-immutable` | Audit Record Immutability | Denies UPDATE and DELETE on `GauntletProbeResult` for all principals |
-| `ConstraintTemplate: GauntletJobConstraints` + `Constraint: gauntlet-job-constraints` | Job SA Constraints | Controller may only create Jobs referencing pre-approved probe ServiceAccounts |
-| `ConstraintTemplate: GauntletNoWritablePVC` + `Constraint: gauntlet-no-writable-pvc` | No Writable PVC | Denies writable PVC mounts on Pods in `gauntlet-system` |
-| `ConstraintTemplate: GauntletAdmissionProbe` + `Constraint: gauntlet-admission-probe-target` | Admission Probe Default | Rejects resources with label `gauntlet.io/admission-probe: "true"` |
+| `ConstraintTemplate: SiderealImageSignature` + `Constraint: sidereal-image-signature-required` | Image Signature Verification | cosign signature verification via Sigstore policy-controller webhook |
+| `ConstraintTemplate: SiderealImmutableResult` + `Constraint: sidereal-proberesult-immutable` | Audit Record Immutability | Denies UPDATE and DELETE on `SiderealProbeResult` for all principals |
+| `ConstraintTemplate: SiderealJobConstraints` + `Constraint: sidereal-job-constraints` | Job SA Constraints | Controller may only create Jobs referencing pre-approved probe ServiceAccounts |
+| `ConstraintTemplate: SiderealNoWritablePVC` + `Constraint: sidereal-no-writable-pvc` | No Writable PVC | Denies writable PVC mounts on Pods in `sidereal-system` |
+| `ConstraintTemplate: SiderealAdmissionProbe` + `Constraint: sidereal-admission-probe-target` | Admission Probe Default | Rejects resources with label `sidereal.cloud/admission-probe: "true"` |
 
 ## Connection Parameters
 
@@ -63,7 +63,7 @@ For this profile, the bootstrap verifier checks:
 2. All 5 ConstraintTemplates and their Constraints listed above are present with `enforcementAction: deny`
 3. Sigstore policy-controller is running and its webhook is active
 4. All 6 ServiceAccounts exist with expected RBAC bindings
-5. Default-deny NetworkPolicy is in place in `gauntlet-system`
+5. Default-deny NetworkPolicy is in place in `sidereal-system`
 6. HMAC root Secret is accessible
 7. Falco gRPC endpoint is reachable on port 50051
 8. NetworkPolicy verification mode is set to `tcp-inference` (no CNI observability endpoint expected)
@@ -76,7 +76,7 @@ These are the profile-specific commands for the SAP test procedures. Replace the
 
 ```bash
 # Confirm Gatekeeper constraint exists and is enforcing
-kubectl get constraint gauntlet-image-signature-required -o yaml \
+kubectl get constraint sidereal-image-signature-required -o yaml \
   | grep 'enforcementAction'
 # Expected: enforcementAction: deny
 
@@ -86,7 +86,7 @@ kubectl get validatingwebhookconfiguration | grep policy-controller
 
 # Attempt unsigned image — confirm it is blocked
 kubectl run test-unsigned --image=nginx:latest \
-  --overrides='{"metadata":{"namespace":"gauntlet-system"}}' \
+  --overrides='{"metadata":{"namespace":"sidereal-system"}}' \
   --dry-run=server 2>&1
 # Expected: admission webhook error
 ```
@@ -94,9 +94,9 @@ kubectl run test-unsigned --image=nginx:latest \
 ### TEST-SYS-02 — HMAC Result Integrity
 
 ```bash
-# Attempt to modify a GauntletProbeResult — confirm Gatekeeper blocks it
-RESULT=$(kubectl get gauntletproberesults -n gauntlet-system -o name | head -1)
-kubectl patch $RESULT -n gauntlet-system \
+# Attempt to modify a SiderealProbeResult — confirm Gatekeeper blocks it
+RESULT=$(kubectl get siderealproberesults -n sidereal-system -o name | head -1)
+kubectl patch $RESULT -n sidereal-system \
   --type='merge' -p '{"spec":{"result":{"outcome":"Pass"}}}' \
   --dry-run=server 2>&1
 # Expected: admission webhook error citing immutability constraint
@@ -106,7 +106,7 @@ kubectl patch $RESULT -n gauntlet-system \
 
 ```bash
 # Confirm immutability constraint exists and is enforcing
-kubectl get constraint gauntlet-proberesult-immutable -o yaml \
+kubectl get constraint sidereal-proberesult-immutable -o yaml \
   | grep 'enforcementAction'
 # Expected: enforcementAction: deny
 ```
@@ -115,7 +115,7 @@ kubectl get constraint gauntlet-proberesult-immutable -o yaml \
 
 ```bash
 # Review the NetworkPolicy probe's most recent result
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml | tail -30
 # Expected: outcome: Pass (or Dropped), verificationMode: tcp-inference
@@ -126,7 +126,7 @@ kubectl get gauntletproberesults -n gauntlet-system \
 
 ```bash
 # Confirm Job-constraints enforcement
-kubectl get constraint gauntlet-job-constraints -o yaml \
+kubectl get constraint sidereal-job-constraints -o yaml \
   | grep 'enforcementAction'
 # Expected: enforcementAction: deny
 ```
@@ -135,12 +135,12 @@ kubectl get constraint gauntlet-job-constraints -o yaml \
 
 ```bash
 # Verify cosign signatures for all deployed images
-kubectl get pods -n gauntlet-system -o json \
+kubectl get pods -n sidereal-system -o json \
   | jq -r '.items[].spec.containers[].image' | sort -u \
   | while read IMAGE; do
       echo "Verifying: $IMAGE"
       cosign verify \
-        --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+        --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
         --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
         "$IMAGE" 2>&1 | grep -E 'Verification|Error'
     done

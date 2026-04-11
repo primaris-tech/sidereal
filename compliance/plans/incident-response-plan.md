@@ -1,4 +1,4 @@
-# Gauntlet Incident Response Integration Plan
+# Sidereal Incident Response Integration Plan
 
 **Document Type**: Supporting Plan — NIST 800-53 IR Family  
 **Baseline**: NIST SP 800-53 Rev 5 High  
@@ -8,25 +8,25 @@
 
 ## 1. Purpose and Scope
 
-This plan defines how Gauntlet integrates with the deploying agency's incident
-response (IR) program. Gauntlet detects active security control failures and
+This plan defines how Sidereal integrates with the deploying agency's incident
+response (IR) program. Sidereal detects active security control failures and
 generates structured incident records automatically. This plan documents what
-Gauntlet produces, how those records trigger the agency's IR workflow, and what
+Sidereal produces, how those records trigger the agency's IR workflow, and what
 human response is expected at each escalation level.
 
 This plan supplements — it does not replace — the agency's organization-wide
-Incident Response Plan. The agency must incorporate Gauntlet-generated incidents
+Incident Response Plan. The agency must incorporate Sidereal-generated incidents
 into their IR program and document this integration in their SSP IR-1 statement.
 
 ---
 
 ## 2. Incident Classification
 
-### 2.1 What Gauntlet Treats as an Incident
+### 2.1 What Sidereal Treats as an Incident
 
-A control failure detected by Gauntlet is an active security control gap on a
-live federal system. When operating in `enforce` execution mode, Gauntlet creates
-a `GauntletIncident` CR for every probe execution where `controlEffectiveness` is
+A control failure detected by Sidereal is an active security control gap on a
+live federal system. When operating in `enforce` execution mode, Sidereal creates
+a `SiderealIncident` CR for every probe execution where `controlEffectiveness` is
 `Ineffective` or `Compromised`. In `observe` mode, probe results are recorded and
 exported to the SIEM but incidents are not generated — this allows an evaluation
 period to tune probes before activating the incident pipeline. In `dryRun` mode,
@@ -41,12 +41,12 @@ probes do not execute. The following failure outcomes trigger incidents (in `enf
 | Detection Coverage | `Undetected` (no alert within window) | Detection gap; known attack technique undetected |
 
 **These are incidents, not warnings.** A `Fail` outcome means a real attacker
-could exploit the same path. The `GauntletIncident` record triggers the agency's
+could exploit the same path. The `SiderealIncident` record triggers the agency's
 IR workflow immediately.
 
 ### 2.2 Severity Classification
 
-| Gauntlet Outcome | Suggested IR Severity | Mandatory Reporting Trigger |
+| Sidereal Outcome | Suggested IR Severity | Mandatory Reporting Trigger |
 |---|---|---|
 | `Forwarded` (NetworkPolicy) | High | Yes — active exfiltration path |
 | `Fail` (RBAC/Secret Access) | High | Yes — unauthorized access possible |
@@ -59,7 +59,7 @@ IR workflow immediately.
 
 ### 2.3 System Alerts vs. Incidents
 
-`GauntletSystemAlert` resources indicate a degraded monitoring state (not
+`SiderealSystemAlert` resources indicate a degraded monitoring state (not
 a direct control failure). They require acknowledgment and investigation but
 may not require external reporting. Types:
 
@@ -76,16 +76,16 @@ may not require external reporting. Types:
 
 ## 3. Automated Incident Generation
 
-### 3.1 GauntletIncident Resource
+### 3.1 SiderealIncident Resource
 
-Every failure outcome creates a `GauntletIncident` CR in `gauntlet-system`:
+Every failure outcome creates a `SiderealIncident` CR in `sidereal-system`:
 
 ```yaml
-apiVersion: gauntlet.io/v1alpha1
-kind: GauntletIncident
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealIncident
 metadata:
   name: incident-<uuid>
-  namespace: gauntlet-system
+  namespace: sidereal-system
 spec:
   probeType: rbac
   outcome: Fail
@@ -98,12 +98,12 @@ spec:
   remediationStatus: Open
 ```
 
-`GauntletIncident` records are append-only and exported to the SIEM immediately
+`SiderealIncident` records are append-only and exported to the SIEM immediately
 on creation.
 
 ### 3.2 IR Webhook
 
-The controller delivers `GauntletIncident` data to the configured IR webhook
+The controller delivers `SiderealIncident` data to the configured IR webhook
 endpoint on every incident creation. Supported targets:
 - Generic webhook (JSON payload, configurable schema)
 - ServiceNow (structured incident creation via API)
@@ -115,7 +115,7 @@ Webhook configuration:
 irWebhook:
   enabled: true
   url: "https://servicenow.agency.gov/api/now/incident"
-  credentialSecret: gauntlet-ir-webhook-cred
+  credentialSecret: sidereal-ir-webhook-cred
   timeoutSeconds: 10
   retryAttempts: 3
 ```
@@ -124,7 +124,7 @@ irWebhook:
 
 ### 3.3 Consecutive Failure Escalation
 
-The `consecutiveFailures` counter on `GauntletProbe.status` increments on
+The `consecutiveFailures` counter on `SiderealProbe.status` increments on
 each consecutive failure execution. Alertmanager rules fire when the counter
 exceeds the configured threshold, escalating to on-call personnel.
 
@@ -139,7 +139,7 @@ Recommended Alertmanager rule thresholds:
 ### 4.1 US-CERT / CISA Reporting
 
 Per FISMA and OMB M-20-04, federal incidents must be reported to CISA
-within defined timeframes. Gauntlet-detected incidents that meet the US-CERT
+within defined timeframes. Sidereal-detected incidents that meet the US-CERT
 reporting threshold must be reported.
 
 | Incident Type | Reporting Window |
@@ -148,7 +148,7 @@ reporting threshold must be reported.
 | Major (RBAC/NetworkPolicy/Admission gap confirmed) | Within 1 hour if critical; 24 hours if significant |
 | Standard | As required by agency IR policy |
 
-*[Agency: Map GauntletIncident types to your US-CERT reporting categories
+*[Agency: Map SiderealIncident types to your US-CERT reporting categories
 and document thresholds here.]*
 
 ### 4.2 Reporting Trigger Configuration
@@ -163,8 +163,8 @@ incidentResponse:
     medium: 72
 ```
 
-When a `GauntletIncident` exceeds its configured reporting window without a
-`remediationStatus` update, the controller creates a `GauntletSystemAlert`
+When a `SiderealIncident` exceeds its configured reporting window without a
+`remediationStatus` update, the controller creates a `SiderealSystemAlert`
 with `reason: MandatoryReportingWindowExceeded`.
 
 ---
@@ -174,18 +174,18 @@ with `reason: MandatoryReportingWindowExceeded`.
 ### 5.1 RBAC / Secret Access Failure Response
 
 1. **Immediate**: Identify the specific API operation that succeeded
-   unexpectedly (captured in `GauntletIncident.spec.observedBehavior`)
+   unexpectedly (captured in `SiderealIncident.spec.observedBehavior`)
 2. **Within 1 hour**: Audit Kubernetes RBAC bindings for the affected
    namespace; identify any recently added ClusterRoleBindings or RoleBindings
 3. **Remediation**: Remove unauthorized RBAC grants; re-run probe to confirm
    `Pass` outcome on next execution
-4. **Documentation**: Update `GauntletIncident.spec.remediationStatus` to
+4. **Documentation**: Update `SiderealIncident.spec.remediationStatus` to
    `Remediated` with remediation notes; document in POA&M if applicable
 
 ### 5.2 NetworkPolicy Failure Response
 
 1. **Immediate**: Identify the source namespace, destination, and protocol
-   of the unauthorized flow (in `GauntletIncident`)
+   of the unauthorized flow (in `SiderealIncident`)
 2. **Within 1 hour**: Review NetworkPolicy objects in the affected namespace
    for recent changes; check CNI configuration for policy enforcement status
 3. **Remediation**: Restore correct NetworkPolicy; verify with probe execution
@@ -220,22 +220,22 @@ with `reason: MandatoryReportingWindowExceeded`.
 3. **Parallel**: Report to US-CERT within 1 hour as a potential integrity attack
 4. **Investigation**: Determine whether the tamper was an active attack or a
    misconfiguration (e.g., an operator accidentally modifying a ConfigMap)
-5. **Recovery**: After investigation, acknowledge the `GauntletSystemAlert`
+5. **Recovery**: After investigation, acknowledge the `SiderealSystemAlert`
    with documented findings; probe execution resumes after acknowledgment
 
 ---
 
-## 6. GauntletSystemAlert Acknowledgment Procedure
+## 6. SiderealSystemAlert Acknowledgment Procedure
 
-`GauntletSystemAlert` resources require individual principal acknowledgment
+`SiderealSystemAlert` resources require individual principal acknowledgment
 before probe execution resumes on the affected surface. Acknowledgment procedure:
 
 1. Investigate the root cause of the alert
 2. Document findings in the acknowledgment annotation:
    ```
-   kubectl annotate GauntletSystemAlert <name> \
-     gauntlet.io/acknowledged-by="firstname.lastname@agency.gov" \
-     gauntlet.io/acknowledgment-notes="Root cause: admission controller pod restarted; policy re-applied; verified functioning"
+   kubectl annotate SiderealSystemAlert <name> \
+     sidereal.cloud/acknowledged-by="firstname.lastname@agency.gov" \
+     sidereal.cloud/acknowledgment-notes="Root cause: admission controller pod restarted; policy re-applied; verified functioning"
    ```
 3. Acknowledgment is recorded in the Kubernetes audit log and exported to SIEM
 4. Probe execution resumes automatically after acknowledgment
@@ -249,8 +249,8 @@ principal must be an individual identity traceable to a named person (AU-10).
 
 | Role | IR Responsibility |
 |---|---|
-| On-call Security Engineer | First responder for GauntletIncident webhook notifications; initial triage |
-| ISSO | Incident classification; mandatory reporting decision; GauntletSystemAlert acknowledgment for critical alerts |
+| On-call Security Engineer | First responder for SiderealIncident webhook notifications; initial triage |
+| ISSO | Incident classification; mandatory reporting decision; SiderealSystemAlert acknowledgment for critical alerts |
 | Authorizing Official | Notified for Critical incidents and TamperedResult events; mandatory reporting approval |
 | System Administrator | Execute remediation actions under ISSO direction |
 
@@ -261,8 +261,8 @@ principal must be an individual identity traceable to a named person (AU-10).
 ## 8. Evidence Retention
 
 Per AU-11 requirements:
-- `GauntletIncident` CRs: 365-day minimum in-cluster; 3-year SIEM retention
-- `GauntletSystemAlert` CRs (including acknowledgment records): same retention
+- `SiderealIncident` CRs: 365-day minimum in-cluster; 3-year SIEM retention
+- `SiderealSystemAlert` CRs (including acknowledgment records): same retention
 - IR webhook delivery logs: retained per agency IR evidence policy
 - Acknowledgment records in Kubernetes audit log: exported to SIEM
 
@@ -271,8 +271,8 @@ Per AU-11 requirements:
 ## 9. Related Controls
 
 - **IR-4** Incident Handling — agency IR plan integration
-- **IR-5** Incident Monitoring — GauntletIncident as incident tracking mechanism
+- **IR-5** Incident Monitoring — SiderealIncident as incident tracking mechanism
 - **IR-6** Incident Reporting — US-CERT reporting thresholds
-- **CA-7** Continuous Monitoring — GauntletIncident as monitoring output
+- **CA-7** Continuous Monitoring — SiderealIncident as monitoring output
 - **SI-4** System Monitoring — detection of failures via probe surfaces
-- **AU-6** Audit Review — GauntletIncident SIEM queries for IR investigation
+- **AU-6** Audit Review — SiderealIncident SIEM queries for IR investigation

@@ -1,10 +1,10 @@
 # Authorization Boundary Diagram
 
-**Purpose**: Defines the Gauntlet authorization boundary for ATO package purposes.
+**Purpose**: Defines the Sidereal authorization boundary for ATO package purposes.
 Identifies all components inside the boundary, all external systems outside it,
 and the security controls governing each boundary-crossing connection.
 
-Per NIST 800-53 CA-3 and the Gauntlet engineering specification, the deploying
+Per NIST 800-53 CA-3 and the Sidereal engineering specification, the deploying
 agency must execute an Interconnection Security Agreement (ISA) for each
 external connection listed in this diagram.
 
@@ -12,7 +12,7 @@ external connection listed in this diagram.
 
 ```mermaid
 flowchart TB
-    subgraph BOUNDARY ["🔐  GAUNTLET AUTHORIZATION BOUNDARY  —  gauntlet-system namespace"]
+    subgraph BOUNDARY ["🔐  SIDEREAL AUTHORIZATION BOUNDARY  —  sidereal-system namespace"]
         direction TB
 
         subgraph CONTROLLER ["Controller Manager (Go / BoringCrypto)"]
@@ -31,18 +31,18 @@ flowchart TB
         end
 
         subgraph CRDS ["Custom Resource Definitions"]
-            GP["GauntletProbe\n(configuration)"]
-            GPR["GauntletProbeResult\n(append-only audit log)"]
-            GI["GauntletIncident\n(control failure record)"]
-            GSA["GauntletSystemAlert\n(degraded state)"]
-            GAO["GauntletAOAuthorization\n(detection probe authorization)"]
+            GP["SiderealProbe\n(configuration)"]
+            GPR["SiderealProbeResult\n(append-only audit log)"]
+            GI["SiderealIncident\n(control failure record)"]
+            GSA["SiderealSystemAlert\n(degraded state)"]
+            GAO["SiderealAOAuthorization\n(detection probe authorization)"]
         end
 
         subgraph POLICIES ["Admission Enforcement Policies (Admission-layer controls)"]
-            SIG_POLICY["gauntlet-image-signature-required\n(cosign verification at admission)"]
-            IMMUTABLE_POLICY["gauntlet-proberesult-immutable\n(append-only enforcement)"]
-            JOB_POLICY["gauntlet-job-constraints\n(controller SA restriction)"]
-            PVC_POLICY["gauntlet-no-writable-pvc\n(non-persistence enforcement)"]
+            SIG_POLICY["sidereal-image-signature-required\n(cosign verification at admission)"]
+            IMMUTABLE_POLICY["sidereal-proberesult-immutable\n(append-only enforcement)"]
+            JOB_POLICY["sidereal-job-constraints\n(controller SA restriction)"]
+            PVC_POLICY["sidereal-no-writable-pvc\n(non-persistence enforcement)"]
         end
 
         SCHED -->|"Creates Job with\nper-execution HMAC key"| JOBS
@@ -86,17 +86,17 @@ flowchart TB
 
 | Component | Type | Notes |
 |---|---|---|
-| Controller Manager | Kubernetes Deployment | Go binary; BoringCrypto FIPS; `gauntlet-system` namespace |
+| Controller Manager | Kubernetes Deployment | Go binary; BoringCrypto FIPS; `sidereal-system` namespace |
 | Probe Runner Jobs | Kubernetes Jobs (ephemeral) | Short-lived; TTL-cleaned; per-probe ServiceAccount |
-| GauntletProbe CRDs | Kubernetes custom resources | Probe configuration; supports built-in and custom probe types |
-| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL; multi-framework controlMappings |
-| GauntletIncident CRDs | Kubernetes custom resources | Control failure records (enforce execution mode only) |
-| GauntletSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
-| GauntletAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization |
-| GauntletProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe suggestions |
-| GauntletReport CRDs | Kubernetes custom resources | Optional scheduled report generation |
+| SiderealProbe CRDs | Kubernetes custom resources | Probe configuration; supports built-in and custom probe types |
+| SiderealProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL; multi-framework controlMappings |
+| SiderealIncident CRDs | Kubernetes custom resources | Control failure records (enforce execution mode only) |
+| SiderealSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
+| SiderealAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization |
+| SiderealProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe suggestions |
+| SiderealReport CRDs | Kubernetes custom resources | Optional scheduled report generation |
 | Admission enforcement policies | Kubernetes custom resources | Admission-layer blast radius controls (per deployment profile) |
-| `gauntlet-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
+| `sidereal-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
 | HMAC root Secret | Kubernetes Secret | KMS-encrypted for IL4/IL5 |
 
 ### Outside the Boundary (External Systems)

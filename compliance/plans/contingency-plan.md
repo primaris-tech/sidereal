@@ -1,4 +1,4 @@
-# Gauntlet Contingency Plan
+# Sidereal Contingency Plan
 
 **Document Type**: Supporting Plan — NIST 800-53 CP Family  
 **Baseline**: NIST SP 800-53 Rev 5 High  
@@ -9,12 +9,12 @@
 ## 1. Purpose and Scope
 
 This Contingency Plan defines the procedures for maintaining, recovering, and
-reconstituting the Gauntlet continuous monitoring operator in the event of
-disruption. Gauntlet is a security control — its unavailability halts ATO
+reconstituting the Sidereal continuous monitoring operator in the event of
+disruption. Sidereal is a security control — its unavailability halts ATO
 evidence generation and creates a documented gap in the continuous monitoring
 record.
 
-This plan covers the Gauntlet software components, their configuration, and
+This plan covers the Sidereal software components, their configuration, and
 the CRD resources they depend on. Infrastructure-level contingency planning
 (Kubernetes cluster recovery, etcd backup, node replacement) is the deploying
 agency's responsibility and must be documented in the agency's organization-wide
@@ -24,13 +24,13 @@ Contingency Plan.
 
 ## 2. System Description
 
-Gauntlet consists of the following recoverable components:
+Sidereal consists of the following recoverable components:
 
 | Component | Type | Recovery Priority |
 |---|---|---|
 | Controller Manager | Kubernetes Deployment | P1 — required for all operations |
-| `GauntletProbe` CRDs | Kubernetes custom resources | P1 — defines probe configuration |
-| `GauntletProbeResult` CRDs | Kubernetes custom resources | P2 — audit records (SIEM is authoritative) |
+| `SiderealProbe` CRDs | Kubernetes custom resources | P1 — defines probe configuration |
+| `SiderealProbeResult` CRDs | Kubernetes custom resources | P2 — audit records (SIEM is authoritative) |
 | Helm release configuration | Kubernetes Secret + GitOps repo | P1 — required to recover controller |
 | HMAC root Secret | Kubernetes Secret | P1 — required for result integrity |
 | Admission enforcement policies | Kubernetes custom resources | P1 — blast radius controls (e.g., Kyverno or OPA/Gatekeeper) |
@@ -54,7 +54,7 @@ Gauntlet consists of the following recoverable components:
 
 ### 4.1 Configuration Backup (RPO: Continuous)
 
-The Gauntlet Helm chart `values-override.yaml` is stored in the agency's
+The Sidereal Helm chart `values-override.yaml` is stored in the agency's
 GitOps repository. This constitutes the configuration backup. Every commit
 to the GitOps repository is a versioned configuration backup with full
 history. No additional backup step is required for configuration.
@@ -63,16 +63,16 @@ history. No additional backup step is required for configuration.
 environment. Confirm repository accessibility as part of the monthly
 contingency test.
 
-### 4.2 GauntletProbe Resource Backup (RPO: 24 hours)
+### 4.2 SiderealProbe Resource Backup (RPO: 24 hours)
 
-`GauntletProbe` resources define probe configuration and cannot be reconstructed
+`SiderealProbe` resources define probe configuration and cannot be reconstructed
 from the Helm chart alone (they contain site-specific probe definitions). These
 must be backed up separately.
 
 **Backup command:**
 ```bash
-kubectl get gauntletprobes -n gauntlet-system -o yaml > \
-  gauntlet-probes-backup-$(date +%Y%m%d).yaml
+kubectl get siderealprobes -n sidereal-system -o yaml > \
+  sidereal-probes-backup-$(date +%Y%m%d).yaml
 ```
 
 Back up to the agency's designated backup storage (S3, Velero, or equivalent).
@@ -80,27 +80,27 @@ Retention: minimum 90 days.
 
 **Automated backup via Velero:**
 ```yaml
-# velero-gauntlet-schedule.yaml
+# velero-sidereal-schedule.yaml
 apiVersion: velero.io/v1
 kind: Schedule
 metadata:
-  name: gauntlet-daily
+  name: sidereal-daily
   namespace: velero
 spec:
   schedule: "0 2 * * *"   # 02:00 UTC daily
   template:
     includedNamespaces:
-      - gauntlet-system
+      - sidereal-system
     includedResources:
-      - gauntletprobes
-      - gauntletsystemalerts
+      - siderealprobes
+      - siderealsystemalerts
     storageLocation: default
     ttl: 2160h   # 90 days
 ```
 
 ### 4.3 Audit Record Backup (Continuous)
 
-`GauntletProbeResult` CRs are continuously exported to the SIEM. The SIEM
+`SiderealProbeResult` CRs are continuously exported to the SIEM. The SIEM
 is the authoritative long-term backup for audit records. In-cluster CRDs are
 the resilient short-term copy.
 
@@ -111,7 +111,7 @@ procedures are initiated.
 
 **Pre-recovery audit record capture (if SIEM export was degraded):**
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system -o json > \
+kubectl get siderealproberesults -n sidereal-system -o json > \
   audit-records-pre-recovery-$(date +%Y%m%d-%H%M).json
 # Upload to SIEM manually or to S3 backup bucket
 ```
@@ -120,7 +120,7 @@ kubectl get gauntletproberesults -n gauntlet-system -o json > \
 
 The HMAC root Secret is critical — without it, the controller cannot sign
 new probe results and will fail integrity verification. It is backed up as
-part of the `gauntlet-system` namespace Velero backup.
+part of the `sidereal-system` namespace Velero backup.
 
 For KMS-encrypted HMAC secrets (recommended for IL4/IL5), the KMS key
 provides its own HA and backup guarantee. Confirm KMS key availability
@@ -140,16 +140,16 @@ node failure, OOMKill):
 2. If the node is lost, Kubernetes reschedules the Pod on an available node
 3. On startup, the controller performs bootstrap verification checks before
    resuming probe scheduling
-4. Verify recovery: `kubectl get pods -n gauntlet-system`
+4. Verify recovery: `kubectl get pods -n sidereal-system`
 
 For persistent failures, investigate controller logs before escalating:
 ```bash
-kubectl logs -n gauntlet-system deployment/gauntlet-controller-manager --previous
+kubectl logs -n sidereal-system deployment/sidereal-controller-manager --previous
 ```
 
 ### 5.2 Full Cluster Recovery (RTO: 4 hours)
 
-In the event the Kubernetes cluster is lost or Gauntlet must be redeployed
+In the event the Kubernetes cluster is lost or Sidereal must be redeployed
 to a new cluster:
 
 **Step 1: Restore prerequisites** (30 minutes)
@@ -158,42 +158,42 @@ to a new cluster:
 - Verify detection backend (e.g., Falco, Tetragon) is operational
 - Verify SIEM endpoint is reachable
 
-**Step 2: Deploy Gauntlet** (15 minutes)
+**Step 2: Deploy Sidereal** (15 minutes)
 ```bash
 # Pull Helm chart at the pinned version
-helm repo add gauntlet https://charts.gauntlet.io
+helm repo add sidereal https://charts.sidereal.io
 helm repo update
 
 # Deploy from GitOps repository values
-helm install gauntlet gauntlet/gauntlet \
+helm install sidereal sidereal/sidereal \
   --version <chart-version> \
-  --namespace gauntlet-system \
+  --namespace sidereal-system \
   --create-namespace \
   --values values-override.yaml
 ```
 
-**Step 3: Restore GauntletProbe resources** (15 minutes)
+**Step 3: Restore SiderealProbe resources** (15 minutes)
 ```bash
 # From Velero backup
-velero restore create --from-backup gauntlet-daily-<date> \
-  --include-namespaces gauntlet-system \
-  --include-resources gauntletprobes
+velero restore create --from-backup sidereal-daily-<date> \
+  --include-namespaces sidereal-system \
+  --include-resources siderealprobes
 
 # Or from manual backup
-kubectl apply -f gauntlet-probes-backup-<date>.yaml
+kubectl apply -f sidereal-probes-backup-<date>.yaml
 ```
 
 **Step 4: Verify bootstrap checks pass** (15 minutes)
 ```bash
-kubectl get gauntletsystemalerts -n gauntlet-system
+kubectl get siderealsystemalerts -n sidereal-system
 # Should be empty after successful bootstrap
-kubectl describe deployment gauntlet-controller-manager -n gauntlet-system
+kubectl describe deployment sidereal-controller-manager -n sidereal-system
 # DegradedMode condition should be False
 ```
 
 **Step 5: Confirm probe execution resumes** (up to 6 hours for High impact)
 ```bash
-kubectl get gauntletproberesults -n gauntlet-system \
+kubectl get siderealproberesults -n sidereal-system \
   --sort-by='.metadata.creationTimestamp' | tail -5
 ```
 
@@ -207,15 +207,15 @@ kubectl get gauntletproberesults -n gauntlet-system \
 For scenarios where some probe surfaces are degraded but not all (e.g.,
 detection backend unavailable):
 
-1. `GauntletSystemAlert` with `reason: SecurityFunctionUnavailable` is
+1. `SiderealSystemAlert` with `reason: SecurityFunctionUnavailable` is
    created automatically
 2. Restore the unavailable security function (detection backend, CNI observability layer, etc.)
-3. Acknowledge the `GauntletSystemAlert` after confirming the function is
+3. Acknowledge the `SiderealSystemAlert` after confirming the function is
    restored:
    ```bash
-   kubectl annotate gauntletsystemalert <name> -n gauntlet-system \
-     gauntlet.io/acknowledged-by="firstname.lastname@agency.gov" \
-     gauntlet.io/acknowledgment-notes="Detection backend DaemonSet restarted; verified operational"
+   kubectl annotate siderealsystemalert <name> -n sidereal-system \
+     sidereal.cloud/acknowledged-by="firstname.lastname@agency.gov" \
+     sidereal.cloud/acknowledgment-notes="Detection backend DaemonSet restarted; verified operational"
    ```
 4. Probe execution on the affected surface resumes automatically
 
@@ -223,7 +223,7 @@ detection backend unavailable):
 
 ## 6. Monitoring Gap Documentation
 
-Any Gauntlet outage that results in a gap in continuous monitoring evidence
+Any Sidereal outage that results in a gap in continuous monitoring evidence
 must be documented. A monitoring gap occurs when probe executions are not
 completing on schedule (High: every 6 hours; Moderate: every 24 hours).
 
@@ -232,7 +232,7 @@ completing on schedule (High: every 6 hours; Moderate: every 24 hours).
 - Outage end time (UTC)
 - Duration per probe surface
 - Root cause
-- Whether any `GauntletIncident` records were generated during the gap
+- Whether any `SiderealIncident` records were generated during the gap
   (i.e., was monitoring partially functional)
 - Remediation actions taken
 - Whether a POA&M entry is required (outages > 8 hours)
@@ -253,7 +253,7 @@ The contingency plan must be tested on the following schedule:
 | Test Type | Frequency | Scope |
 |---|---|---|
 | Tabletop exercise | Annual | Full recovery procedure walkthrough |
-| Backup verification | Monthly | Confirm GauntletProbe backup is restorable |
+| Backup verification | Monthly | Confirm SiderealProbe backup is restorable |
 | GitOps recovery drill | Semi-annual | Deploy from GitOps values to a test environment |
 | Full recovery exercise | Annual | Complete cluster recovery per Section 5.2 |
 

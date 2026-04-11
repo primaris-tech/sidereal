@@ -1,5 +1,5 @@
 # System Security Plan (SSP) Template
-## Gauntlet Continuous Security Control Validation Operator
+## Sidereal Continuous Security Control Validation Operator
 
 **Classification**: [Agency: Insert applicable classification marking]
 **Version**: 1.0
@@ -7,13 +7,13 @@
 **Status**: [Draft / Final]
 
 > **How to use this template**: Sections marked `[Agency: ...]` require agency-specific input.
-> All other sections document Gauntlet's control implementations as pre-filled content.
-> Do not alter pre-filled Gauntlet sections without consulting your Gauntlet representative —
+> All other sections document Sidereal's control implementations as pre-filled content.
+> Do not alter pre-filled Sidereal sections without consulting your Sidereal representative —
 > changes may invalidate the supporting OSCAL Component Definition.
 >
 > The FIPS 199 impact level is operator-configurable via `global.impactLevel` (high, moderate,
 > or low). This template defaults to **NIST 800-53 Rev 5 High Baseline** examples, but
-> Gauntlet adjusts retention requirements and control scope based on the configured impact level.
+> Sidereal adjusts retention requirements and control scope based on the configured impact level.
 > For Moderate or Low baselines, annotate which High-only enhancements your agency has waived.
 
 ---
@@ -50,9 +50,9 @@
 
 | Field | Value |
 |---|---|
-| System Name | Gauntlet Continuous Security Control Validation Operator |
-| System Abbreviation / Acronym | Gauntlet |
-| System Version | [Agency: Insert deployed Helm chart version, e.g., `gauntlet-1.2.0`] |
+| System Name | Sidereal Continuous Security Control Validation Operator |
+| System Abbreviation / Acronym | Sidereal |
+| System Version | [Agency: Insert deployed Helm chart version, e.g., `sidereal-1.2.0`] |
 | FIPS 199 Impact Level | [Agency: Per `global.impactLevel` — High, Moderate, or Low] |
 | System Type | Minor Application / Platform Component |
 | Operational Status | [Agency: Operational / Under Development / Major Modification] |
@@ -102,20 +102,20 @@
 
 ### 3.1 Purpose and Function
 
-Gauntlet is a Kubernetes-native security operator that provides **continuous, active validation
-of security control effectiveness**. Rather than verifying configuration state, Gauntlet
+Sidereal is a Kubernetes-native security operator that provides **continuous, active validation
+of security control effectiveness**. Rather than verifying configuration state, Sidereal
 continuously executes targeted probes against a live cluster to verify that security controls
 are *operationally effective* — producing evidence that would be accepted by a NIST 800-53
 assessor.
 
-Gauntlet addresses the gap between configuration verification (what most tools do) and
+Sidereal addresses the gap between configuration verification (what most tools do) and
 operational validation (whether controls actually stop or detect adversarial actions). Each probe
 maps directly to one or more NIST 800-53 controls and, where applicable, a MITRE ATT&CK for
 Containers technique.
 
 ### 3.2 Probe Surfaces
 
-Gauntlet executes five built-in probe surfaces plus operator-defined custom probes:
+Sidereal executes five built-in probe surfaces plus operator-defined custom probes:
 
 | Probe Surface | What It Validates | Primary Controls |
 |---|---|---|
@@ -132,17 +132,17 @@ Each probe carries a `controlMappings` field supporting multi-framework mapping 
 
 - **Continuous, not point-in-time**: Probes execute on configurable schedules (default: every 6 hours) with ±10% jitter
 - **HMAC result integrity**: Every probe result is signed with a per-execution HMAC key; the controller verifies the signature before accepting the result; a tampered result suspends the probe surface
-- **Append-only audit log**: `GauntletProbeResult` CRs are immutable after creation (enforced by admission enforcement policy); they cannot be deleted or modified during the impact-level-dependent retention period (365 days at High/Moderate, 180 days at Low)
-- **Control effectiveness derivation**: Each `GauntletProbeResult` includes a derived `controlEffectiveness` field (Effective, Ineffective, Degraded, or Compromised) computed from probe outcomes, providing assessors with a standardized effectiveness determination
+- **Append-only audit log**: `SiderealProbeResult` CRs are immutable after creation (enforced by admission enforcement policy); they cannot be deleted or modified during the impact-level-dependent retention period (365 days at High/Moderate, 180 days at Low)
+- **Control effectiveness derivation**: Each `SiderealProbeResult` includes a derived `controlEffectiveness` field (Effective, Ineffective, Degraded, or Compromised) computed from probe outcomes, providing assessors with a standardized effectiveness determination
 - **Separation of identity**: The controller cannot perform the operations the probes perform; a compromised controller cannot produce a falsified result without also defeating HMAC verification
 - **FIPS 140-2 cryptography**: Go components use BoringCrypto (CMVP #3678); Rust detection probe uses aws-lc-rs (CMVP #4816); no non-FIPS codepath is reachable at runtime
-- **AO authorization for detection probes**: Detection probes require an active `GauntletAOAuthorization` CR bearing the AO's identity, scope, and expiry before execution proceeds
+- **AO authorization for detection probes**: Detection probes require an active `SiderealAOAuthorization` CR bearing the AO's identity, scope, and expiry before execution proceeds
 
 ### 3.4 System Deployment Context
 
-[Agency: Describe the cluster(s) Gauntlet is deployed into, their classification, and how Gauntlet fits into the overall system architecture.]
+[Agency: Describe the cluster(s) Sidereal is deployed into, their classification, and how Sidereal fits into the overall system architecture.]
 
-Gauntlet is deployed as a Kubernetes operator into the `gauntlet-system` namespace using the
+Sidereal is deployed as a Kubernetes operator into the `sidereal-system` namespace using the
 official Helm chart. It does not require persistent storage. It does not expose any external
 services. It does not process mission application data.
 
@@ -152,9 +152,9 @@ services. It does not process mission application data.
 
 ### 4.1 Boundary Description
 
-The Gauntlet authorization boundary is the `gauntlet-system` Kubernetes namespace, which is
+The Sidereal authorization boundary is the `sidereal-system` Kubernetes namespace, which is
 protected by a default-deny NetworkPolicy. All components inside the boundary are deployed and
-managed by the Gauntlet Helm chart.
+managed by the Sidereal Helm chart.
 
 See `compliance/diagrams/authorization-boundary.md` for the full Mermaid diagram.
 
@@ -164,15 +164,15 @@ See `compliance/diagrams/authorization-boundary.md` for the full Mermaid diagram
 |---|---|---|
 | Controller Manager | Kubernetes Deployment | Go / BoringCrypto FIPS; always running |
 | Probe Runner Jobs | Kubernetes Jobs (ephemeral) | One per execution; TTL-cleaned; short-lived |
-| GauntletProbe CRDs | Kubernetes custom resources | Probe configuration |
-| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL (365d High/Moderate, 180d Low); includes `controlEffectiveness` derivation |
-| GauntletIncident CRDs | Kubernetes custom resources | Control failure records |
-| GauntletSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
-| GauntletAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization tokens |
-| GauntletProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe recommendations; primary onboarding surface |
-| GauntletReport CRDs | Kubernetes custom resources | Continuous monitoring reports, POA&M, coverage matrices |
+| SiderealProbe CRDs | Kubernetes custom resources | Probe configuration |
+| SiderealProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL (365d High/Moderate, 180d Low); includes `controlEffectiveness` derivation |
+| SiderealIncident CRDs | Kubernetes custom resources | Control failure records |
+| SiderealSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
+| SiderealAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization tokens |
+| SiderealProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe recommendations; primary onboarding surface |
+| SiderealReport CRDs | Kubernetes custom resources | Continuous monitoring reports, POA&M, coverage matrices |
 | Admission enforcement policies | Kubernetes custom resources | Admission-layer blast radius controls |
-| `gauntlet-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
+| `sidereal-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
 | HMAC root Secret | Kubernetes Secret | KMS-encrypted at IL4/IL5 |
 
 ### 4.3 Components Outside the Boundary
@@ -198,7 +198,7 @@ See `compliance/diagrams/network-topology.md` for the full Mermaid diagram.
 
 ### 5.1 Summary
 
-The `gauntlet-system` namespace operates under a default-deny NetworkPolicy for both ingress
+The `sidereal-system` namespace operates under a default-deny NetworkPolicy for both ingress
 and egress. All traffic is explicit allowlist-based.
 
 **Permitted Ingress:**
@@ -254,14 +254,14 @@ See `compliance/diagrams/data-flows.md` for the full Mermaid diagrams.
 
 | Location | Data | Protection |
 |---|---|---|
-| etcd (in-cluster) | GauntletProbeResult, GauntletIncident, GauntletProbeRecommendation, GauntletReport CRs | Kubernetes etcd encryption at rest; HMAC integrity |
+| etcd (in-cluster) | SiderealProbeResult, SiderealIncident, SiderealProbeRecommendation, SiderealReport CRs | Kubernetes etcd encryption at rest; HMAC integrity |
 | etcd (in-cluster) | HMAC root Secret | KMS-encrypted (IL4/IL5 requirement) |
 | S3 | Exported audit records | SSE-KMS (FIPS key); Object Lock COMPLIANCE mode; 3-year retention |
 | Splunk / Elasticsearch | Exported audit records | [Agency: Document at-rest encryption controls] |
 
 ### 6.3 Privacy Considerations
 
-Gauntlet processes no mission application data and no end-user PII by design. It records:
+Sidereal processes no mission application data and no end-user PII by design. It records:
 
 - Kubernetes namespace names and workload labels (may be considered sensitive in some contexts)
 - Probe execution timestamps and outcomes
@@ -280,7 +280,7 @@ are considered sensitive, enable `privacy.redactNamespaceNames` and
 
 ### 7.1 Infrastructure
 
-[Agency: Describe the Kubernetes cluster(s) Gauntlet is deployed on, including:
+[Agency: Describe the Kubernetes cluster(s) Sidereal is deployed on, including:
 - Cluster type (EKS, GKE, AKS, OpenShift, bare-metal, etc.)
 - Kubernetes version
 - Node operating system and hardening baseline (e.g., STIG-hardened RHEL 8)
@@ -289,8 +289,8 @@ are considered sensitive, enable `privacy.redactNamespaceNames` and
 
 ### 7.2 Software Dependencies
 
-Gauntlet depends on the following cluster-level software. These are external to the Gauntlet
-boundary; their control implementations are inherited by Gauntlet but governed by the cluster ATO.
+Sidereal depends on the following cluster-level software. These are external to the Sidereal
+boundary; their control implementations are inherited by Sidereal but governed by the cluster ATO.
 
 | Capability | Required | Purpose | Options (per deployment profile) |
 |---|---|---|---|
@@ -307,7 +307,7 @@ probe will produce `BackendUnreachable` outcomes.]
 
 ### 7.3 FIPS Compliance
 
-Gauntlet ships two image variants:
+Sidereal ships two image variants:
 
 | Variant | Cryptographic Library | Use Case |
 |---|---|---|
@@ -322,7 +322,7 @@ images when `global.fips: true` is set in values.
 
 ## 8. Leveraged Systems
 
-Gauntlet inherits security controls from the underlying Kubernetes infrastructure. The
+Sidereal inherits security controls from the underlying Kubernetes infrastructure. The
 following table identifies inherited controls and the system from which they are inherited.
 
 [Agency: Complete with references to the applicable system ATOs.]
@@ -340,53 +340,53 @@ following table identifies inherited controls and the system from which they are
 
 ## 9. Control Implementation Summary
 
-The following table summarizes Gauntlet's implementation status for NIST 800-53 Rev 5
+The following table summarizes Sidereal's implementation status for NIST 800-53 Rev 5
 controls within scope (baseline determined by `global.impactLevel`; defaults to High). Controls marked **Inherited** rely on the underlying
-platform; controls marked **Provided** are fully implemented by Gauntlet; controls marked
-**Shared** have both Gauntlet and agency/platform components.
+platform; controls marked **Provided** are fully implemented by Sidereal; controls marked
+**Shared** have both Sidereal and agency/platform components.
 
 Machine-readable control implementations are available in the OSCAL Component Definition
-at `compliance/trestle-workspace/component-definitions/gauntlet/component-definition.json`.
+at `compliance/trestle-workspace/component-definitions/sidereal/component-definition.json`.
 
 | Family | Control | Status | Implementation Owner |
 |---|---|---|---|
 | AC | AC-2 | Inherited | Kubernetes platform |
-| AC | AC-3 | Provided | Gauntlet |
-| AC | AC-4 | Provided | Gauntlet |
-| AC | AC-6 | Provided | Gauntlet |
-| AC | AC-12 | Provided | Gauntlet |
-| AU | AU-2 | Provided | Gauntlet |
-| AU | AU-3 | Provided | Gauntlet |
-| AU | AU-4 | Provided | Gauntlet |
-| AU | AU-5 | Provided | Gauntlet |
-| AU | AU-8 | Shared | Gauntlet + platform (NTP) |
-| AU | AU-9 | Provided | Gauntlet |
-| AU | AU-10 | Provided | Gauntlet |
-| AU | AU-11 | Provided | Gauntlet |
-| AU | AU-12 | Provided | Gauntlet |
-| CA | CA-2 | Provided | Gauntlet |
-| CA | CA-7 | Provided | Gauntlet |
-| CA | CA-8 | Provided | Gauntlet |
-| CM | CM-2 | Provided | Gauntlet |
-| CM | CM-3 | Shared | Gauntlet + agency |
-| CM | CM-6 | Provided | Gauntlet |
-| CM | CM-7 | Provided | Gauntlet |
-| CM | CM-8 | Provided | Gauntlet |
-| CM | CM-14 | Provided | Gauntlet |
-| IA | IA-3 | Provided | Gauntlet |
-| IA | IA-7 | Provided | Gauntlet |
-| IA | IA-8 | Provided | Gauntlet |
-| SC | SC-7 | Provided | Gauntlet |
-| SC | SC-8 | Provided | Gauntlet |
-| SC | SC-12 | Provided | Gauntlet |
-| SC | SC-13 | Provided | Gauntlet |
-| SI | SI-2 | Provided | Gauntlet |
-| SI | SI-6 | Provided | Gauntlet |
-| SI | SI-14 | Provided | Gauntlet |
-| SR | SR-3 | Provided | Gauntlet |
-| SR | SR-4 | Provided | Gauntlet |
-| SR | SR-9 | Provided | Gauntlet |
-| SR | SR-11 | Provided | Gauntlet |
+| AC | AC-3 | Provided | Sidereal |
+| AC | AC-4 | Provided | Sidereal |
+| AC | AC-6 | Provided | Sidereal |
+| AC | AC-12 | Provided | Sidereal |
+| AU | AU-2 | Provided | Sidereal |
+| AU | AU-3 | Provided | Sidereal |
+| AU | AU-4 | Provided | Sidereal |
+| AU | AU-5 | Provided | Sidereal |
+| AU | AU-8 | Shared | Sidereal + platform (NTP) |
+| AU | AU-9 | Provided | Sidereal |
+| AU | AU-10 | Provided | Sidereal |
+| AU | AU-11 | Provided | Sidereal |
+| AU | AU-12 | Provided | Sidereal |
+| CA | CA-2 | Provided | Sidereal |
+| CA | CA-7 | Provided | Sidereal |
+| CA | CA-8 | Provided | Sidereal |
+| CM | CM-2 | Provided | Sidereal |
+| CM | CM-3 | Shared | Sidereal + agency |
+| CM | CM-6 | Provided | Sidereal |
+| CM | CM-7 | Provided | Sidereal |
+| CM | CM-8 | Provided | Sidereal |
+| CM | CM-14 | Provided | Sidereal |
+| IA | IA-3 | Provided | Sidereal |
+| IA | IA-7 | Provided | Sidereal |
+| IA | IA-8 | Provided | Sidereal |
+| SC | SC-7 | Provided | Sidereal |
+| SC | SC-8 | Provided | Sidereal |
+| SC | SC-12 | Provided | Sidereal |
+| SC | SC-13 | Provided | Sidereal |
+| SI | SI-2 | Provided | Sidereal |
+| SI | SI-6 | Provided | Sidereal |
+| SI | SI-14 | Provided | Sidereal |
+| SR | SR-3 | Provided | Sidereal |
+| SR | SR-4 | Provided | Sidereal |
+| SR | SR-9 | Provided | Sidereal |
+| SR | SR-11 | Provided | Sidereal |
 
 ---
 
@@ -394,78 +394,78 @@ at `compliance/trestle-workspace/component-definitions/gauntlet/component-defini
 
 ### AC-3 — Access Enforcement
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet continuously validates AC-3 enforcement across two dimensions:
+Sidereal continuously validates AC-3 enforcement across two dimensions:
 
-1. **Deny-path validation**: The RBAC probe attempts operations that should be denied (e.g., accessing Secrets in a namespace where the test SA has no permissions) and verifies that a 403 Forbidden response is returned. A 200 or 404 constitutes a probe Failure and generates a `GauntletIncident`.
+1. **Deny-path validation**: The RBAC probe attempts operations that should be denied (e.g., accessing Secrets in a namespace where the test SA has no permissions) and verifies that a 403 Forbidden response is returned. A 200 or 404 constitutes a probe Failure and generates a `SiderealIncident`.
 
 2. **Allow-path validation**: The RBAC probe verifies that expected operations succeed, confirming that policy misconfiguration has not accidentally over-denied legitimate access.
 
 The Secret Access probe provides cross-namespace AC-3 validation by attempting to read Secrets in namespaces the probe SA has no permissions in, expecting HTTP 403 for all attempts.
 
-**Per-component permission inventory**: Each Gauntlet component uses a pre-provisioned ServiceAccount with minimal RBAC. The controller SA cannot perform probe operations. Probe runner SAs cannot write CRDs. The detection probe SA has no Kubernetes API access.
+**Per-component permission inventory**: Each Sidereal component uses a pre-provisioned ServiceAccount with minimal RBAC. The controller SA cannot perform probe operations. Probe runner SAs cannot write CRDs. The detection probe SA has no Kubernetes API access.
 
-An admission enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs referencing any ServiceAccount other than the seven built-in probe and discovery SAs (plus any registered custom probe SAs), preventing privilege escalation through Job creation.
+An admission enforcement policy (`sidereal-job-constraints`) prevents the controller from creating Jobs referencing any ServiceAccount other than the seven built-in probe and discovery SAs (plus any registered custom probe SAs), preventing privilege escalation through Job creation.
 
 **Customer Responsibility:**
 
-[Agency: Document the RBAC policies in place for the target namespaces Gauntlet probes.
-Configure `GauntletProbe` resources with appropriate `targetNamespace` values.
-Review probe Failures in the `GauntletIncident` log and remediate RBAC misconfigurations.]
+[Agency: Document the RBAC policies in place for the target namespaces Sidereal probes.
+Configure `SiderealProbe` resources with appropriate `targetNamespace` values.
+Review probe Failures in the `SiderealIncident` log and remediate RBAC misconfigurations.]
 
 ---
 
 ### AC-4 — Information Flow Enforcement
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 The NetworkPolicy probe validates that the CNI enforcement plane is actively dropping traffic
 that NetworkPolicy rules prohibit. Rather than inferring enforcement from TCP responses
-(which are ambiguous between application-layer rejection and network-layer drop), Gauntlet
+(which are ambiguous between application-layer rejection and network-layer drop), Sidereal
 reads verdicts directly from the CNI observability API (e.g., Hubble for Cilium or Calico
 flow logs). The CNI enforcement plane's verdict — `Dropped` or `Forwarded` — is the
 authoritative source of whether the NetworkPolicy rule was enforced.
 
 The probe generates a test flow with a unique probe-id label, then queries the CNI for the
 flow record matching that probe-id. A `Forwarded` verdict where `Dropped` was expected
-constitutes a Failure and generates a `GauntletIncident` with the control gap documented.
+constitutes a Failure and generates a `SiderealIncident` with the control gap documented.
 
-Gauntlet's own `gauntlet-system` namespace is protected by a default-deny NetworkPolicy.
+Sidereal's own `sidereal-system` namespace is protected by a default-deny NetworkPolicy.
 The NetworkPolicy probe validates this policy continuously (tests 1–5 in the topology
 validation section of `compliance/diagrams/network-topology.md`).
 
 **Customer Responsibility:**
 
-[Agency: Configure `GauntletProbe` resources with target namespaces and flow paths to
-test. Ensure the CNI observability API is accessible from `gauntlet-system`. Review
+[Agency: Configure `SiderealProbe` resources with target namespaces and flow paths to
+test. Ensure the CNI observability API is accessible from `sidereal-system`. Review
 probe Failures and remediate NetworkPolicy gaps.]
 
 ---
 
 ### AC-6 — Least Privilege
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet enforces and continuously validates least privilege at two levels:
+Sidereal enforces and continuously validates least privilege at two levels:
 
-**Gauntlet-internal enforcement**: Seven built-in ServiceAccounts (`gauntlet-controller`, `gauntlet-probe-rbac`, `gauntlet-probe-netpol`, `gauntlet-probe-admission`, `gauntlet-probe-secret`, `gauntlet-probe-detection`, `gauntlet-discovery`) with non-overlapping minimal RBAC, each scoped to exactly the operations required by that component. Custom probe ServiceAccounts are registered through the custom probe SA registration mechanism and receive equivalent least-privilege scoping. The admission enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs that reference any unregistered ServiceAccount, making privilege escalation through Job creation impossible even if the controller is compromised.
+**Sidereal-internal enforcement**: Seven built-in ServiceAccounts (`sidereal-controller`, `sidereal-probe-rbac`, `sidereal-probe-netpol`, `sidereal-probe-admission`, `sidereal-probe-secret`, `sidereal-probe-detection`, `sidereal-discovery`) with non-overlapping minimal RBAC, each scoped to exactly the operations required by that component. Custom probe ServiceAccounts are registered through the custom probe SA registration mechanism and receive equivalent least-privilege scoping. The admission enforcement policy (`sidereal-job-constraints`) prevents the controller from creating Jobs that reference any unregistered ServiceAccount, making privilege escalation through Job creation impossible even if the controller is compromised.
 
 **Cluster-wide validation**: The RBAC probe continuously tests that service accounts in target
 namespaces cannot perform operations outside their intended scope. Failures surface as
-`GauntletIncident` CRs with the offending RBAC binding identified.
+`SiderealIncident` CRs with the offending RBAC binding identified.
 
 **Customer Responsibility:**
 
-[Agency: Review `GauntletIncident` records for AC-6 findings. Configure least-privilege
-RBAC for the namespaces Gauntlet probes. Respond to RBAC Failure incidents within the
+[Agency: Review `SiderealIncident` records for AC-6 findings. Configure least-privilege
+RBAC for the namespaces Sidereal probes. Respond to RBAC Failure incidents within the
 timeframes specified in your Incident Response Plan.]
 
 ---
 
 ### AC-12 — Session Termination
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 Probe runner Jobs use time-bound Kubernetes service account tokens with a maximum 1-hour
 lifetime (`expirationSeconds: 3600`). The token is audience-restricted to the Kubernetes API
@@ -481,7 +481,7 @@ by confirming that requests with expired credentials receive 401, not 200.
 
 **Customer Responsibility:**
 
-[Agency: No additional agency action required for Gauntlet's own sessions. Document token
+[Agency: No additional agency action required for Sidereal's own sessions. Document token
 expiry policy for service accounts in target namespaces if those are in scope for this SSP.]
 
 ---
@@ -490,17 +490,17 @@ expiry policy for service accounts in target namespaces if those are in scope fo
 
 ### AU-2 / AU-3 / AU-12 — Audit Events and Content
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet generates two classes of audit records on every probe execution:
+Sidereal generates two classes of audit records on every probe execution:
 
-**Tier 1 — Operational status** (mutable): `GauntletProbe.status` subresource stores the
+**Tier 1 — Operational status** (mutable): `SiderealProbe.status` subresource stores the
 last N results and consecutive failure count. This tier supports real-time dashboards and
 alerting but is not the authoritative audit record.
 
-**Tier 2 — Audit log** (append-only): `GauntletProbeResult` CRs are created by the Result
+**Tier 2 — Audit log** (append-only): `SiderealProbeResult` CRs are created by the Result
 Reconciler and enforced as append-only by the admission enforcement policy
-(`gauntlet-proberesult-immutable`). Once created, a ProbeResult cannot be modified or deleted during its TTL
+(`sidereal-proberesult-immutable`). Once created, a ProbeResult cannot be modified or deleted during its TTL
 window. Each record contains:
 
 | Field | Content |
@@ -517,13 +517,13 @@ window. Each record contains:
 | `audit.exportStatus` | `Exported`, `Pending`, `Failed` |
 
 All audit events are additionally recorded in the Kubernetes audit log at RequestResponse level
-by virtue of the API calls Gauntlet makes. The Kubernetes audit log is external to the Gauntlet
+by virtue of the API calls Sidereal makes. The Kubernetes audit log is external to the Sidereal
 boundary and governed by the cluster ATO.
 
 **Customer Responsibility:**
 
 [Agency: Configure Kubernetes audit logging at RequestResponse level for the
-`gauntlet-system` namespace. Ensure the SIEM export pipeline is configured and
+`sidereal-system` namespace. Ensure the SIEM export pipeline is configured and
 `audit.exportStatus` for all ProbeResult records reaches `Exported`. Review any records
 with `audit.exportStatus: Failed`.]
 
@@ -531,45 +531,45 @@ with `audit.exportStatus: Failed`.]
 
 ### AU-4 — Audit Log Storage Capacity
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet uses a two-tier storage architecture to prevent audit capacity exhaustion:
+Sidereal uses a two-tier storage architecture to prevent audit capacity exhaustion:
 
-- **In-cluster** (etcd): `GauntletProbeResult` CRs are subject to an impact-level-dependent minimum TTL (365 days at High/Moderate, 180 days at Low, per `global.impactLevel`). After TTL expiry, the Kubernetes TTL controller reclaims storage. The `gauntlet-system` ResourceQuota limits the number of concurrent Jobs and related resources, preventing runaway probe execution from filling etcd.
+- **In-cluster** (etcd): `SiderealProbeResult` CRs are subject to an impact-level-dependent minimum TTL (365 days at High/Moderate, 180 days at Low, per `global.impactLevel`). After TTL expiry, the Kubernetes TTL controller reclaims storage. The `sidereal-system` ResourceQuota limits the number of concurrent Jobs and related resources, preventing runaway probe execution from filling etcd.
 - **Off-cluster SIEM** (authoritative long-term): All records are exported in real time. S3 export uses Object Lock in COMPLIANCE mode with a 3-year retention lock. Elasticsearch and Splunk retention is agency-configured (minimum 3 years for federal deployments).
 
-Gauntlet does not purge audit records to manage storage — the two-tier architecture separates
+Sidereal does not purge audit records to manage storage — the two-tier architecture separates
 the retention enforcement concern (SIEM, 3-year) from the operational view concern (etcd, 365-day at High/Moderate or 180-day at Low).
 
 **Customer Responsibility:**
 
-[Agency: Ensure SIEM storage capacity is sized for 3-year retention of Gauntlet audit
-records. Monitor `gauntlet_siem_export_failures_total` Prometheus metric. Configure
+[Agency: Ensure SIEM storage capacity is sized for 3-year retention of Sidereal audit
+records. Monitor `sidereal_siem_export_failures_total` Prometheus metric. Configure
 S3 bucket lifecycle policy and Object Lock if using S3 export.]
 
 ---
 
 ### AU-5 — Response to Audit Processing Failures
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet has two separate failure detection paths:
+Sidereal has two separate failure detection paths:
 
-**SIEM export failure**: On any export failure, Gauntlet retries with exponential backoff
+**SIEM export failure**: On any export failure, Sidereal retries with exponential backoff
 (5 seconds initial, up to 5 minutes maximum, 24-hour window). After consecutive failures:
-1. `gauntlet_siem_export_failures_total` Prometheus metric increments
-2. `GauntletSystemAlert` CR is created with `reason: SIEMExportDegraded`
+1. `sidereal_siem_export_failures_total` Prometheus metric increments
+2. `SiderealSystemAlert` CR is created with `reason: SIEMExportDegraded`
 3. If `audit.failClosedOnExportFailure: true`, probe scheduling halts
 
-**etcd write failure**: On failure to write a `GauntletProbeResult` CR, the Result Reconciler
-creates a `GauntletSystemAlert` with `reason: AuditWriteFailure` and suspends the probe surface.
+**etcd write failure**: On failure to write a `SiderealProbeResult` CR, the Result Reconciler
+creates a `SiderealSystemAlert` with `reason: AuditWriteFailure` and suspends the probe surface.
 
-All `GauntletSystemAlert` CRs require individual principal acknowledgment before the system
+All `SiderealSystemAlert` CRs require individual principal acknowledgment before the system
 returns to normal operation. Acknowledgment is logged with the acknowledging principal's identity.
 
 **Customer Responsibility:**
 
-[Agency: Configure alerting on `GauntletSystemAlert` CRs. Document the response procedure
+[Agency: Configure alerting on `SiderealSystemAlert` CRs. Document the response procedure
 for `SIEMExportDegraded` alerts (see IRP). Determine whether `failClosedOnExportFailure`
 should be `true` for your deployment (recommended for High systems).]
 
@@ -577,17 +577,17 @@ should be `true` for your deployment (recommended for High systems).]
 
 ### AU-8 — Time Stamps
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-All `GauntletProbeResult` timestamps use RFC 3339 UTC format with nanosecond precision.
+All `SiderealProbeResult` timestamps use RFC 3339 UTC format with nanosecond precision.
 Go components use `time.Now().UTC()` which reads `CLOCK_REALTIME` from the Linux kernel.
 Rust components use `chrono::Utc::now()` which also reads `CLOCK_REALTIME`. Both are
 therefore accurate to within the node's NTP synchronization tolerance.
 
-Gauntlet does not run its own NTP daemon — it relies on the cluster node NTP infrastructure.
+Sidereal does not run its own NTP daemon — it relies on the cluster node NTP infrastructure.
 An indirect NTP failure signal is available through JWT expiry: if a node's clock drifts
-beyond token acceptance tolerance, Gauntlet's API calls will begin returning 401 errors,
-which surface as `Indeterminate` outcomes and a `GauntletSystemAlert`.
+beyond token acceptance tolerance, Sidereal's API calls will begin returning 401 errors,
+which surface as `Indeterminate` outcomes and a `SiderealSystemAlert`.
 
 **Customer Responsibility:**
 
@@ -599,15 +599,15 @@ and synchronization tolerance. Ensure NTP configuration is included in your clus
 
 ### AU-9 / AU-10 — Audit Record Protection and Non-Repudiation
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-**Integrity**: Every `GauntletProbeResult` record contains an `integrityStatus` field set by
+**Integrity**: Every `SiderealProbeResult` record contains an `integrityStatus` field set by
 HMAC verification. The HMAC key is derived per execution using HKDF from a root key held
 in a Kubernetes Secret (KMS-encrypted at IL4/IL5). If the HMAC verification fails, the
-`integrityStatus` is set to `TamperedResult` and a `GauntletSystemAlert` is created.
+`integrityStatus` is set to `TamperedResult` and a `SiderealSystemAlert` is created.
 
-**Append-only enforcement**: The admission enforcement policy (`gauntlet-proberesult-immutable`)
-intercepts all UPDATE and DELETE operations on `GauntletProbeResult` CRs and denies them.
+**Append-only enforcement**: The admission enforcement policy (`sidereal-proberesult-immutable`)
+intercepts all UPDATE and DELETE operations on `SiderealProbeResult` CRs and denies them.
 This enforcement is independent of the controller — it operates at the Kubernetes admission
 layer and cannot be bypassed by a compromised controller.
 
@@ -620,13 +620,13 @@ key across all audit systems.
 
 [Agency: Protect the admission enforcement policies (e.g., Kyverno ClusterPolicy or OPA Constraint) from unauthorized modification. Ensure the
 HMAC root Secret is encrypted with a KMS key (required for IL4/IL5). Monitor Rekor inclusion
-proofs for all Gauntlet image versions deployed.]
+proofs for all Sidereal image versions deployed.]
 
 ---
 
 ### AU-11 — Audit Record Retention
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 | Storage Tier | Retention | Mechanism |
 |---|---|---|
@@ -650,14 +650,14 @@ retention policies. Document the retention policy in your Records Management pro
 
 ### CM-2 — Baseline Configuration
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-The authoritative baseline configuration for a Gauntlet deployment is the Helm `values.yaml`
+The authoritative baseline configuration for a Sidereal deployment is the Helm `values.yaml`
 committed in the agency's GitOps repository. The `values.schema.json` in the Helm chart
 enforces schema constraints at deploy time, preventing out-of-range values.
 
-Drift detection is continuous: Gauntlet's bootstrap verifier checks prerequisites on startup and
-after each reconciliation cycle. Deviations from expected state generate `GauntletSystemAlert`
+Drift detection is continuous: Sidereal's bootstrap verifier checks prerequisites on startup and
+after each reconciliation cycle. Deviations from expected state generate `SiderealSystemAlert`
 CRs. The Helm chart version and image digests present in the cluster are the operational
 baseline record.
 
@@ -671,7 +671,7 @@ Do not apply configuration changes outside the GitOps workflow.]
 
 ### CM-6 — Configuration Settings
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 The `values.schema.json` enforces the following critical configuration constraints:
 
@@ -697,9 +697,9 @@ via `--set` flags outside the change control process.]
 
 ### CM-7 — Least Functionality
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet minimizes attack surface through four layers:
+Sidereal minimizes attack surface through four layers:
 
 1. **Image composition**: Distroless or scratch base images; no shell, no package manager, no debug utilities; single-binary containers
 2. **Disabled endpoints**: No debug endpoints, no profiling endpoints, no admin endpoints exposed outside the container; only `:8080` metrics and `:8081` health on the controller
@@ -715,9 +715,9 @@ Review the NetworkPolicy specification and confirm it is appropriate for your en
 
 ### CM-8 — System Component Inventory
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-A Software Bill of Materials (SBOM) in CycloneDX format is generated for each Gauntlet
+A Software Bill of Materials (SBOM) in CycloneDX format is generated for each Sidereal
 image at build time using `syft` (Go components) and `cargo cyclonedx` (Rust components).
 SBOMs are cosign-attested and stored in the image registry alongside the image.
 
@@ -726,25 +726,25 @@ The SBOM can be retrieved for any deployed image:
 ```bash
 cosign verify-attestation \
   --type cyclonedx \
-  --certificate-identity-regexp 'https://github.com/primaris-tech/gauntlet' \
+  --certificate-identity-regexp 'https://github.com/primaris-tech/sidereal' \
   <image>@<digest> \
   | jq '.payload | @base64d | fromjson | .predicate'
 ```
 
 **Customer Responsibility:**
 
-[Agency: Retrieve and archive SBOMs for all deployed Gauntlet image digests as part of
-your component inventory. Configure your agency's SBOM tooling to ingest Gauntlet SBOMs.
+[Agency: Retrieve and archive SBOMs for all deployed Sidereal image digests as part of
+your component inventory. Configure your agency's SBOM tooling to ingest Sidereal SBOMs.
 Cross-reference SBOM contents against your approved software list.]
 
 ---
 
 ### CM-14 — Signed Components
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-All Gauntlet container images are signed with cosign using a KMS-backed signing key at
-build time. The admission enforcement policy (`gauntlet-image-signature-required`) verifies
+All Sidereal container images are signed with cosign using a KMS-backed signing key at
+build time. The admission enforcement policy (`sidereal-image-signature-required`) verifies
 the cosign signature at every Pod admission — not once at deploy time, but on every scheduled
 reconciliation and every new probe Job creation.
 
@@ -754,7 +754,7 @@ repudiation impossible.
 
 **Customer Responsibility:**
 
-[Agency: Ensure the admission enforcement policies are deployed and active before deploying Gauntlet.
+[Agency: Ensure the admission enforcement policies are deployed and active before deploying Sidereal.
 For air-gapped environments, configure an internal Sigstore stack or use cosign's
 `--insecure-skip-tlog-upload` with a documented exception. Do not disable signature
 verification in production.]
@@ -782,9 +782,9 @@ Complete the agency-specific sections of the Contingency Plan.]
 
 ### IA-3 — Device Identification and Authentication
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet authenticates all external systems before establishing connections. Each external
+Sidereal authenticates all external systems before establishing connections. Each external
 system is authenticated through a combination of:
 
 | System | Authentication Mechanism |
@@ -807,22 +807,22 @@ recommended over long-lived certificates for all gRPC connections.
 **Customer Responsibility:**
 
 [Agency: Issue and configure mTLS certificates for detection backend and CNI observability
-layer connections. For SPIFFE/SPIRE, deploy a SPIRE server and configure the Gauntlet
+layer connections. For SPIFFE/SPIRE, deploy a SPIRE server and configure the Sidereal
 workload registration. Execute ISA/MOU agreements for connections to separately-owned systems.]
 
 ---
 
 ### IA-7 — Cryptographic Module Authentication
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet's FIPS variant images use FIPS-validated cryptographic modules exclusively:
+Sidereal's FIPS variant images use FIPS-validated cryptographic modules exclusively:
 
 - **Go components**: BoringCrypto (CMVP Certificate #3678). Go's `crypto/tls`, `crypto/hmac`, `crypto/sha256`, and related packages automatically route to BoringCrypto when built with the `boringcrypto` build tag. Any call to a non-FIPS-approved algorithm causes an immediate process panic.
 
 - **Rust detection probe**: aws-lc-rs (CMVP Certificate #4816). A compile-time algorithm allow-list ensures only FIPS-approved algorithms are callable. FIPS Known Answer Tests (KATs) execute at process initialization; failure causes an immediate `process::exit(1)`.
 
-Both failure modes surface as `Indeterminate` probe outcomes and a `GauntletSystemAlert`,
+Both failure modes surface as `Indeterminate` probe outcomes and a `SiderealSystemAlert`,
 preventing silent FIPS compliance degradation.
 
 **Customer Responsibility:**
@@ -835,17 +835,17 @@ Set `global.fips: true` in Helm values.]
 
 ### IA-8 — Identification and Authentication (Non-Organizational Users)
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-External systems that connect to Gauntlet (inbound connections) are authenticated at the
+External systems that connect to Sidereal (inbound connections) are authenticated at the
 admission layer:
 
-- **Admission controller webhook**: Gauntlet's controller presents a TLS certificate issued by the cluster CA. The admission controller verifies this certificate before sending admission requests. Gauntlet verifies the admission controller's client certificate in return (mTLS).
-- **Prometheus scrape**: Gauntlet exposes `:8080/metrics` only on a ClusterIP-bound interface. Prometheus authentication is governed by the monitoring namespace's configuration.
+- **Admission controller webhook**: Sidereal's controller presents a TLS certificate issued by the cluster CA. The admission controller verifies this certificate before sending admission requests. Sidereal verifies the admission controller's client certificate in return (mTLS).
+- **Prometheus scrape**: Sidereal exposes `:8080/metrics` only on a ClusterIP-bound interface. Prometheus authentication is governed by the monitoring namespace's configuration.
 
 All inbound connections are restricted by NetworkPolicy to the specific source namespaces
 listed in section 5.1. Inbound connections from unlisted sources are dropped at the
-network layer before reaching Gauntlet components.
+network layer before reaching Sidereal components.
 
 **Customer Responsibility:**
 
@@ -858,9 +858,9 @@ Ensure NetworkPolicy source restrictions match your actual monitoring namespace 
 
 See `compliance/plans/incident-response-plan.md` for the full Incident Response Plan.
 
-### Gauntlet-Generated IR Artifacts
+### Sidereal-Generated IR Artifacts
 
-When a probe Fails, Gauntlet automatically creates a `GauntletIncident` CR. This CR contains:
+When a probe Fails, Sidereal automatically creates a `SiderealIncident` CR. This CR contains:
 - The failing control identifier (NIST control)
 - The MITRE ATT&CK technique identifier
 - The probe execution timestamp and probe-id
@@ -869,27 +869,27 @@ When a probe Fails, Gauntlet automatically creates a `GauntletIncident` CR. This
 IR teams can query incidents:
 
 ```bash
-kubectl get gauntletincidents -n gauntlet-system --sort-by=.metadata.creationTimestamp
+kubectl get siderealincidents -n sidereal-system --sort-by=.metadata.creationTimestamp
 ```
 
 **Customer Responsibility:**
 
 [Agency: Configure IR webhook in `ir.webhook.url`. Document IR procedures in the
 Incident Response Plan (see `compliance/plans/incident-response-plan.md`). Train IR staff
-on `GauntletIncident` interpretation and response procedures.]
+on `SiderealIncident` interpretation and response procedures.]
 
 ---
 
 ## 16. Risk Assessment (RA)
 
-[Agency: Document the risk assessment process for the system that Gauntlet is monitoring.
-Note that Gauntlet generates continuous evidence of control effectiveness that can be used
+[Agency: Document the risk assessment process for the system that Sidereal is monitoring.
+Note that Sidereal generates continuous evidence of control effectiveness that can be used
 to update the risk posture and POA&M status in near-real-time.]
 
-**Risk posture benefit**: Each probe Failure generates a `GauntletIncident` that directly
+**Risk posture benefit**: Each probe Failure generates a `SiderealIncident` that directly
 maps to one or more NIST 800-53 controls (and, via `controlMappings`, to CMMC, CJIS,
 IRS 1075, HIPAA, and NIST 800-171 controls). The `controlEffectiveness` field on each
-`GauntletProbeResult` (Effective, Ineffective, Degraded, Compromised) provides a
+`SiderealProbeResult` (Effective, Ineffective, Degraded, Compromised) provides a
 standardized risk input. These incidents can be imported directly into the agency's risk
 management tooling as documented control findings, with timestamps, probe-ids, effectiveness
 determinations, and multi-framework control identifiers for full traceability.
@@ -900,28 +900,28 @@ determinations, and multi-framework control identifiers for full traceability.
 
 ### CA-2 — Control Assessments
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet is the continuous assessment infrastructure for the controls it covers. For each
-probe surface, Gauntlet produces `GauntletProbeResult` records that map directly to OSCAL
+Sidereal is the continuous assessment infrastructure for the controls it covers. For each
+probe surface, Sidereal produces `SiderealProbeResult` records that map directly to OSCAL
 `assessment-results` finding structures:
 
-| OSCAL Field | Gauntlet Source |
+| OSCAL Field | Sidereal Source |
 |---|---|
 | `finding.title` | Probe type + outcome |
 | `finding.related-observations[].collected` | `execution.timestamp` |
 | `finding.target.status.state` | Satisfied / Not-Satisfied |
-| `finding.related-risks` | `GauntletIncident` reference (on Failure) |
+| `finding.related-risks` | `SiderealIncident` reference (on Failure) |
 
-For an annual Assessment and Authorization cycle, Gauntlet's SIEM export provides the
+For an annual Assessment and Authorization cycle, Sidereal's SIEM export provides the
 assessor with a complete chronological record of control effectiveness for the assessment period.
-The assessor does not need to conduct point-in-time control tests for controls covered by Gauntlet
-— the continuous record replaces them. The `gauntlet report` CLI and optional `GauntletReport` CRD
+The assessor does not need to conduct point-in-time control tests for controls covered by Sidereal
+— the continuous record replaces them. The `sidereal report` CLI and optional `SiderealReport` CRD
 generate continuous monitoring reports, POA&M summaries, and coverage matrices on demand or on
 schedule, providing assessors with pre-formatted evidence packages.
 
 Multi-framework compliance evidence is produced automatically via the `controlMappings` field,
-enabling a single Gauntlet deployment to satisfy assessment requirements across NIST 800-53,
+enabling a single Sidereal deployment to satisfy assessment requirements across NIST 800-53,
 CMMC, CJIS, IRS 1075, HIPAA, and NIST 800-171 simultaneously.
 
 **Assessment independence**: The controller cannot produce a falsified probe result through
@@ -931,25 +931,25 @@ execution *and* HMAC verification — two independent mechanisms.
 
 **Customer Responsibility:**
 
-[Agency: Provide Gauntlet SIEM records to the assessor as evidence for covered controls.
-Run `kubectl get gauntletproberesults -n gauntlet-system -o yaml` to export in-cluster records
+[Agency: Provide Sidereal SIEM records to the assessor as evidence for covered controls.
+Run `kubectl get siderealproberesults -n sidereal-system -o yaml` to export in-cluster records
 for the assessment period. Reference probe-ids in the SAR for full traceability.]
 
 ---
 
 ### CA-7 — Continuous Monitoring
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet is the continuous monitoring mechanism for the controls it covers. Probes execute
+Sidereal is the continuous monitoring mechanism for the controls it covers. Probes execute
 on configurable schedules (default: every 6 hours) with ±10% jitter to prevent predictable
-timing gaps. Any probe Failure immediately creates a `GauntletIncident` and (via IR webhook)
+timing gaps. Any probe Failure immediately creates a `SiderealIncident` and (via IR webhook)
 alerts the monitoring team.
 
 **Discovery**: The discovery controller is a core capability (not optional) that continuously
-scans cluster resources and generates `GauntletProbeRecommendation` CRs for uncovered
+scans cluster resources and generates `SiderealProbeRecommendation` CRs for uncovered
 security controls. This ensures that as the cluster evolves, probe coverage tracks changes
-automatically. `GauntletProbeRecommendation` is the primary onboarding surface for new
+automatically. `SiderealProbeRecommendation` is the primary onboarding surface for new
 namespaces and workloads.
 
 The continuous monitoring strategy is documented in section 21 below.
@@ -958,7 +958,7 @@ The continuous monitoring strategy is documented in section 21 below.
 
 ### CA-8 — Penetration Testing
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 The Detection Coverage probe constitutes continuous automated penetration testing of the
 detection layer. Each execution emits a known adversarial syscall pattern (drawn from the
@@ -966,18 +966,18 @@ AO-approved technique catalog) and verifies that the detection backend (e.g., Fa
 60 seconds.
 
 **AO authorization is mandatory**: Before any detection probe executes, the controller verifies
-that an active `GauntletAOAuthorization` CR exists, signed by the AO, covering the requested
+that an active `SiderealAOAuthorization` CR exists, signed by the AO, covering the requested
 technique and namespace, and not yet expired. This ensures every detection probe execution
 has been explicitly authorized by the Authorizing Official.
 
 Example authorization CR:
 
 ```yaml
-apiVersion: gauntlet.io/v1alpha1
-kind: GauntletAOAuthorization
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealAOAuthorization
 metadata:
   name: ao-authorization-q1-2026
-  namespace: gauntlet-system
+  namespace: sidereal-system
 spec:
   aoName: "[Agency: AO Name and Title]"
   authorizedTechniques:
@@ -993,7 +993,7 @@ spec:
 
 **Customer Responsibility:**
 
-[Agency: Create a `GauntletAOAuthorization` CR for each detection probe authorization period.
+[Agency: Create a `SiderealAOAuthorization` CR for each detection probe authorization period.
 Document the authorization in the POA&M. Review `Undetected` outcomes and create detection
 rules for gaps. Coordinate with the security operations team before enabling detection probes.]
 
@@ -1003,21 +1003,21 @@ rules for gaps. Coordinate with the security operations team before enabling det
 
 ### SC-7 — Boundary Protection
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-The `gauntlet-system` namespace operates under a default-deny NetworkPolicy for both ingress
+The `sidereal-system` namespace operates under a default-deny NetworkPolicy for both ingress
 and egress. All traffic is explicit allowlist-based (section 5.1).
 
 The NetworkPolicy probe continuously validates that this boundary is being enforced by the CNI.
 The five reference test flows in `compliance/diagrams/network-topology.md` are executed on
 each probe cycle. A `Forwarded` verdict where `Dropped` was expected constitutes a Failure.
 
-Gauntlet has no LoadBalancer, NodePort, or HostNetwork services. No ports below 1024 are
-opened by any Gauntlet component.
+Sidereal has no LoadBalancer, NodePort, or HostNetwork services. No ports below 1024 are
+opened by any Sidereal component.
 
 **Customer Responsibility:**
 
-[Agency: Confirm CNI NetworkPolicy enforcement is enabled. Configure `GauntletProbe`
+[Agency: Confirm CNI NetworkPolicy enforcement is enabled. Configure `SiderealProbe`
 resources to test the specific flow paths relevant to your deployment. Review Forwarded
 verdict incidents promptly.]
 
@@ -1025,9 +1025,9 @@ verdict incidents promptly.]
 
 ### SC-8 — Transmission Confidentiality and Integrity
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-All Gauntlet network transmissions use TLS 1.2 or higher with FIPS-approved cipher suites:
+All Sidereal network transmissions use TLS 1.2 or higher with FIPS-approved cipher suites:
 
 | Connection | Protocol | Cipher Constraint |
 |---|---|---|
@@ -1050,7 +1050,7 @@ with FIPS cipher suites.]
 
 ### SC-12 / SC-13 — Key Management and Cryptographic Protection
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 **Key categories and lifecycle:**
 
@@ -1069,7 +1069,7 @@ The cosign signing key is stored in a KMS HSM; it is never in plaintext outside 
 [Agency: Configure KMS encryption for the HMAC root Secret (required for IL4/IL5).
 Establish a key rotation schedule for mTLS certificates. Follow the 6-step cosign key
 rotation procedure in the CM-12 control implementation when rotating the signing key.
-Ensure KMS key policies allow access only from the `gauntlet-system` namespace SA.]
+Ensure KMS key policies allow access only from the `sidereal-system` namespace SA.]
 
 ---
 
@@ -1077,9 +1077,9 @@ Ensure KMS key policies allow access only from the `gauntlet-system` namespace S
 
 ### SI-2 — Flaw Remediation
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-CVE scanning is integrated into the Gauntlet CI pipeline using Trivy. All images are scanned
+CVE scanning is integrated into the Sidereal CI pipeline using Trivy. All images are scanned
 on every build. New CVEs in deployed digests trigger automated alerts through the SBOM
 monitoring pipeline.
 
@@ -1095,35 +1095,35 @@ new digest through the standard CM-3 change control process.
 
 **Customer Responsibility:**
 
-[Agency: Monitor CVE advisories for all Gauntlet image digests deployed. Maintain contact
-with the Gauntlet project for security patch notifications. Comply with SLA timelines for
+[Agency: Monitor CVE advisories for all Sidereal image digests deployed. Maintain contact
+with the Sidereal project for security patch notifications. Comply with SLA timelines for
 deployment of patched images.]
 
 ---
 
 ### SI-6 — Security and Privacy Function Verification
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet verifies its own security functions through a bootstrap verification checklist on
+Sidereal verifies its own security functions through a bootstrap verification checklist on
 startup and through continuous self-probing:
 
 **Bootstrap verification** (at startup and after each significant change):
-1. All built-in ServiceAccounts (7 total, including `gauntlet-discovery`) and any registered custom probe SAs are present with expected RBAC
+1. All built-in ServiceAccounts (7 total, including `sidereal-discovery`) and any registered custom probe SAs are present with expected RBAC
 2. Admission enforcement policies are active (signature verification, append-only, Job constraints)
 3. NetworkPolicy is in place with default-deny
 4. HMAC root Secret is accessible
 5. Detection backend(s) are reachable (if configured)
-6. Discovery controller is operational and generating `GauntletProbeRecommendation` CRs
+6. Discovery controller is operational and generating `SiderealProbeRecommendation` CRs
 
-Any bootstrap verification failure creates a `GauntletSystemAlert` and blocks probe scheduling.
+Any bootstrap verification failure creates a `SiderealSystemAlert` and blocks probe scheduling.
 
 **Continuous verification**: Each probe cycle validates security functions for the probe surface
 covered. Probe Failures are immediate findings requiring response.
 
 **Customer Responsibility:**
 
-[Agency: Configure alerting on `GauntletSystemAlert` CRs. Do not acknowledge alerts without
+[Agency: Configure alerting on `SiderealSystemAlert` CRs. Do not acknowledge alerts without
 investigating the underlying condition. Review probe Failures within the response timeframes
 in the Incident Response Plan.]
 
@@ -1131,7 +1131,7 @@ in the Incident Response Plan.]
 
 ### SI-14 — Non-Persistence
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
 Probe runner Jobs are strictly non-persistent:
 
@@ -1139,7 +1139,7 @@ Probe runner Jobs are strictly non-persistent:
 - **No environment carryover**: each Job pod starts from a clean container state
 - **Per-execution HMAC key**: derived fresh via HKDF for each execution; previous key material is deleted
 - **Fresh SA token**: time-bound token issued for each Job; not shared between executions
-- **No volume mounts**: no PersistentVolumeClaims; admission enforcement policy (`gauntlet-no-writable-pvc`) enforces this at admission
+- **No volume mounts**: no PersistentVolumeClaims; admission enforcement policy (`sidereal-no-writable-pvc`) enforces this at admission
 - **TTL cleanup**: Job, Pod, and result ConfigMap are all deleted after `ttlSecondsAfterFinished`
 
 The detection probe is the strictest posture: no network, no mounts, no credentials, custom
@@ -1148,7 +1148,7 @@ seccomp profile blocking filesystem writes beyond the initial binary execution.
 **Customer Responsibility:**
 
 [Agency: Confirm `ttlSecondsAfterFinished` is set to an appropriate value (default: 3600).
-Confirm the admission enforcement policy (`gauntlet-no-writable-pvc`) is active before deploying Gauntlet.]
+Confirm the admission enforcement policy (`sidereal-no-writable-pvc`) is active before deploying Sidereal.]
 
 ---
 
@@ -1156,9 +1156,9 @@ Confirm the admission enforcement policy (`gauntlet-no-writable-pvc`) is active 
 
 ### SR-3 / SR-4 / SR-9 / SR-11 — Supply Chain Controls
 
-**Gauntlet Implementation (Provided):**
+**Sidereal Implementation (Provided):**
 
-Gauntlet implements a full software supply chain security stack:
+Sidereal implements a full software supply chain security stack:
 
 | Control | Mechanism |
 |---|---|
@@ -1167,7 +1167,7 @@ Gauntlet implements a full software supply chain security stack:
 | SR-9 (Tamper Resistance) | cosign image signing + admission controller verification; HMAC result signing; S3 Object Lock |
 | SR-11 (Component Authenticity) | Image digest pinning (not tag); cosign signature verification at every Pod admission |
 
-The complete provenance chain for any Gauntlet image:
+The complete provenance chain for any Sidereal image:
 
 ```
 Source commit (GitHub) → CI build (GitHub Actions) → Image digest → cosign signature
@@ -1178,10 +1178,10 @@ Every step is independently verifiable and append-only in Rekor.
 
 **Customer Responsibility:**
 
-[Agency: Verify cosign signatures before deploying new Gauntlet image versions.
+[Agency: Verify cosign signatures before deploying new Sidereal image versions.
 Retrieve and compare SLSA provenance attestations for all deployed digests.
 Configure your container registry to require cosign verification for images in the
-`gauntlet-system` namespace.]
+`sidereal-system` namespace.]
 
 ---
 
@@ -1204,23 +1204,23 @@ Intervals below 5 minutes are not supported by schema constraints.]
 
 | Metric | Alert Threshold | Response |
 |---|---|---|
-| `gauntlet_probe_failures_total` | Any increment | IR ticket; see IRP |
-| `gauntlet_siem_export_failures_total` | Any increment | SIEM team notification |
-| `gauntlet_consecutive_failures` | ≥ 3 for any probe | Escalation per IRP |
-| `GauntletSystemAlert` CR created | Any creation | Immediate ISSO notification |
-| `GauntletIncident` CR created | Any creation | IR ticket within 1 hour |
+| `sidereal_probe_failures_total` | Any increment | IR ticket; see IRP |
+| `sidereal_siem_export_failures_total` | Any increment | SIEM team notification |
+| `sidereal_consecutive_failures` | ≥ 3 for any probe | Escalation per IRP |
+| `SiderealSystemAlert` CR created | Any creation | Immediate ISSO notification |
+| `SiderealIncident` CR created | Any creation | IR ticket within 1 hour |
 
 ### 21.3 Annual Review
 
 The following items are reviewed annually or upon significant system change:
 
-- Review all `GauntletProbe` configurations against current threat model
-- Review `GauntletProbeRecommendation` CRs for unaddressed coverage gaps identified by discovery
+- Review all `SiderealProbe` configurations against current threat model
+- Review `SiderealProbeRecommendation` CRs for unaddressed coverage gaps identified by discovery
 - Rotate mTLS certificates and HMAC root key if approaching expiry
-- Update the `GauntletAOAuthorization` CR for the new fiscal year
-- Validate FIPS module CMVP certificate status for deployed Gauntlet version
+- Update the `SiderealAOAuthorization` CR for the new fiscal year
+- Validate FIPS module CMVP certificate status for deployed Sidereal version
 - Review and update the ISA/MOU agreements for all boundary connections
-- Generate annual `GauntletReport` (via `gauntlet report` CLI or `GauntletReport` CRD) for continuous monitoring evidence package
+- Generate annual `SiderealReport` (via `sidereal report` CLI or `SiderealReport` CRD) for continuous monitoring evidence package
 - Verify `global.impactLevel` and `global.executionMode` settings remain appropriate for the current authorization
 
 [Agency: Document the annual review process owner and schedule.]
@@ -1229,25 +1229,25 @@ The following items are reviewed annually or upon significant system change:
 
 ## 22. Plan of Action and Milestones (POA&M)
 
-[Agency: Import open `GauntletIncident` CRs into your POA&M system. Each incident includes
+[Agency: Import open `SiderealIncident` CRs into your POA&M system. Each incident includes
 the NIST control identifier, MITRE technique, timestamp, probe-id, and multi-framework
 `controlMappings` — sufficient information to populate a POA&M entry without additional
-manual analysis. The `gauntlet report` CLI and `GauntletReport` CRD can generate POA&M
+manual analysis. The `sidereal report` CLI and `SiderealReport` CRD can generate POA&M
 summaries and coverage matrices automatically.
 
-The following is a template for a Gauntlet-sourced POA&M entry:
+The following is a template for a Sidereal-sourced POA&M entry:
 
 | Field | Source |
 |---|---|
-| Weakness ID | GauntletIncident `.metadata.name` |
-| Weakness Name | GauntletIncident `.spec.controlId` + `.spec.mitreId` |
-| Description | GauntletIncident `.spec.description` |
-| Date Identified | GauntletIncident `.metadata.creationTimestamp` |
-| Source Identifier | `Gauntlet Probe Runner` |
+| Weakness ID | SiderealIncident `.metadata.name` |
+| Weakness Name | SiderealIncident `.spec.controlId` + `.spec.mitreId` |
+| Description | SiderealIncident `.spec.description` |
+| Date Identified | SiderealIncident `.metadata.creationTimestamp` |
+| Source Identifier | `Sidereal Probe Runner` |
 | Milestone | [Agency: enter remediation plan and date] |
 | Status | Open until probe returns `Pass` for 3 consecutive cycles |
 
-Close a POA&M item when `GauntletProbeResult` records show `Pass` for 3 consecutive executions
+Close a POA&M item when `SiderealProbeResult` records show `Pass` for 3 consecutive executions
 after the remediation action. The probe-id provides an audit trail linking the POA&M item to
 the specific execution records that demonstrate closure.]
 
@@ -1287,7 +1287,7 @@ security posture of the system.
 ### Authorizing Official (AO)
 
 I have reviewed this System Security Plan and grant Authority to Operate (ATO) for
-the Gauntlet Continuous Security Control Validation Operator as documented herein.
+the Sidereal Continuous Security Control Validation Operator as documented herein.
 
 | Field | Value |
 |---|---|
@@ -1299,8 +1299,8 @@ the Gauntlet Continuous Security Control Validation Operator as documented herei
 
 ---
 
-*This document was prepared using the Gauntlet ATO Documentation Package.
-The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/gauntlet/component-definition.json`)
+*This document was prepared using the Sidereal ATO Documentation Package.
+The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/sidereal/component-definition.json`)
 is the machine-readable source of record for all control implementations. In the event of
 conflict between this SSP narrative and the OSCAL Component Definition, the OSCAL
 Component Definition governs.*

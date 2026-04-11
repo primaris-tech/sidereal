@@ -1,4 +1,4 @@
-# Gauntlet Privacy Impact Assessment Template
+# Sidereal Privacy Impact Assessment Template
 
 **Document Type**: PIA Template — NIST 800-53 PT Family  
 **Baseline**: NIST SP 800-53 Rev 5 High  
@@ -9,10 +9,10 @@
 ## Instructions for Use
 
 This template must be completed by the deploying agency's Privacy Officer
-or designated privacy official before deploying Gauntlet in an environment
+or designated privacy official before deploying Sidereal in an environment
 where monitored workloads process Personally Identifiable Information (PII).
 
-Gauntlet itself does not process PII in its normal probe operations — it
+Sidereal itself does not process PII in its normal probe operations — it
 monitors the security posture of Kubernetes infrastructure. However, probe
 results and audit records capture metadata (namespace names, workload
 identities, ServiceAccount names, timestamps, behavioral telemetry) that
@@ -20,7 +20,7 @@ may constitute PII depending on how workloads in monitored namespaces are
 named and organized.
 
 Complete each section below. Sections marked *[Agency]* require agency-specific
-input. Sections with pre-filled content document Gauntlet's built-in
+input. Sections with pre-filled content document Sidereal's built-in
 privacy controls.
 
 ---
@@ -29,15 +29,15 @@ privacy controls.
 
 ### 1.1 System Overview
 
-**System Name**: Gauntlet Continuous Security Control Validation Operator  
+**System Name**: Sidereal Continuous Security Control Validation Operator  
 **Deployment Context**: *[Agency: Describe the environment (IL level, agency, mission system)]*  
 **System Owner**: *[Agency: Name and title]*  
 **Privacy Officer**: *[Agency: Name and title]*  
 **Date of Assessment**: *[Agency: Date]*  
 
-### 1.2 Data Elements Collected by Gauntlet
+### 1.2 Data Elements Collected by Sidereal
 
-Gauntlet audit records (`GauntletProbeResult`, `GauntletIncident`) contain
+Sidereal audit records (`SiderealProbeResult`, `SiderealIncident`) contain
 the following data elements:
 
 | Data Element | Example | PII? | Basis |
@@ -59,7 +59,7 @@ individual persons, check the PII column.]*
 
 Answer the following questions to determine if a full PIA is required:
 
-1. Do any namespaces monitored by Gauntlet have names that identify
+1. Do any namespaces monitored by Sidereal have names that identify
    individual persons (e.g., `user-john-smith`, `analyst-team-3`)?
    **[Agency: Yes / No]**
 
@@ -68,7 +68,7 @@ Answer the following questions to determine if a full PIA is required:
    specific individuals?  
    **[Agency: Yes / No]**
 
-3. Is Gauntlet deployed in an environment where individual user behavior
+3. Is Sidereal deployed in an environment where individual user behavior
    is attributable (e.g., a system where each namespace corresponds to
    a specific user's workloads)?  
    **[Agency: Yes / No]**
@@ -84,20 +84,20 @@ reviewed annually and on any significant system change.
 
 ### 2.1 Data Collection Minimization
 
-Gauntlet collects the minimum metadata required to produce actionable ATO
+Sidereal collects the minimum metadata required to produce actionable ATO
 evidence. It does not:
 - Read Secret values (only verifies access control enforcement, not content)
 - Capture network payload content (only flow verdicts)
 - Record user authentication events (only ServiceAccount operations)
 - Monitor individual user sessions
 
-However, Gauntlet does capture namespace and workload identity metadata
+However, Sidereal does capture namespace and workload identity metadata
 in every audit record, which may have privacy implications in some
 deployment contexts.
 
 ### 2.2 Privacy Configuration Options
 
-Gauntlet provides the following Helm values to reduce PII collection in
+Sidereal provides the following Helm values to reduce PII collection in
 audit records:
 
 | Setting | Default | Effect |
@@ -110,7 +110,7 @@ PIA findings. If PII is present, enabling both settings is recommended.]**
 
 When redaction is enabled:
 - The mapping between opaque identifiers and real names is stored as a
-  Kubernetes Secret in `gauntlet-system`, accessible only to the ISSO role
+  Kubernetes Secret in `sidereal-system`, accessible only to the ISSO role
 - Probe results are still actionable (a failure on `ns-a3f2` can be
   investigated using the mapping)
 - SIEM records do not expose real names to SIEM operators without the mapping
@@ -121,10 +121,10 @@ When redaction is enabled:
 
 | Data Flow | Source | Destination | PII Elements | Protection |
 |---|---|---|---|---|
-| Probe results → etcd | Controller | gauntlet-system namespace | Namespace names, workload identities | RBAC-restricted; append-only |
+| Probe results → etcd | Controller | sidereal-system namespace | Namespace names, workload identities | RBAC-restricted; append-only |
 | Probe results → SIEM | Controller | [Agency SIEM] | As above (or redacted) | TLS 1.2+, FIPS cipher suites |
 | Probe results → S3 | Controller | [Agency S3 bucket] | As above | SSE-KMS, object lock |
-| GauntletIncident → IR webhook | Controller | [Agency IR system] | Namespace, workload identity | TLS, API credential |
+| SiderealIncident → IR webhook | Controller | [Agency IR system] | Namespace, workload identity | TLS, API credential |
 
 ### 2.4 Privacy Risk Register
 
@@ -142,7 +142,7 @@ When redaction is enabled:
 
 ### 3.1 Legal Authority
 
-*[Agency: Cite the legal authority under which Gauntlet is deployed.]*
+*[Agency: Cite the legal authority under which Sidereal is deployed.]*
 
 - FISMA (44 U.S.C. § 3554) — system security controls
 - OMB Circular A-130 — federal information system security
@@ -150,7 +150,7 @@ When redaction is enabled:
 
 ### 3.2 Purpose Specification
 
-Gauntlet collects namespace and workload identity metadata for the following
+Sidereal collects namespace and workload identity metadata for the following
 specific, documented purpose:
 
 **Security monitoring and ATO evidence generation** — to continuously verify
@@ -165,9 +165,9 @@ Audit records are not used for:
 
 ### 3.3 System of Records Notice (SORN)
 
-*[Agency: Determine whether a SORN is required for Gauntlet audit records.]*
+*[Agency: Determine whether a SORN is required for Sidereal audit records.]*
 
-A SORN may be required if Gauntlet audit records are retrieved by individual
+A SORN may be required if Sidereal audit records are retrieved by individual
 identifier (e.g., ServiceAccount name traceable to a specific person).
 
 **[Agency determination required: Yes / No / N/A — justify]**
@@ -180,8 +180,8 @@ identifier (e.g., ServiceAccount name traceable to a specific person).
 
 | Role | Access to Audit Records | Justification |
 |---|---|---|
-| `gauntlet-audit-admin` | Read-only `GauntletProbeResult` | ATO evidence review; ISSO function |
-| `gauntlet-reader` | Read `GauntletProbe` and results | Operational monitoring |
+| `sidereal-audit-admin` | Read-only `SiderealProbeResult` | ATO evidence review; ISSO function |
+| `sidereal-reader` | Read `SiderealProbe` and results | Operational monitoring |
 | SIEM operators | Query SIEM records | Incident response and reporting |
 | Cluster-admin | All resources | Restricted per agency privileged access policy |
 
@@ -192,8 +192,8 @@ enabled) is accessible only to the ISSO via a separately managed Secret.
 
 | Record Type | In-Cluster Retention | SIEM Retention | Disposal Method |
 |---|---|---|---|
-| `GauntletProbeResult` | 365 days minimum | 3 years minimum | Kubernetes TTL; SIEM retention policy |
-| `GauntletIncident` | 365 days minimum | 3 years minimum | As above |
+| `SiderealProbeResult` | 365 days minimum | 3 years minimum | Kubernetes TTL; SIEM retention policy |
+| `SiderealIncident` | 365 days minimum | 3 years minimum | As above |
 | Redaction mapping Secret | Duration of deployment | N/A | Kubernetes Secret deletion; KMS key retirement |
 
 *[Agency: Confirm SIEM retention policy meets both AU-11 and privacy requirements.]*
@@ -224,5 +224,5 @@ enabled) is accessible only to the ISSO via a separately managed Secret.
 - **PT-3** Purpose Specification — Section 3.2 of this PIA
 - **PT-4** Information in Public-Facing Content — not applicable (no public interface)
 - **PT-5** Privacy Notice — *[Agency: Determine if users of monitored systems require notice]*
-- **AU-3** Content of Audit Records — data elements in Gauntlet audit records
+- **AU-3** Content of Audit Records — data elements in Sidereal audit records
 - **AU-11** Audit Record Retention — retention requirements in Section 4.2
