@@ -1,7 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"context"
+
+	"github.com/primaris-tech/sidereal/internal/probe"
+	"github.com/primaris-tech/sidereal/probes/netpol"
+)
 
 func main() {
-	fmt.Println("sidereal-probe-netpol: not yet implemented")
+	probe.Run(func(ctx context.Context, cfg probe.Config) probe.Result {
+		return netpol.Execute(ctx, cfg)
+	})
 }
