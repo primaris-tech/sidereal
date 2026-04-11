@@ -29,13 +29,17 @@ The authoritative Gauntlet baseline configuration document is the Helm chart
 `values.yaml` file, stored in version control alongside the Gauntlet Helm
 chart at the versioned release tag. The baseline captures:
 
-- Probe schedules and FIPS 199 impact level declaration
+- Global execution mode (`global.executionMode`: `observe` or `enforce`)
+- Global impact level declaration (`global.impactLevel`: `low`, `moderate`, or `high`)
+- Control frameworks (`global.controlFrameworks`) and audit export format (`audit.exportFormat`)
+- Probe schedules (cadence defaults cascade from `global.impactLevel`)
 - SIEM endpoint URLs and transport configuration
 - Container image references (SHA-256 digest-pinned)
 - FIPS mode flags (`fips.enabled`)
-- Audit record retention TTLs (minimum 365 days)
+- Audit record retention TTLs (minimum 365 days; default cascades from `global.impactLevel`)
 - ResourceQuota limits for `gauntlet-system`
 - RBAC role bindings for per-probe ServiceAccounts
+- Deployment profile selection (six pre-built profiles available)
 
 The site-specific configuration is maintained in a separate `values-override.yaml`
 file stored in the deploying agency's GitOps repository.
@@ -72,11 +76,16 @@ Configuration drift produces a `GauntletSystemAlert` with
 | Change Type | Authorization Required | Mechanism |
 |---|---|---|
 | Probe schedule modification | `gauntlet-operator` role | `kubectl edit GauntletProbe` via GitOps |
-| Enable live probe execution | `gauntlet-live-executor` role | `dryRun: false` in GauntletProbe spec |
+| Transition execution mode | `gauntlet-live-executor` role | `executionMode: observe` or `executionMode: enforce` in GauntletProbe spec |
 | Modify SIEM endpoints | `gauntlet-security-override` role | Helm upgrade |
 | Change retention TTLs | `gauntlet-security-override` role | Helm upgrade |
 | Modify FIPS mode setting | `gauntlet-security-override` role | Helm upgrade (requires new images) |
 | Enable detection probes | `gauntlet-approver` + `GauntletAOAuthorization` | AO-signed authorization CR |
+| Change impact level | `gauntlet-security-override` role | Helm upgrade (`global.impactLevel`); cascades cadence, retention, fail-closed defaults |
+| Modify control frameworks | `gauntlet-security-override` role | Helm upgrade (`global.controlFrameworks`) |
+| Change audit export format | `gauntlet-security-override` role | Helm upgrade (`audit.exportFormat`) |
+| Register custom probes | `gauntlet-operator` + ISSO approval | Custom `GauntletProbe` with non-default probe type |
+| Modify framework crosswalk | `gauntlet-security-override` role | Security-relevant change; requires ISSO review |
 | Disable admission controller check | `gauntlet-security-override` + AO approval | `global.requireAdmissionController: false` |
 
 ### 3.2 Change Control Process
@@ -120,11 +129,14 @@ The `values.schema.json` in the Helm chart enforces the following constraints:
 
 | Parameter | Constraint | Rationale |
 |---|---|---|
+| `global.executionMode` | Default `observe` | Blast radius default; `enforce` requires `gauntlet-live-executor` role |
+| `global.impactLevel` | `low`, `moderate`, or `high` | Cascades defaults for cadence, retention, and fail-closed behavior |
+| `global.controlFrameworks` | Array of framework identifiers | Determines active control crosswalks |
 | `probe.intervalSeconds` (High impact) | Maximum 21,600 (6 hours) | NIST 800-137 High monitoring cadence |
 | `audit.retentionDays` | Minimum 365 | FedRAMP AU-11 retention floor |
+| `audit.exportFormat` | Supported format identifier | Determines SIEM export serialization |
 | `siem.tlsCABundle` | Required when SIEM enabled | Prevents unauthenticated export |
 | `fips.enabled` | Must be `true` for federal deployments | FIPS 140-2 compliance |
-| `probe.dryRun` | Default `true` | Blast radius default |
 | `tlsInsecureSkipVerify` | Must remain `false` | IA-3/IA-8 device authentication |
 
 ### 4.2 Approved Deviations

@@ -11,8 +11,10 @@
 > Do not alter pre-filled Gauntlet sections without consulting your Gauntlet representative —
 > changes may invalidate the supporting OSCAL Component Definition.
 >
-> This template assumes deployment on a **NIST 800-53 Rev 5 High Baseline** system.
-> For Moderate baseline, annotate which High-only enhancements your agency has waived.
+> The FIPS 199 impact level is operator-configurable via `global.impactLevel` (high, moderate,
+> or low). This template defaults to **NIST 800-53 Rev 5 High Baseline** examples, but
+> Gauntlet adjusts retention requirements and control scope based on the configured impact level.
+> For Moderate or Low baselines, annotate which High-only enhancements your agency has waived.
 
 ---
 
@@ -51,7 +53,7 @@
 | System Name | Gauntlet Continuous Security Control Validation Operator |
 | System Abbreviation / Acronym | Gauntlet |
 | System Version | [Agency: Insert deployed Helm chart version, e.g., `gauntlet-1.2.0`] |
-| FIPS 199 Impact Level | High |
+| FIPS 199 Impact Level | [Agency: Per `global.impactLevel` — High, Moderate, or Low] |
 | System Type | Minor Application / Platform Component |
 | Operational Status | [Agency: Operational / Under Development / Major Modification] |
 | System Owner Organization | [Agency: Insert organization name] |
@@ -113,7 +115,7 @@ Containers technique.
 
 ### 3.2 Probe Surfaces
 
-Gauntlet executes five probe surfaces:
+Gauntlet executes five built-in probe surfaces plus operator-defined custom probes:
 
 | Probe Surface | What It Validates | Primary Controls |
 |---|---|---|
@@ -122,12 +124,16 @@ Gauntlet executes five probe surfaces:
 | **Admission Control** | Admission controller policies reject non-compliant workloads | CM-7, SI-3 |
 | **Secret Access** | Cross-namespace Secret access is denied; least-privilege enforced | AC-3, AC-6 |
 | **Detection Coverage** | Detection backend raises alerts when adversarial syscall patterns are emitted | SI-3, SI-4, CA-8 |
+| **Custom Probes** | Operator-defined probes for organization-specific validation scenarios; registered via custom probe ServiceAccount registration | [Per probe `controlMappings`] |
+
+Each probe carries a `controlMappings` field supporting multi-framework mapping (NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171), enabling a single probe execution to produce compliance evidence across multiple regulatory frameworks simultaneously.
 
 ### 3.3 Key Design Properties
 
 - **Continuous, not point-in-time**: Probes execute on configurable schedules (default: every 6 hours) with ±10% jitter
 - **HMAC result integrity**: Every probe result is signed with a per-execution HMAC key; the controller verifies the signature before accepting the result; a tampered result suspends the probe surface
-- **Append-only audit log**: `GauntletProbeResult` CRs are immutable after creation (enforced by admission enforcement policy); they cannot be deleted or modified during the 365-day minimum retention period
+- **Append-only audit log**: `GauntletProbeResult` CRs are immutable after creation (enforced by admission enforcement policy); they cannot be deleted or modified during the impact-level-dependent retention period (365 days at High/Moderate, 180 days at Low)
+- **Control effectiveness derivation**: Each `GauntletProbeResult` includes a derived `controlEffectiveness` field (Effective, Ineffective, Degraded, or Compromised) computed from probe outcomes, providing assessors with a standardized effectiveness determination
 - **Separation of identity**: The controller cannot perform the operations the probes perform; a compromised controller cannot produce a falsified result without also defeating HMAC verification
 - **FIPS 140-2 cryptography**: Go components use BoringCrypto (CMVP #3678); Rust detection probe uses aws-lc-rs (CMVP #4816); no non-FIPS codepath is reachable at runtime
 - **AO authorization for detection probes**: Detection probes require an active `GauntletAOAuthorization` CR bearing the AO's identity, scope, and expiry before execution proceeds
@@ -159,10 +165,12 @@ See `compliance/diagrams/authorization-boundary.md` for the full Mermaid diagram
 | Controller Manager | Kubernetes Deployment | Go / BoringCrypto FIPS; always running |
 | Probe Runner Jobs | Kubernetes Jobs (ephemeral) | One per execution; TTL-cleaned; short-lived |
 | GauntletProbe CRDs | Kubernetes custom resources | Probe configuration |
-| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; 365-day minimum TTL |
+| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL (365d High/Moderate, 180d Low); includes `controlEffectiveness` derivation |
 | GauntletIncident CRDs | Kubernetes custom resources | Control failure records |
 | GauntletSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
 | GauntletAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization tokens |
+| GauntletProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe recommendations; primary onboarding surface |
+| GauntletReport CRDs | Kubernetes custom resources | Continuous monitoring reports, POA&M, coverage matrices |
 | Admission enforcement policies | Kubernetes custom resources | Admission-layer blast radius controls |
 | `gauntlet-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
 | HMAC root Secret | Kubernetes Secret | KMS-encrypted at IL4/IL5 |
@@ -175,10 +183,10 @@ See `compliance/diagrams/authorization-boundary.md` for the full Mermaid diagram
 | Admission controller | [Agency: Per deployment profile] | Inbound (enforces) | Admission decisions | No (same cluster) |
 | Detection backend | [Agency: Per deployment profile] | Inbound (read) | Alert/event records | [Agency: Yes/No + agreement reference] |
 | CNI observability layer | [Agency: Per deployment profile] | Inbound (read) | Flow verdicts/records | [Agency: Yes/No + agreement reference] |
-| SIEM | Splunk HEC / Elasticsearch | Outbound (write) | Audit records | [Agency: Yes — insert ISA/MOU reference] |
+| SIEM | Splunk HEC / Elasticsearch | Outbound (write) | Audit records (configurable format: JSON, CEF, LEEF, Syslog, OCSF) | [Agency: Yes — insert ISA/MOU reference] |
 | Object storage | S3 | Outbound (write) | Audit records | [Agency: Yes — insert ISA/MOU reference] |
 
-[Agency: Per deployment profile, document which admission controller (e.g., Kyverno or OPA Gatekeeper), detection backend (e.g., Falco or Tetragon), and CNI observability layer (e.g., Hubble/Cilium or Calico) are deployed.]
+[Agency: Per deployment profile, document which admission controller (e.g., Kyverno or OPA Gatekeeper), detection backend (e.g., Falco or Tetragon), and CNI observability layer (e.g., Hubble/Cilium or Calico) are deployed. Six pre-built profiles are available: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, and `opa-rke2`. Custom profiles are also supported.]
 
 *Complete with actual ISA/MOU agreement references per CA-3 requirements.*
 
@@ -240,13 +248,13 @@ See `compliance/diagrams/data-flows.md` for the full Mermaid diagrams.
 | DF-1 | Controller / Probe Jobs | Kubernetes API | Job specs; HMAC-signed result ConfigMaps; CRD records | System operational data |
 | DF-2 | Controller | Detection backend (e.g., Falco or Tetragon) | Detection alert query; alert records (no PII) | System telemetry |
 | DF-3 | Controller | CNI observability layer (e.g., Hubble or Calico) | Flow verdict query; flow records (no PII) | System telemetry |
-| DF-4 | Controller | Splunk / Elasticsearch / S3 | Structured audit records | [Agency: Determine classification — see PIA] |
+| DF-4 | Controller | Splunk / Elasticsearch / S3 | Structured audit records (configurable format: JSON, CEF, LEEF, Syslog, OCSF) | [Agency: Determine classification — see PIA] |
 
 ### 6.2 Data at Rest
 
 | Location | Data | Protection |
 |---|---|---|
-| etcd (in-cluster) | GauntletProbeResult, GauntletIncident CRs | Kubernetes etcd encryption at rest; HMAC integrity |
+| etcd (in-cluster) | GauntletProbeResult, GauntletIncident, GauntletProbeRecommendation, GauntletReport CRs | Kubernetes etcd encryption at rest; HMAC integrity |
 | etcd (in-cluster) | HMAC root Secret | KMS-encrypted (IL4/IL5 requirement) |
 | S3 | Exported audit records | SSE-KMS (FIPS key); Object Lock COMPLIANCE mode; 3-year retention |
 | Splunk / Elasticsearch | Exported audit records | [Agency: Document at-rest encryption controls] |
@@ -332,8 +340,8 @@ following table identifies inherited controls and the system from which they are
 
 ## 9. Control Implementation Summary
 
-The following table summarizes Gauntlet's implementation status for all NIST 800-53 Rev 5
-High Baseline controls within scope. Controls marked **Inherited** rely on the underlying
+The following table summarizes Gauntlet's implementation status for NIST 800-53 Rev 5
+controls within scope (baseline determined by `global.impactLevel`; defaults to High). Controls marked **Inherited** rely on the underlying
 platform; controls marked **Provided** are fully implemented by Gauntlet; controls marked
 **Shared** have both Gauntlet and agency/platform components.
 
@@ -398,7 +406,7 @@ The Secret Access probe provides cross-namespace AC-3 validation by attempting t
 
 **Per-component permission inventory**: Each Gauntlet component uses a pre-provisioned ServiceAccount with minimal RBAC. The controller SA cannot perform probe operations. Probe runner SAs cannot write CRDs. The detection probe SA has no Kubernetes API access.
 
-An admission enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs referencing any ServiceAccount other than the five pre-provisioned probe SAs, preventing privilege escalation through Job creation.
+An admission enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs referencing any ServiceAccount other than the seven built-in probe and discovery SAs (plus any registered custom probe SAs), preventing privilege escalation through Job creation.
 
 **Customer Responsibility:**
 
@@ -441,11 +449,7 @@ probe Failures and remediate NetworkPolicy gaps.]
 
 Gauntlet enforces and continuously validates least privilege at two levels:
 
-**Gauntlet-internal enforcement**: Five separate ServiceAccounts with non-overlapping minimal
-RBAC, each scoped to exactly the operations required by that probe type. The admission
-enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs
-that reference any other ServiceAccount, making privilege escalation through Job creation impossible even
-if the controller is compromised.
+**Gauntlet-internal enforcement**: Seven built-in ServiceAccounts (`gauntlet-controller`, `gauntlet-probe-rbac`, `gauntlet-probe-netpol`, `gauntlet-probe-admission`, `gauntlet-probe-secret`, `gauntlet-probe-detection`, `gauntlet-discovery`) with non-overlapping minimal RBAC, each scoped to exactly the operations required by that component. Custom probe ServiceAccounts are registered through the custom probe SA registration mechanism and receive equivalent least-privilege scoping. The admission enforcement policy (`gauntlet-job-constraints`) prevents the controller from creating Jobs that reference any unregistered ServiceAccount, making privilege escalation through Job creation impossible even if the controller is compromised.
 
 **Cluster-wide validation**: The RBAC probe continuously tests that service accounts in target
 namespaces cannot perform operations outside their intended scope. Failures surface as
@@ -506,6 +510,8 @@ window. Each record contains:
 | `probe.targetNamespace` | Namespace under test |
 | `result.outcome` | `Pass`, `Fail`, `Undetected`, `Indeterminate`, `TamperedResult` |
 | `result.nistControls` | NIST control identifiers validated by this execution |
+| `result.controlEffectiveness` | Derived field: `Effective`, `Ineffective`, `Degraded`, or `Compromised` |
+| `result.controlMappings` | Multi-framework mapping (NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171) |
 | `result.integrityStatus` | `Verified` or `TamperedResult` |
 | `execution.timestamp` | RFC 3339 UTC with nanosecond precision |
 | `audit.exportStatus` | `Exported`, `Pending`, `Failed` |
@@ -529,11 +535,11 @@ with `audit.exportStatus: Failed`.]
 
 Gauntlet uses a two-tier storage architecture to prevent audit capacity exhaustion:
 
-- **In-cluster** (etcd): `GauntletProbeResult` CRs are subject to a 365-day minimum TTL. After TTL expiry, the Kubernetes TTL controller reclaims storage. The `gauntlet-system` ResourceQuota limits the number of concurrent Jobs and related resources, preventing runaway probe execution from filling etcd.
+- **In-cluster** (etcd): `GauntletProbeResult` CRs are subject to an impact-level-dependent minimum TTL (365 days at High/Moderate, 180 days at Low, per `global.impactLevel`). After TTL expiry, the Kubernetes TTL controller reclaims storage. The `gauntlet-system` ResourceQuota limits the number of concurrent Jobs and related resources, preventing runaway probe execution from filling etcd.
 - **Off-cluster SIEM** (authoritative long-term): All records are exported in real time. S3 export uses Object Lock in COMPLIANCE mode with a 3-year retention lock. Elasticsearch and Splunk retention is agency-configured (minimum 3 years for federal deployments).
 
 Gauntlet does not purge audit records to manage storage — the two-tier architecture separates
-the retention enforcement concern (SIEM, 3-year) from the operational view concern (etcd, 365-day).
+the retention enforcement concern (SIEM, 3-year) from the operational view concern (etcd, 365-day at High/Moderate or 180-day at Low).
 
 **Customer Responsibility:**
 
@@ -624,7 +630,7 @@ proofs for all Gauntlet image versions deployed.]
 
 | Storage Tier | Retention | Mechanism |
 |---|---|---|
-| In-cluster (etcd) | 365 days minimum | Kubernetes TTL controller; admission enforcement policy blocks premature deletion |
+| In-cluster (etcd) | 365 days minimum (High/Moderate) or 180 days minimum (Low) | Kubernetes TTL controller; admission enforcement policy blocks premature deletion; retention floor determined by `global.impactLevel` |
 | S3 | 3 years | S3 Object Lock COMPLIANCE mode; WORM; cannot be shortened by any principal |
 | Splunk | [Agency-configured] | [Agency: document Splunk index retention policy; minimum 3 years] |
 | Elasticsearch | [Agency-configured] | [Agency: document index lifecycle policy; minimum 3 years] |
@@ -672,9 +678,10 @@ The `values.schema.json` enforces the following critical configuration constrain
 | Parameter | Constraint | Rationale |
 |---|---|---|
 | `probe.intervalSeconds` | 300–86400 | Minimum 5 min; maximum 24 hr |
-| `audit.retentionDays` | ≥ 365 | Minimum retention floor |
+| `audit.retentionDays` | ≥ 365 (High/Moderate) or ≥ 180 (Low) | Impact-level-dependent minimum retention floor |
 | `tls.required` | Must be `true` | Disabling TLS is not a valid configuration |
-| `global.dryRun` | Default: `true` | Live execution requires explicit opt-in |
+| `global.executionMode` | `dryRun` (default), `observe`, or `enforce` | Tri-state execution mode; `dryRun` is the default on fresh install; `observe` enables probes in read-only mode; `enforce` enables full active probing with incident generation |
+| `global.impactLevel` | `high` (default), `moderate`, or `low` | FIPS 199 impact level; determines retention requirements and control scope |
 | `global.fips` | Default: `true` on FIPS variant | FIPS cannot be disabled on FIPS images |
 
 These constraints are enforced at Helm install and upgrade time by the schema validation
@@ -880,9 +887,12 @@ Note that Gauntlet generates continuous evidence of control effectiveness that c
 to update the risk posture and POA&M status in near-real-time.]
 
 **Risk posture benefit**: Each probe Failure generates a `GauntletIncident` that directly
-maps to one or more NIST 800-53 controls. These incidents can be imported directly into
-the agency's risk management tooling as documented control findings, with timestamps,
-probe-ids, and NIST control identifiers for full traceability.
+maps to one or more NIST 800-53 controls (and, via `controlMappings`, to CMMC, CJIS,
+IRS 1075, HIPAA, and NIST 800-171 controls). The `controlEffectiveness` field on each
+`GauntletProbeResult` (Effective, Ineffective, Degraded, Compromised) provides a
+standardized risk input. These incidents can be imported directly into the agency's risk
+management tooling as documented control findings, with timestamps, probe-ids, effectiveness
+determinations, and multi-framework control identifiers for full traceability.
 
 ---
 
@@ -906,7 +916,13 @@ probe surface, Gauntlet produces `GauntletProbeResult` records that map directly
 For an annual Assessment and Authorization cycle, Gauntlet's SIEM export provides the
 assessor with a complete chronological record of control effectiveness for the assessment period.
 The assessor does not need to conduct point-in-time control tests for controls covered by Gauntlet
-— the continuous record replaces them.
+— the continuous record replaces them. The `gauntlet report` CLI and optional `GauntletReport` CRD
+generate continuous monitoring reports, POA&M summaries, and coverage matrices on demand or on
+schedule, providing assessors with pre-formatted evidence packages.
+
+Multi-framework compliance evidence is produced automatically via the `controlMappings` field,
+enabling a single Gauntlet deployment to satisfy assessment requirements across NIST 800-53,
+CMMC, CJIS, IRS 1075, HIPAA, and NIST 800-171 simultaneously.
 
 **Assessment independence**: The controller cannot produce a falsified probe result through
 direct API manipulation. The probe runner executes the actual operation; the controller only
@@ -929,6 +945,12 @@ Gauntlet is the continuous monitoring mechanism for the controls it covers. Prob
 on configurable schedules (default: every 6 hours) with ±10% jitter to prevent predictable
 timing gaps. Any probe Failure immediately creates a `GauntletIncident` and (via IR webhook)
 alerts the monitoring team.
+
+**Discovery**: The discovery controller is a core capability (not optional) that continuously
+scans cluster resources and generates `GauntletProbeRecommendation` CRs for uncovered
+security controls. This ensures that as the cluster evolves, probe coverage tracks changes
+automatically. `GauntletProbeRecommendation` is the primary onboarding surface for new
+namespaces and workloads.
 
 The continuous monitoring strategy is documented in section 21 below.
 
@@ -1087,11 +1109,12 @@ Gauntlet verifies its own security functions through a bootstrap verification ch
 startup and through continuous self-probing:
 
 **Bootstrap verification** (at startup and after each significant change):
-1. All probe ServiceAccounts are present with expected RBAC
+1. All built-in ServiceAccounts (7 total, including `gauntlet-discovery`) and any registered custom probe SAs are present with expected RBAC
 2. Admission enforcement policies are active (signature verification, append-only, Job constraints)
 3. NetworkPolicy is in place with default-deny
 4. HMAC root Secret is accessible
 5. Detection backend(s) are reachable (if configured)
+6. Discovery controller is operational and generating `GauntletProbeRecommendation` CRs
 
 Any bootstrap verification failure creates a `GauntletSystemAlert` and blocks probe scheduling.
 
@@ -1192,10 +1215,13 @@ Intervals below 5 minutes are not supported by schema constraints.]
 The following items are reviewed annually or upon significant system change:
 
 - Review all `GauntletProbe` configurations against current threat model
+- Review `GauntletProbeRecommendation` CRs for unaddressed coverage gaps identified by discovery
 - Rotate mTLS certificates and HMAC root key if approaching expiry
 - Update the `GauntletAOAuthorization` CR for the new fiscal year
 - Validate FIPS module CMVP certificate status for deployed Gauntlet version
 - Review and update the ISA/MOU agreements for all boundary connections
+- Generate annual `GauntletReport` (via `gauntlet report` CLI or `GauntletReport` CRD) for continuous monitoring evidence package
+- Verify `global.impactLevel` and `global.executionMode` settings remain appropriate for the current authorization
 
 [Agency: Document the annual review process owner and schedule.]
 
@@ -1204,8 +1230,10 @@ The following items are reviewed annually or upon significant system change:
 ## 22. Plan of Action and Milestones (POA&M)
 
 [Agency: Import open `GauntletIncident` CRs into your POA&M system. Each incident includes
-the NIST control identifier, MITRE technique, timestamp, and probe-id — sufficient
-information to populate a POA&M entry without additional manual analysis.
+the NIST control identifier, MITRE technique, timestamp, probe-id, and multi-framework
+`controlMappings` — sufficient information to populate a POA&M entry without additional
+manual analysis. The `gauntlet report` CLI and `GauntletReport` CRD can generate POA&M
+summaries and coverage matrices automatically.
 
 The following is a template for a Gauntlet-sourced POA&M entry:
 

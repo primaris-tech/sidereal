@@ -190,6 +190,8 @@ or document the differences and their impact on assessment validity.]
 | CNI in use | [Agency: Cilium / Calico / other] |
 | Detection backends | [Agency: detection backend in use, e.g., Falco / Tetragon / none] |
 | SIEM target(s) | [Agency: Splunk / Elasticsearch / S3] |
+| SIEM export format | [Agency: JSON / CEF / LEEF / Syslog / OCSF] |
+| Impact level (`global.impactLevel`) | [Agency: low / moderate / high] |
 
 ---
 
@@ -238,6 +240,16 @@ kubectl get gauntletproberesults -n gauntlet-system -o json \
 A count of `0` indicates no failures during the period. Any non-zero count requires
 investigation of the corresponding `GauntletIncident` CRs.
 
+**Step 2a — Check for any non-Effective control effectiveness assessments:**
+
+```bash
+kubectl get gauntletproberesults -n gauntlet-system -o json \
+  | jq '[.items[] | select(.spec.result.controlEffectiveness != "Effective")] | length'
+```
+
+A count of `0` indicates all controls were assessed as Effective during the period.
+Any `Ineffective`, `Degraded`, or `Compromised` results require investigation.
+
 **Step 3 — Verify HMAC integrity status:**
 
 ```bash
@@ -272,7 +284,16 @@ kubectl get gauntletproberesults -n gauntlet-system \
 [Agency: Calculate expected probe interval from Helm values. Any gap exceeding
 2× the configured interval is a finding — the probe was not executing continuously.]
 
-**Step 6 — Cross-reference with SIEM:**
+**Step 6 — Verify SIEM export format:**
+
+```bash
+helm get values gauntlet -n gauntlet-system | grep -A5 'siem\|export'
+```
+
+Confirm the configured export format (JSON, CEF, LEEF, Syslog, or OCSF) matches the
+agency's SIEM ingestion requirements.
+
+**Step 7 — Cross-reference with SIEM:**
 
 Pull the same date range from the SIEM and confirm the record counts match the
 in-cluster `GauntletProbeResult` count. A mismatch indicates an export or retention gap.
@@ -284,10 +305,10 @@ Track 2 review:
 
 | Rating | Criteria |
 |---|---|
-| **Satisfied** | Zero probe failures during assessment period; all records HMAC-verified; SIEM export complete; no coverage gaps |
-| **Other Than Satisfied — Low** | 1–2 probe failures; all remediated within SLA; root cause documented |
-| **Other Than Satisfied — Moderate** | 3+ probe failures; OR any failure not remediated within SLA; OR coverage gap ≤ 48 hours |
-| **Other Than Satisfied — High** | Any `TamperedResult` record; OR coverage gap > 48 hours; OR SIEM export failures with no recovery |
+| **Satisfied** | Zero probe failures during assessment period; all `controlEffectiveness` values `Effective`; all records HMAC-verified; SIEM export complete; no coverage gaps |
+| **Other Than Satisfied — Low** | 1–2 probe failures or `Degraded` effectiveness assessments; all remediated within SLA; root cause documented |
+| **Other Than Satisfied — Moderate** | 3+ probe failures; OR any `Ineffective` effectiveness assessment; OR any failure not remediated within SLA; OR coverage gap ≤ 48 hours |
+| **Other Than Satisfied — High** | Any `TamperedResult` record; OR any `Compromised` effectiveness assessment; OR coverage gap > 48 hours; OR SIEM export failures with no recovery |
 
 ---
 
@@ -567,7 +588,7 @@ kubectl get jobs -n gauntlet-system -o json \
 ```
 
 Expected: only `gauntlet-probe-rbac`, `gauntlet-probe-netpol`, `gauntlet-probe-admission`,
-`gauntlet-probe-secret`, `gauntlet-probe-detection` (not `gauntlet-controller` or `default`).
+`gauntlet-probe-secret`, `gauntlet-probe-detection`, `gauntlet-probe-discovery` (not `gauntlet-controller` or `default`).
 
 **Pass Criteria**: All Jobs run non-root, read-only, all-caps-dropped. TTL cleanup is configured.
 No PVCs exist. Admission enforcement PVC policy enforces. Only pre-approved probe SAs are used.
@@ -648,7 +669,7 @@ Expected: `validationFailureAction: Enforce`
 2. Confirm that each probe SA lacks CRD write permissions:
 
 ```bash
-for SA in rbac netpol admission secret detection; do
+for SA in rbac netpol admission secret detection discovery; do
   echo "=== gauntlet-probe-$SA ==="
   kubectl auth can-i create gauntletproberesults \
     --as=system:serviceaccount:gauntlet-system:gauntlet-probe-$SA \
@@ -656,7 +677,7 @@ for SA in rbac netpol admission secret detection; do
 done
 ```
 
-Expected: `no` for all five probe SAs.
+Expected: `no` for all probe SAs.
 
 3. Confirm the controller SA cannot perform RBAC test operations in target namespaces:
 
@@ -758,6 +779,8 @@ kubectl get gauntletproberesults -n gauntlet-system \
 
 Confirm the result contains:
 - `result.outcome: Pass`
+- `result.controlEffectiveness: Effective`
+- `result.controlMappings` includes NIST 800-53 `AC-3` (and any additional framework mappings)
 - `result.nistControls` includes `AC-3`
 - `result.integrityStatus: Verified`
 - `audit.exportStatus: Exported`
@@ -827,6 +850,8 @@ kubectl get gauntletproberesults -n gauntlet-system \
 
 Confirm:
 - `result.outcome: Pass` for all deny-path tests (Forwarded where Dropped expected = Fail)
+- `result.controlEffectiveness: Effective`
+- `result.controlMappings` includes NIST 800-53 `AC-4` (and any additional framework mappings)
 - `result.nistControls` includes `AC-4`
 - CNI verdict source is documented in the result (CNI observability backend, e.g., Hubble or Calico)
 
@@ -913,7 +938,7 @@ expired token rejection. No probe failures.
 1. Retrieve a representative sample of recent probe results across all probe types:
 
 ```bash
-for TYPE in rbac netpol admission secret detection; do
+for TYPE in rbac netpol admission secret detection discovery; do
   echo "=== $TYPE ==="
   kubectl get gauntletproberesults -n gauntlet-system \
     --field-selector="spec.probe.type=$TYPE" \
@@ -927,15 +952,17 @@ done
 | Field | Required Value |
 |---|---|
 | `spec.probe.id` | UUID (not empty) |
-| `spec.probe.type` | One of the five probe types |
+| `spec.probe.type` | One of the five built-in probe types (or a custom probe type) |
 | `spec.probe.targetNamespace` | Non-empty string |
 | `spec.result.outcome` | Valid outcome value |
+| `spec.result.controlEffectiveness` | `Effective`, `Ineffective`, `Degraded`, or `Compromised` |
+| `spec.result.controlMappings` | Non-empty array (multi-framework mappings) |
 | `spec.result.nistControls` | Non-empty array |
 | `spec.result.integrityStatus` | `Verified` or `TamperedResult` |
 | `spec.execution.timestamp` | RFC 3339 UTC format |
 | `spec.audit.exportStatus` | `Exported`, `Pending`, or `Failed` |
 
-**Pass Criteria**: All eight required fields are present and populated in a sample of
+**Pass Criteria**: All ten required fields are present and populated in a sample of
 at least 5 results per probe type.
 
 **Rating**: [ ] Satisfied  [ ] Other Than Satisfied — Low  [ ] Moderate  [ ] High
@@ -1185,7 +1212,15 @@ helm upgrade gauntlet . -n gauntlet-system \
 
 Expected: schema validation error for `intervalSeconds` below minimum (300).
 
-2. Attempt to set `tls.required: false`:
+2. Confirm `global.impactLevel` is set appropriately for the system categorization:
+
+```bash
+helm get values gauntlet -n gauntlet-system | grep impactLevel
+```
+
+Expected: `impactLevel: high` (for NIST 800-53 High baseline systems).
+
+3. Attempt to set `tls.required: false`:
 
 ```bash
 helm upgrade gauntlet . -n gauntlet-system \
@@ -1325,12 +1360,13 @@ from https://csrc.nist.gov/projects/cryptographic-module-validation-program]
 **Control**: CA-2, CA-2(1), CA-7
 **Track**: Track 2 (Evidence Review — all probe types)
 
-**Objective**: Confirm that Gauntlet is continuously assessing all five probe surfaces and
-that the assessment record is complete for the assessment period.
+**Objective**: Confirm that Gauntlet is continuously assessing all five built-in probe surfaces
+(plus any custom probes) and that the assessment record is complete for the assessment period.
 
 **Procedure**:
 
-Execute the Track 2 evidence review (§4.2) for all five probe types. Compile a coverage matrix:
+Execute the Track 2 evidence review (§4.2) for all five built-in probe types and any deployed
+custom probes. Compile a coverage matrix:
 
 | Probe Type | Results Count | Failures | Coverage Gaps | SIEM Export Complete | Rating |
 |---|---|---|---|---|---|
@@ -1339,8 +1375,9 @@ Execute the Track 2 evidence review (§4.2) for all five probe types. Compile a 
 | admission | [Agency] | [Agency] | [Agency] | [Agency] | [Agency] |
 | secret | [Agency] | [Agency] | [Agency] | [Agency] | [Agency] |
 | detection | [Agency] | [Agency] | [Agency] | [Agency] | [Agency] |
+| [Agency: custom] | [Agency] | [Agency] | [Agency] | [Agency] | [Agency] |
 
-**Pass Criteria**: All five probe surfaces have continuous results for the assessment period.
+**Pass Criteria**: All five built-in probe surfaces (and any deployed custom probes) have continuous results for the assessment period.
 No coverage gaps exceeding 2× the configured interval. All records HMAC-verified. SIEM export
 complete for all records.
 
@@ -1565,8 +1602,9 @@ continuously, and that failures halt operations.
 
 1. Execute TEST-SYS-08 (§5) for bootstrap verification.
 
-2. Execute the Track 2 evidence review (§4.2) for all five probe types, confirming that
-   continuous security function verification is producing current results.
+2. Execute the Track 2 evidence review (§4.2) for all five built-in probe types (and any
+   deployed custom probes), confirming that continuous security function verification is
+   producing current results.
 
 3. Confirm the halt-on-failure posture:
 
@@ -1825,6 +1863,37 @@ kubectl get gauntletsystemalerts -n gauntlet-system \
   -o json > gauntlet-system-alerts-$(date +%Y%m%d).json
 ```
 
+### Export all AO authorizations
+
+```bash
+kubectl get gauntletaoauthorizations -n gauntlet-system \
+  -o json > gauntlet-ao-authorizations-$(date +%Y%m%d).json
+```
+
+### Export all probe recommendations
+
+```bash
+kubectl get gauntletproberecommendations -n gauntlet-system \
+  -o json > gauntlet-probe-recommendations-$(date +%Y%m%d).json
+```
+
+### Export all reports
+
+```bash
+kubectl get gauntletreports -n gauntlet-system \
+  -o json > gauntlet-reports-$(date +%Y%m%d).json
+```
+
+### Generate an assessment report via CLI
+
+```bash
+gauntlet report \
+  --namespace gauntlet-system \
+  --start-date [Agency: Insert start date] \
+  --end-date [Agency: Insert end date] \
+  --output gauntlet-assessment-report-$(date +%Y%m%d).json
+```
+
 ### Export current Helm values (deployed configuration baseline)
 
 ```bash
@@ -1837,6 +1906,7 @@ helm get values gauntlet -n gauntlet-system \
 ```bash
 kubectl get gauntletproberesults -n gauntlet-system -o json \
   | jq '[.items[] | {type: .spec.probe.type, outcome: .spec.result.outcome,
+          effectiveness: .spec.result.controlEffectiveness,
           integrity: .spec.result.integrityStatus, exported: .spec.audit.exportStatus,
           ts: .spec.execution.timestamp}]
         | group_by(.type)
@@ -1896,7 +1966,8 @@ Reference any `GauntletIncident` CR names if applicable (e.g., `incident-ac3-202
 - Kubectl output files
 - SIEM query results
 - GauntletProbeResult CR names
-- GauntletIncident CR names]
+- GauntletIncident CR names
+- GauntletReport CR names (if applicable)]
 
 **Root Cause**:
 
@@ -1924,11 +1995,14 @@ Reference any `GauntletIncident` CR names if applicable (e.g., `incident-ac3-202
 **Closure Criteria**:
 
 [Agency: Define what constitutes closure. For probe-surface findings, closure requires
-`GauntletProbeResult` records showing `Pass` for a minimum of 3 consecutive executions
-after the remediation action.]
+`GauntletProbeResult` records showing `Pass` with `controlEffectiveness: Effective` for
+a minimum of 3 consecutive executions after the remediation action. Review any
+`GauntletProbeRecommendation` CRs for remediation guidance.]
 
 ---
 
 *This document was prepared using the Gauntlet ATO Documentation Package.
 The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/gauntlet/component-definition.json`)
-is the machine-readable source of record for all control implementations referenced in this plan.*
+is the machine-readable source of record for all control implementations referenced in this plan.
+Gauntlet defines 8 CRDs: GauntletProbe, GauntletProbeResult, GauntletIncident, GauntletSystemAlert,
+GauntletAOAuthorization, GauntletProbeRecommendation, GauntletReport, and 7 built-in ServiceAccounts.*

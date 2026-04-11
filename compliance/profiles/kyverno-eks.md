@@ -1,9 +1,9 @@
-# Deployment Profile: kyverno-cilium-falco
+# Deployment Profile: kyverno-eks
 
-> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
+> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `opa-calico-tetragon`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
 
-**Profile ID**: `kyverno-cilium-falco`
-**Description**: Default Gauntlet deployment profile for Cilium-based clusters with Kyverno admission control and Falco runtime detection.
+**Profile ID**: `kyverno-eks`
+**Description**: Gauntlet deployment profile for Amazon EKS clusters with VPC CNI, Kyverno admission control, and Falco runtime detection.
 
 ---
 
@@ -14,7 +14,7 @@
 | Admission Enforcement | Kyverno | >= 1.10 |
 | Image Signature Verification | Kyverno cosign verifyImages | >= 1.10 |
 | Detection Backend | Falco gRPC Output API | >= 0.37 |
-| CNI Observability | Hubble gRPC (Cilium) | >= 1.14 |
+| CNI Observability | None (VPC CNI — no native flow API) | — |
 | SIEM Export | [Agency-configured: Splunk HEC, Elasticsearch, S3] | — |
 
 ## Helm Profile Configuration
@@ -25,8 +25,15 @@ gauntlet:
     admissionController: kyverno
     signatureVerifier: kyverno
     detectionBackend: falco
-    cniObservability: hubble
+    cniObservability: none
+    networkPolicyVerification: tcp-inference
 ```
+
+## Degraded Capabilities
+
+| Capability | Impact | Mitigation |
+|---|---|---|
+| NetworkPolicy Verification | `tcp-inference` mode instead of `cni-verdict` | VPC CNI does not expose a flow-level observability API (no Hubble/Calico equivalent). The `tcp-inference` mode validates enforcement by attempting connections and observing TCP RST/timeout behavior. This provides functional validation but cannot report the CNI-level verdict reason. |
 
 ## Admission Policies Rendered
 
@@ -44,9 +51,8 @@ The Helm chart renders the following Kyverno ClusterPolicies for this profile:
 
 | System | Port | Protocol | Authentication |
 |---|---|---|---|
-| Kubernetes API Server | 443/TCP | mTLS | ServiceAccount token (1hr bound expiry) |
+| Kubernetes API Server (EKS) | 443/TCP | mTLS | ServiceAccount token (1hr bound expiry) via IRSA or Pod Identity |
 | Falco gRPC | 50051/TCP | gRPC/TLS | mTLS, SAN validation |
-| Hubble Relay | 4245/TCP | gRPC/TLS | mTLS, SAN validation |
 | SIEM endpoints | [Agency-configured] | HTTPS/TLS 1.2+ FIPS | [Agency-configured] |
 
 ## Bootstrap Verification Checklist
@@ -59,7 +65,7 @@ For this profile, the bootstrap verifier checks:
 4. Default-deny NetworkPolicy is in place in `gauntlet-system`
 5. HMAC root Secret is accessible
 6. Falco gRPC endpoint is reachable on port 50051
-7. Hubble Relay gRPC endpoint is reachable on port 4245
+7. NetworkPolicy verification mode is set to `tcp-inference` (no CNI observability endpoint expected)
 
 ## SAP Test Commands
 
@@ -100,14 +106,15 @@ kubectl get clusterpolicy gauntlet-proberesult-immutable -o yaml \
 # Expected: validationFailureAction: Enforce
 ```
 
-### TEST-SYS-04 — NetworkPolicy Verification (Hubble)
+### TEST-SYS-04 — NetworkPolicy Verification (tcp-inference)
 
 ```bash
 # Review the NetworkPolicy probe's most recent result
 kubectl get gauntletproberesults -n gauntlet-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml | tail -30
-# Expected: outcome: Pass (or Dropped), verificationMode: cni-verdict
+# Expected: outcome: Pass (or Dropped), verificationMode: tcp-inference
+# Note: cni-verdict is not available on VPC CNI; tcp-inference is the expected mode
 ```
 
 ### TEST-SYS-07 — Identity Separation

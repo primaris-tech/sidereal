@@ -109,10 +109,10 @@ two separate identities, two separate actions, independent of each other.
 
 | Outcome | Meaning | GauntletIncident? |
 |---|---|---|
-| `Detected` | Alert raised within 60s window | No (pass) |
-| `Undetected` | No alert within 60s window | Yes — detection gap |
-| `Blocked` | Syscall blocked by detection backend enforcement mode (e.g., Tetragon) | No (pass — enforcement active) |
-| `BackendUnreachable` | gRPC query failed | GauntletSystemAlert |
+| `Detected` (Effective) | Alert raised within 60s window | No |
+| `Undetected` (Ineffective) | No alert within 60s window | Yes — detection gap (enforce mode only) |
+| `Blocked` (Effective) | Syscall blocked by detection backend enforcement mode (e.g., Tetragon) | No |
+| `BackendUnreachable` (Degraded) | gRPC query failed | GauntletSystemAlert |
 
 ---
 
@@ -186,7 +186,7 @@ flowchart TB
     subgraph GAUNTLET ["Gauntlet Authorization Boundary"]
         GPR_STORE["GauntletProbeResult\n(in-cluster, append-only)"]
         GI_STORE["GauntletIncident\n(in-cluster, append-only)"]
-        EXPORT["Audit Export Pipeline\n• Exponential backoff retry\n• Bounded in-memory buffer\n• Fail-closed option"]
+        EXPORT["Audit Export Pipeline\n• Configurable format\n  (JSON/CEF/LEEF/Syslog/OCSF)\n• Exponential backoff retry\n• Fail-closed option"]
     end
 
     GPR_STORE -->|"Read on creation"| EXPORT
@@ -232,10 +232,11 @@ flowchart TB
 
 | Field | Value | Purpose |
 |---|---|---|
-| `probe.type` | `rbac`, `netpol`, `admission`, `secret`, `detection` | Filter by control surface |
-| `result.outcome` | `Pass`, `Fail`, `Undetected`, etc. | Gap identification |
+| `probe.type` | `rbac`, `netpol`, `admission`, `secret`, `detection`, `custom` | Filter by control surface |
+| `result.outcome` | `Pass`, `Fail`, `Undetected`, etc. | Detailed gap identification |
+| `result.controlEffectiveness` | `Effective`, `Ineffective`, `Degraded`, `Compromised` | Normalized posture view |
 | `execution.timestamp` | RFC 3339 UTC, nanosecond precision | Timeline reconstruction |
-| `result.nistControls` | `["AC-3", "AC-6"]` etc. | Control-specific reporting |
+| `result.controlMappings` | `{"nist-800-53":["AC-3"],"cmmc":["AC.L2-3.1.1"]}` | Multi-framework reporting |
 | `result.integrityStatus` | `Verified` / `TamperedResult` | Integrity assurance |
 | `probe.targetNamespace` | `production` (or redacted ID) | Scope identification |
 | `probe.id` | UUID | Correlation key |
@@ -245,9 +246,9 @@ flowchart TB
 
 | Flow | Data | Direction | Protection |
 |---|---|---|---|
-| Probe result export (Splunk) | Structured JSON audit record | Outbound | TLS 1.2+ FIPS, HEC token |
-| Probe result export (Elasticsearch) | Structured JSON audit record | Outbound | TLS 1.2+ FIPS, API key |
-| Probe result export (S3) | Structured JSON audit record | Outbound | TLS 1.2+ FIPS, SigV4, SSE-KMS |
+| Probe result export (Splunk) | Structured audit record (JSON/CEF/LEEF per config) | Outbound | TLS 1.2+ FIPS, HEC token |
+| Probe result export (Elasticsearch) | Structured audit record (JSON per config) | Outbound | TLS 1.2+ FIPS, API key |
+| Probe result export (S3) | Structured audit record (JSON/OCSF per config) | Outbound | TLS 1.2+ FIPS, SigV4, SSE-KMS |
 | Export acknowledgment | Delivery confirmation (token / `_id` / ETag) | Inbound | TLS record layer |
 
 ---

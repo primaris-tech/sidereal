@@ -17,9 +17,11 @@ flowchart TB
             direction LR
             SCHED["Probe\nScheduler"]
             RECONCILE["Result\nReconciler"]
-            EXPORT["Audit Export\nPipeline"]
+            EXPORT["Audit Export\nPipeline\n(JSON/CEF/LEEF/\nSyslog/OCSF)"]
             BOOTSTRAP["Bootstrap\nVerifier"]
             ALERT["Alert\nManager"]
+            DISCOVER["Discovery\nReconciler"]
+            REPORT["Report\nGenerator"]
         end
 
         subgraph SA_BOX ["Per-Probe ServiceAccounts (pre-provisioned at install)"]
@@ -30,6 +32,7 @@ flowchart TB
             SA_ADM["gauntlet-probe-admission\n(test resource create/delete)"]
             SA_SEC["gauntlet-probe-secret\n(Secret GET attempts)"]
             SA_DET["gauntlet-probe-detection\n(no API access)"]
+            SA_DISC["gauntlet-discovery\n(cluster-wide read-only)"]
         end
 
         subgraph JOBS_BOX ["Probe Runner Jobs (ephemeral — one per execution)"]
@@ -46,10 +49,12 @@ flowchart TB
         end
 
         subgraph TIER2 ["Tier 2 — Audit Log (append-only, admission-enforced)"]
-            GPR["GauntletProbeResult\n• HMAC-verified\n• NIST control mapping\n• 365-day min TTL"]
-            GI["GauntletIncident\n• Failure details\n• NIST controls\n• MITRE technique"]
+            GPR["GauntletProbeResult\n• HMAC-verified\n• Multi-framework controlMappings\n• controlEffectiveness\n• Impact-level TTL"]
+            GI["GauntletIncident\n• Failure details\n• Multi-framework controls\n• MITRE technique\n• enforce mode only"]
             GSA["GauntletSystemAlert\n• Degraded state\n• Acknowledgment gate"]
             GAO["GauntletAOAuthorization\n• AO name + scope\n• Expiry window"]
+            GPR_REC["GauntletProbeRecommendation\n• Discovery-generated\n• pending/promoted/dismissed"]
+            G_RPT["GauntletReport\n• Scheduled reports\n• ConMon/POA&M/Evidence"]
         end
 
         subgraph ADMISSION_BOX ["Admission Controls (Admission Enforcement Policies)"]
@@ -75,6 +80,10 @@ flowchart TB
         RECONCILE -->|"Creates on failure"| GI
         ALERT -->|"Creates on degraded state"| GSA
         SCHED -->|"Reads authorization\nbefore detection probe"| GAO
+        DISCOVER -->|"Creates recommendations"| GPR_REC
+        REPORT -->|"Reads results/incidents"| GPR
+        REPORT -->|"Reads incidents"| GI
+        SA_DISC -.->|"Identity used by"| DISCOVER
 
         EXPORT -->|"Reads and exports\nto SIEM"| GPR
         EXPORT -->|"Reads and exports\nto SIEM"| GI
@@ -150,19 +159,19 @@ flowchart LR
     RECONCILE -->|"Append-only\nAudit record\n(admission-enforced)"| TIER2
 
     subgraph TIER2 ["Tier 2 — GauntletProbeResult CR"]
-        AU1["probeType + outcome"]
+        AU1["probeType + outcome\n+ controlEffectiveness"]
         AU2["probeStartTime / probeEndTime"]
-        AU3["result.nistControls"]
+        AU3["result.controlMappings\n(multi-framework)"]
         AU4["result.integrityStatus (HMAC)"]
         AU5["audit.exportStatus"]
         AU6["probe.id (fingerprint)"]
     end
 
-    TIER2 -->|"TLS 1.2+ FIPS\nReal-time export"| SIEM
+    TIER2 -->|"TLS 1.2+ FIPS\nConfigurable format\n(JSON/CEF/LEEF/Syslog/OCSF)"| SIEM
 
     subgraph SIEM ["Off-Cluster SIEM (authoritative long-term)"]
-        S1["Splunk / Elasticsearch\n3-year retention"]
-        S2["S3 + Object Lock COMPLIANCE\n3-year retention"]
+        S1["Splunk / Elasticsearch\nRetention per impact level"]
+        S2["S3 + Object Lock COMPLIANCE\nRetention per impact level"]
     end
 
     style TIER1 fill:#e8f4f8,stroke:#2196F3
@@ -186,6 +195,7 @@ and CA-2 independence requirements.
 | `gauntlet-probe-admission` SA | Create/delete test resources (specific types) | Access Secrets; persistent resource creation |
 | `gauntlet-probe-secret` SA | Attempt GET on test Secret names | Write Secrets; cross-namespace read (expects 403) |
 | `gauntlet-probe-detection` SA | None — no Kubernetes API access | Any Kubernetes API operation |
+| `gauntlet-discovery` SA | Read-only cluster-wide: list/get NetworkPolicies, WebhookConfigs, RoleBindings, Secrets (metadata), Falco/Tetragon rules | Any write operation; access to Secret data |
 
 **Key property**: The controller cannot perform the operations the probes
 perform. A compromised controller cannot produce a falsified probe result

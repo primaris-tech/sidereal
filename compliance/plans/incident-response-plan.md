@@ -25,8 +25,12 @@ into their IR program and document this integration in their SSP IR-1 statement.
 ### 2.1 What Gauntlet Treats as an Incident
 
 A control failure detected by Gauntlet is an active security control gap on a
-live federal system. Gauntlet creates a `GauntletIncident` CR for every probe
-execution that produces a failure outcome:
+live federal system. When operating in `enforce` execution mode, Gauntlet creates
+a `GauntletIncident` CR for every probe execution where `controlEffectiveness` is
+`Ineffective` or `Compromised`. In `observe` mode, probe results are recorded and
+exported to the SIEM but incidents are not generated — this allows an evaluation
+period to tune probes before activating the incident pipeline. In `dryRun` mode,
+probes do not execute. The following failure outcomes trigger incidents (in `enforce` mode):
 
 | Probe Surface | Failure Outcome | Security Meaning |
 |---|---|---|

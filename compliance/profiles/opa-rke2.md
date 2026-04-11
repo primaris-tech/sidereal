@@ -1,9 +1,9 @@
-# Deployment Profile: opa-calico-tetragon
+# Deployment Profile: opa-rke2
 
-> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
+> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`. Custom profiles are supported for agency-specific configurations.
 
-**Profile ID**: `opa-calico-tetragon`
-**Description**: Gauntlet deployment profile for Calico-based clusters with OPA/Gatekeeper admission control and Tetragon runtime detection.
+**Profile ID**: `opa-rke2`
+**Description**: Gauntlet deployment profile for RKE2/k3s on-premises clusters with OPA/Gatekeeper admission control and Tetragon runtime detection.
 
 ---
 
@@ -14,7 +14,7 @@
 | Admission Enforcement | OPA/Gatekeeper | >= 3.14 |
 | Image Signature Verification | Sigstore policy-controller | >= 0.6 |
 | Detection Backend | Tetragon gRPC Event API | >= 1.0 |
-| CNI Observability | Calico Flow Log API | >= 3.26 |
+| CNI Observability | None (Canal/Flannel — no native flow API) | — |
 | SIEM Export | [Agency-configured: Splunk HEC, Elasticsearch, S3] | — |
 
 ## Helm Profile Configuration
@@ -25,8 +25,15 @@ gauntlet:
     admissionController: opa
     signatureVerifier: policy-controller
     detectionBackend: tetragon
-    cniObservability: calico
+    cniObservability: none
+    networkPolicyVerification: tcp-inference  # or responder
 ```
+
+## Degraded Capabilities
+
+| Capability | Impact | Mitigation |
+|---|---|---|
+| NetworkPolicy Verification | `tcp-inference` or `responder` mode instead of `cni-verdict` | RKE2 defaults to Canal (Flannel + Calico NetworkPolicy) and k3s defaults to Flannel. Neither exposes a flow-level observability API. Two fallback modes are available: `tcp-inference` validates enforcement by attempting connections and observing TCP RST/timeout behavior; `responder` deploys a Gauntlet-managed responder pod to confirm or deny reachability. Choose `responder` when stricter validation is required or when TCP inference results are ambiguous due to network configuration. |
 
 ## Admission Policies Rendered
 
@@ -44,9 +51,8 @@ The Helm chart renders the following OPA/Gatekeeper resources for this profile:
 
 | System | Port | Protocol | Authentication |
 |---|---|---|---|
-| Kubernetes API Server | 443/TCP | mTLS | ServiceAccount token (1hr bound expiry) |
+| Kubernetes API Server (RKE2/k3s) | 6443/TCP | mTLS | ServiceAccount token (1hr bound expiry) |
 | Tetragon gRPC | 54321/TCP | gRPC/TLS | mTLS, SAN validation |
-| Calico API | 5443/TCP | HTTPS/TLS | mTLS, SAN validation |
 | SIEM endpoints | [Agency-configured] | HTTPS/TLS 1.2+ FIPS | [Agency-configured] |
 
 ## Bootstrap Verification Checklist
@@ -60,11 +66,11 @@ For this profile, the bootstrap verifier checks:
 5. Default-deny NetworkPolicy is in place in `gauntlet-system`
 6. HMAC root Secret is accessible
 7. Tetragon gRPC endpoint is reachable on port 54321
-8. Calico API endpoint is reachable on port 5443
+8. NetworkPolicy verification mode is set to `tcp-inference` or `responder` (no CNI observability endpoint expected)
 
 ## SAP Test Commands
 
-These are the profile-specific commands for the SAP test procedures.
+These are the profile-specific commands for the SAP test procedures. Replace the generic `[profile-specific]` placeholders in the SAP template with these commands.
 
 ### TEST-SYS-01 — Image Signature Verification
 
@@ -105,14 +111,18 @@ kubectl get constraint gauntlet-proberesult-immutable -o yaml \
 # Expected: enforcementAction: deny
 ```
 
-### TEST-SYS-04 — NetworkPolicy Verification (Calico)
+### TEST-SYS-04 — NetworkPolicy Verification (tcp-inference / responder)
 
 ```bash
 # Review the NetworkPolicy probe's most recent result
 kubectl get gauntletproberesults -n gauntlet-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml | tail -30
-# Expected: outcome: Pass (or Dropped), verificationMode: cni-verdict
+# Expected: outcome: Pass (or Dropped), verificationMode: tcp-inference or responder
+# Note: cni-verdict is not available on Canal/Flannel; tcp-inference or responder is the expected mode
+
+# (If using responder mode) Verify responder pod is running
+# kubectl get pods -n gauntlet-system -l gauntlet.io/component=netpol-responder
 ```
 
 ### TEST-SYS-07 — Identity Separation

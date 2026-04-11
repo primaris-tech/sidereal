@@ -2,7 +2,7 @@
 x-trestle-comp-def-rules:
   gauntlet:
     - name: probes-verify-security-functions-are-operating
-      description: Gauntlet's five probe surfaces continuously verify that the security functions they depend on (RBAC enforcement, NetworkPolicy CNI, admission control, secret store access controls, detection coverage) are operating as intended
+      description: Gauntlet's built-in and custom probe surfaces continuously verify that the security functions they depend on (RBAC enforcement, NetworkPolicy CNI, admission control, secret store access controls, detection coverage, and operator-extensible custom controls) are operating as intended
 x-trestle-global:
   profile:
     title: NIST SP 800-53 Rev 5 High Baseline
@@ -127,7 +127,8 @@ receive the notification.
 ## Evidence Produced
 
 - `GauntletProbeResult` CRs for each security function verification cycle
-  across all five probe surfaces (continuous evidence of verification)
+  across all built-in and custom probe surfaces (continuous evidence of verification),
+  with `controlEffectiveness` normalization for ISSO-facing dashboards
 - `GauntletIncident` CRs for every `Fail` outcome, with specific security
   function, expected behavior, and observed behavior
 - `GauntletSystemAlert` CRs with `reason: SecurityFunctionUnavailable` when

@@ -73,7 +73,7 @@ Gauntlet's design is shaped by the following federal information security standa
 | Standard | What It Is | How It Shapes Gauntlet |
 |---|---|---|
 | **FIPS 140-2** (Security Requirements for Cryptographic Modules) | The federal standard for cryptographic module validation. Required for all cryptographic operations in federal systems. | Gauntlet ships FIPS-only image variants. Go components use BoringCrypto (CMVP #3678). Rust detection probe uses aws-lc-rs (CMVP #4816). No non-FIPS codepath is reachable at runtime — a call to a non-approved algorithm causes an immediate process panic (Go) or compile-time rejection (Rust). KAT self-test failure → process exit → `Indeterminate` outcome → `GauntletSystemAlert`. |
-| **FIPS 199** (Standards for Security Categorization) | Defines impact levels (Low, Moderate, High) based on confidentiality, integrity, and availability impact. | Gauntlet targets **High** impact. This drives the most stringent control selection from 800-53, the tightest probe scheduling cadence (every 6 hours), and the longest retention requirements (365 days in-cluster, 3 years in SIEM). Detection probes are classified as Medium risk under FIPS 199 methodology. |
+| **FIPS 199** (Standards for Security Categorization) | Defines impact levels (Low, Moderate, High) based on confidentiality, integrity, and availability impact. | Gauntlet's impact level is **operator-configurable** via Helm values (`global.impactLevel: high | moderate | low`). The selected impact level cascades defaults for probe scheduling cadence, audit retention minimums, and fail-closed behavior (see Configuration Management section). The Helm chart ships with `high` as the default, but agencies operating at Moderate or Low can select their baseline and receive tuned defaults without manual override of individual parameters. Detection probes are classified as Medium risk under FIPS 199 methodology regardless of the system impact level. |
 
 ### FedRAMP
 
@@ -168,12 +168,37 @@ Based on the profile selection:
 
 ### Pre-Built Profiles
 
-Gauntlet ships two pre-built profiles that are fully documented and tested:
+Gauntlet ships six pre-built profiles covering the most common federal Kubernetes platforms. Each profile is fully documented, tested, and ships with a companion profile binding document in `compliance/profiles/`.
 
 | Profile | Admission | Signature Verification | Detection | CNI Observability | Target Environment |
 |---|---|---|---|---|---|
-| `kyverno-cilium-falco` | Kyverno | Kyverno cosign | Falco gRPC | Hubble gRPC | Cilium-based clusters with Falco |
-| `opa-calico-tetragon` | OPA/Gatekeeper | Sigstore policy-controller | Tetragon gRPC | Calico flow logs | Calico-based clusters with Tetragon |
+| `kyverno-cilium-falco` | Kyverno | Kyverno cosign | Falco gRPC | Hubble gRPC (cni-verdict) | Cilium-based clusters with Falco |
+| `opa-calico-tetragon` | OPA/Gatekeeper | Sigstore policy-controller | Tetragon gRPC | Calico flow logs (cni-verdict) | Calico-based clusters with Tetragon |
+| `kyverno-eks` | Kyverno | Kyverno cosign | Falco gRPC | tcp-inference | Amazon EKS with VPC CNI (no Hubble) |
+| `opa-aks` | OPA/Gatekeeper | Sigstore policy-controller | Falco gRPC | tcp-inference | Azure AKS with Azure CNI |
+| `kyverno-gke` | Kyverno | Kyverno cosign | Falco gRPC | tcp-inference | Google GKE with Dataplane V2 (Cilium-based but Hubble availability varies) |
+| `opa-rke2` | OPA/Gatekeeper | Sigstore policy-controller | Tetragon gRPC | tcp-inference or responder | RKE2/k3s on-premises (Rancher ecosystem) |
+
+### Profile Compatibility Matrix
+
+Not every profile supports every capability at full fidelity. The following matrix documents what is available and what is degraded per profile, so an ISSO can immediately assess fit:
+
+| Capability | kyverno-cilium-falco | opa-calico-tetragon | kyverno-eks | opa-aks | kyverno-gke | opa-rke2 |
+|---|---|---|---|---|---|---|
+| Admission enforcement | Full | Full | Full | Full | Full | Full |
+| Image signature verification | Full | Full | Full | Full | Full | Full |
+| RBAC probe | Full | Full | Full | Full | Full | Full |
+| NetworkPolicy probe (cni-verdict) | Full | Full | — | — | Varies | — |
+| NetworkPolicy probe (tcp-inference) | Available | Available | **Default** | **Default** | **Default** | **Default** |
+| NetworkPolicy probe (responder) | Available | Available | Available | Available | Available | Available |
+| Detection probe (Falco) | Full | — | Full | Full | Full | — |
+| Detection probe (Tetragon) | — | Full | — | — | — | Full |
+| Secret Access probe | Full | Full | Full | Full | Full | Full |
+| Admission Control probe | Full | Full | Full | Full | Full | Full |
+
+**Legend**: Full = authoritative evidence; **Default** = the default verification mode for this profile; Available = supported but not the default; — = not applicable for this profile; Varies = depends on cluster configuration.
+
+The managed Kubernetes profiles (`kyverno-eks`, `opa-aks`, `kyverno-gke`) default to `tcp-inference` for NetworkPolicy verification because managed CNI offerings don't consistently expose flow verdict APIs. The `responder` mode is available as an upgrade path for higher-evidence NetworkPolicy validation on these platforms.
 
 Custom profiles are supported by mixing any combination of supported implementations. The Helm chart validates that the selected combination is coherent (e.g., `cniObservability: hubble` requires Cilium to be installed).
 
@@ -213,10 +238,10 @@ Rust probe binaries use `aws-lc-rs` (CMVP Certificate #4816) with FIPS-validated
 - **Probe execution**: Short-lived, immutable Kubernetes Jobs per probe execution — scoped ServiceAccount, TTL-based cleanup, non-root with read-only root filesystem
 - **Probe taxonomy**: CRD-defined `GauntletProbe` resources, each mapping to a MITRE ATT&CK technique and specific NIST 800-53 controls
 - **Outcomes**: Per-probe type; detection probes use an extended outcome set (see Detection Probe Verification below) — all outcomes exported as Prometheus metrics and written to the audit log
-- **Prometheus metrics**: `gauntlet_probe_executions_total` (counter; labels: probe_type, outcome), `gauntlet_probe_failures_total` (counter; labels: probe_type), `gauntlet_consecutive_failures` (gauge; labels: probe_type, target_namespace), `gauntlet_siem_export_failures_total` (counter; labels: backend), `gauntlet_hmac_verification_failures_total` (counter), `gauntlet_probe_duration_seconds` (histogram; labels: probe_type), `gauntlet_bootstrap_verification_status` (gauge; 1=passed, 0=failed)
+- **Prometheus metrics**: `gauntlet_probe_executions_total` (counter; labels: probe_type, outcome, control_effectiveness), `gauntlet_probe_failures_total` (counter; labels: probe_type), `gauntlet_consecutive_failures` (gauge; labels: probe_type, target_namespace), `gauntlet_siem_export_failures_total` (counter; labels: backend, export_format), `gauntlet_hmac_verification_failures_total` (counter), `gauntlet_probe_duration_seconds` (histogram; labels: probe_type), `gauntlet_bootstrap_verification_status` (gauge; 1=passed, 0=failed), `gauntlet_control_effectiveness` (gauge; labels: probe_type, target_namespace, control_effectiveness; value: count of probes in each state — enables real-time compliance posture dashboards)
 - **Integrations**: Detection backends (detection validation), admission controllers (admission validation), CNI observability (NetworkPolicy verdict), Prometheus + Alertmanager (observability), SIEM export targets (audit export). See Deployment Profiles section for supported implementations.
 - **Controller endpoints**: `:8080/metrics` (Prometheus), `:8081/healthz` and `:8081/readyz` (liveness/readiness), `:8443` (webhook callbacks). No other ports are opened. No LoadBalancer or NodePort Services are created.
-- **Scheduling**: Configurable probe cadence per probe with minimum frequencies tied to FIPS 199 impact level — High: every 6 hours, Moderate: every 24 hours, Low: every 72 hours. The controller surfaces a compliance warning if configured cadence exceeds the threshold for the declared impact level. Probe execution time is randomized with ±10% jitter to prevent predictable blind spots (SI-4)
+- **Scheduling**: Configurable probe cadence per probe with minimum frequencies derived from the operator-selected FIPS 199 impact level (`global.impactLevel`). Default cadence floors — High: every 6 hours, Moderate: every 24 hours, Low: every 72 hours. The controller surfaces a compliance warning if configured cadence exceeds the floor for the declared impact level. Operators may set cadence tighter than their impact level requires (a Moderate system running at 6-hour cadence is valid); they may not set it looser without an explicit override and audit record. Probe execution time is randomized with ±10% jitter to prevent predictable blind spots (SI-4)
 - **Last-run state**: Stored in `status.lastExecutedAt` on `GauntletProbe`, surviving controller restarts without re-executing probes that recently ran
 
 ---
@@ -282,12 +307,12 @@ All Gauntlet operator accounts must be individual (not shared service accounts) 
 |---|---|---|
 | `gauntlet-reader` | Read `GauntletProbe`, `GauntletProbeResult` | View-only access to probe configuration and results |
 | `gauntlet-operator` | Read/write `GauntletProbe` | Configure probes; cannot enable live execution |
-| `gauntlet-live-executor` | Set `dryRun: false` on `GauntletProbe` | Enabling live execution; restricted role |
+| `gauntlet-live-executor` | Set `executionMode: observe` or `enforce` on `GauntletProbe` | Enabling live execution (observe or enforce); restricted role |
 | `gauntlet-approver` | Create `GauntletAOAuthorization` | Second-party authorization for detection probes |
 | `gauntlet-audit-admin` | Read `GauntletProbeResult` | Audit log access; cannot delete or modify records |
 | `gauntlet-security-override` | Modify security-relevant Helm values | Required for `global.requireAdmissionController: false` |
 
-**Separation of duty for live execution**: Enabling live probes (`dryRun: false`) requires the `gauntlet-live-executor` role. Detection probe execution additionally requires a valid `GauntletAOAuthorization` resource (see Detection Probe Verification). The `gauntlet-operator` and `gauntlet-live-executor` roles are separate. Per AC-5, the SSP and access management policy must prohibit assigning both roles to the same individual — this is an administrative control enforced by the ISSO during account provisioning and verified through Kubernetes audit log review. Kubernetes RBAC provides the technical separation; organizational policy enforces the human separation.
+**Separation of duty for live execution**: Enabling live probes (`executionMode: observe` or `enforce`) requires the `gauntlet-live-executor` role. Detection probe execution additionally requires a valid `GauntletAOAuthorization` resource (see Detection Probe Verification). The `gauntlet-operator` and `gauntlet-live-executor` roles are separate. Per AC-5, the SSP and access management policy must prohibit assigning both roles to the same individual — this is an administrative control enforced by the ISSO during account provisioning and verified through Kubernetes audit log review. Kubernetes RBAC provides the technical separation; organizational policy enforces the human separation.
 
 Account provisioning, modification, and deprovisioning follow the deploying agency's AC-2 procedures, documented in the SSP.
 
@@ -552,6 +577,80 @@ Each probe class is assigned a dedicated ServiceAccount, pre-provisioned at inst
 | Admission | `gauntlet-probe-admission` | Submit a known-bad resource spec, read the rejection |
 | Secret Access | `gauntlet-probe-secret` | Attempt to `get` secrets outside the authorized namespace — tests the data exfiltration vector specifically |
 | Detection | `gauntlet-probe-detection` | Execute known-bad syscall patterns — including runtime privilege escalation attempts — in a sandboxed container |
+| Discovery | `gauntlet-discovery` | Read-only cluster-wide access: list/get NetworkPolicies, WebhookConfigurations, RoleBindings, ClusterRoleBindings, Secrets (metadata only), Falco rules, Tetragon TracingPolicies. No write permissions. |
+
+---
+
+## Custom Probe Extensibility
+
+The five built-in probe surfaces cover the most common Kubernetes security control boundaries. However, agencies have diverse control environments that extend beyond these surfaces — encryption at rest verification, logging pipeline integrity, certificate expiration monitoring, DNS policy enforcement, service mesh mTLS validation, and others. Rather than forcing agencies to wait for upstream additions, Gauntlet provides a custom probe extension model.
+
+### Custom Probe Contract
+
+A custom probe is a container image that conforms to a standardized input/output contract. The controller handles scheduling, HMAC signing, audit recording, SIEM export, and incident creation — the custom probe handles only the domain-specific validation logic.
+
+**Input contract** — the controller provides:
+- Environment variable `GAUNTLET_PROBE_ID` — the unique execution ID (UUID)
+- Environment variable `GAUNTLET_TARGET_NAMESPACE` — the namespace under test
+- Environment variable `GAUNTLET_EXECUTION_MODE` — `dryRun`, `observe`, or `enforce`
+- Volume mount `/gauntlet/config` — probe-specific configuration from `GauntletProbe.spec.customProbe.config` (JSON)
+- Volume mount `/gauntlet/hmac` — the per-execution HMAC key (same mechanism as built-in probes)
+
+**Output contract** — the probe writes a JSON result to `/gauntlet/result/outcome.json`:
+```json
+{
+  "outcome": "Pass | Fail | NotApplicable | Indeterminate",
+  "detail": "Human-readable description of what was validated and what was found",
+  "nistControls": ["SC-28", "SC-13"],
+  "mitreAttackId": "T1552"
+}
+```
+
+The result is HMAC-signed by the probe using the provided key, identical to built-in probes. The controller verifies the signature and maps the four custom probe outcomes to `controlEffectiveness` using the same normalization table as built-in probes.
+
+### GauntletProbe Custom Probe Configuration
+
+```yaml
+apiVersion: gauntlet.io/v1alpha1
+kind: GauntletProbe
+metadata:
+  name: etcd-encryption-verify
+spec:
+  type: custom
+  customProbe:
+    image: ghcr.io/agency/gauntlet-probe-etcd-encryption@sha256:abc123...
+    serviceAccountRef: gauntlet-probe-etcd-encryption
+    config:
+      encryptionProvider: "aescbc"
+      verifyNamespaces: ["production", "staging"]
+    nistControls: ["SC-28"]
+    mitreAttackId: "T1552"
+  targetNamespaceSelector:
+    matchLabels:
+      data-classification: "high"
+  executionMode: observe
+  intervalSeconds: 86400
+```
+
+### Security Model
+
+Custom probes are subject to **all** the same security controls as built-in probes:
+
+- **Image signing** — custom probe images must be cosign-signed. The admission enforcement policy verifies signatures before the Job pod is admitted. Unsigned custom probe images are rejected at admission.
+- **Digest pinning** — custom probe images are referenced by digest, not tag. The `values.schema.json` enforces this.
+- **ServiceAccount isolation** — each custom probe type requires its own dedicated ServiceAccount, pre-provisioned by the operator. The controller's admission enforcement policy validates that the Job references only approved ServiceAccounts (built-in or registered custom).
+- **HMAC integrity** — custom probe results are HMAC-signed and verified identically to built-in probes.
+- **Pod security** — custom probe Jobs run with the same Restricted pod security profile: non-root, read-only root filesystem, all capabilities dropped, seccomp RuntimeDefault.
+- **Resource limits** — custom probe Jobs are subject to the same `ResourceQuota` as built-in probes.
+
+Custom probe ServiceAccounts must be registered in the Helm values (`customProbes.registeredServiceAccounts`) so the admission enforcement policy can validate them. Unregistered ServiceAccounts are rejected.
+
+### What Custom Probes Cannot Do
+
+- Custom probes cannot use the `detection` outcome set (`Detected`/`Undetected`/`Blocked`) — those outcomes require the controller-driven verification window and AO authorization. Custom probes that need detection validation should request it be added as a built-in detection catalog entry.
+- Custom probes cannot bypass the HMAC integrity chain.
+- Custom probes cannot run with elevated privileges beyond what their registered ServiceAccount provides.
+- Custom probes cannot opt out of image signature verification.
 
 ---
 
@@ -559,9 +658,23 @@ Each probe class is assigned a dedicated ServiceAccount, pre-provisioned at inst
 
 Blast radius containment is a first-class design constraint, not an afterthought. Controls are layered in depth:
 
-**Namespace Scoping** — every `GauntletProbe` must declare a `targetNamespace`. The probe runner Job is created in `gauntlet-system` and its ServiceAccount RoleBinding is scoped to the target namespace only. Cross-namespace access is never implicit.
+**Namespace Scoping** — every `GauntletProbe` must declare either a `targetNamespace` (explicit, single namespace) or a `targetNamespaceSelector` (label-based, multiple namespaces). The two fields are mutually exclusive — specifying both is rejected at admission.
 
-**Dry-Run Mode** — a first-class spec field on every probe (`dryRun: true`). In dry-run mode, the probe constructs the action it would take and records it without executing. This is the default on initial install, requiring explicit opt-in to live execution via the `gauntlet-live-executor` role.
+When `targetNamespaceSelector` is used, the controller resolves matching namespaces at scheduling time and creates one probe Job per matching namespace. New namespaces that acquire a matching label are automatically included in subsequent scheduling cycles; namespaces that lose the label are automatically excluded. This eliminates the combinatorial overhead of managing hundreds of per-namespace probe definitions — a single `GauntletProbe` with `targetNamespaceSelector: { matchLabels: { compliance-tier: "high" } }` covers all namespaces in that tier.
+
+The probe runner Job is created in `gauntlet-system` and its ServiceAccount RoleBinding is scoped to the resolved target namespace only. Cross-namespace access is never implicit. For `targetNamespaceSelector` probes, ephemeral RoleBindings are created per-Job and cleaned up with the Job's TTL. Each resolved namespace produces its own `GauntletProbeResult` — there is no aggregated multi-namespace result.
+
+**Execution Modes** — a first-class spec field on every probe (`executionMode: dryRun | observe | enforce`), overridable at the global level via Helm values. The three modes provide a graduated adoption path:
+
+| Mode | Behavior | Incidents Created | Webhooks Fired | Use Case |
+|---|---|---|---|---|
+| `dryRun` | Probe constructs the action it would take and records it without executing | No | No | Initial install, configuration validation |
+| `observe` | Probe executes live; results are recorded and exported to SIEM | No | No | Evaluation period — ISSO reviews results, tunes probes, builds confidence |
+| `enforce` | Probe executes live; results are recorded; `GauntletIncident` resources are created on failure; IR webhooks fire | Yes | Yes | Full operational mode with incident pipeline |
+
+`dryRun` is the default on initial install. Transitioning to `observe` requires the `gauntlet-live-executor` role (same gate as before — live execution is still explicitly opted into). Transitioning from `observe` to `enforce` requires the same role. The graduated path allows an ISSO to enable live probing, review weeks of results, and only then activate the incident pipeline — reducing the risk of alert fatigue from untuned probes flooding the IR system.
+
+Per-probe `executionMode` overrides the global setting. A probe can be in `enforce` while the global default is `observe`, allowing incremental promotion of individual probe surfaces.
 
 **Resource Quotas** — a `ResourceQuota` is applied to `gauntlet-system` at install time, capping concurrent probe Jobs and total CPU/memory consumption. This prevents a misconfigured schedule or runaway reconciliation loop from flooding the cluster.
 
@@ -639,7 +752,7 @@ Gauntlet's blast radius controls depend on the configured admission controller b
 **Controller startup check and acknowledgment gate** — on every startup and after every reconciliation cycle (continuous drift detection), the controller executes a bootstrap verification checklist:
 
 1. Admission controller CRDs exist and all 4 Gauntlet admission policies are present and enforcing (policy resource type depends on deployment profile)
-2. All 6 ServiceAccounts exist with expected RBAC bindings
+2. All 7 built-in ServiceAccounts exist with expected RBAC bindings (plus any registered custom probe ServiceAccounts)
 3. Default-deny NetworkPolicy is in place in `gauntlet-system`
 4. HMAC root Secret is accessible
 5. Detection backend(s) are reachable (if configured)
@@ -692,7 +805,9 @@ Each record includes the following fields:
 | `spec.probe.targetNamespace` | string | Namespace under test |
 | `spec.probe.aoAuthorizationRef` | string | Reference to GauntletAOAuthorization (detection probes only) |
 | `spec.result.outcome` | enum | `Pass`, `Fail`, `Detected`, `Undetected`, `Blocked`, `Rejected`, `Accepted`, `NotApplicable`, `BackendUnreachable`, `NotEnforced`, `Indeterminate`, `TamperedResult` |
+| `spec.result.controlEffectiveness` | enum | Derived from `outcome` — see Control Effectiveness Normalization below |
 | `spec.result.nistControls` | []string | NIST 800-53 controls validated by this execution (see control mapping below) |
+| `spec.result.controlMappings` | map[string][]string | Multi-framework control mappings — see Multi-Framework Control Mapping below |
 | `spec.result.mitreAttackId` | string | MITRE ATT&CK for Containers technique ID |
 | `spec.result.integrityStatus` | enum | `Verified` or `TamperedResult` |
 | `spec.result.detail` | string | Human-readable description of the outcome |
@@ -710,7 +825,25 @@ Every `GauntletProbeResult` is pushed to a configurable external export target. 
 
 All SIEM export connections require TLS 1.2+ with FIPS-approved cipher suites and certificate validation. Payloads are signed with the Gauntlet signing key before transmission so the SIEM can verify records were not altered in transit. S3 export requires SSE-KMS encryption and object lock in COMPLIANCE mode for AU-11 retention enforcement.
 
-Export is pluggable via an `AuditExportBackend` interface, consistent with the `DetectionBackend` and `NetworkPolicyBackend` patterns. Failed exports are retried with exponential backoff (5-second initial delay, 5-minute maximum, 24-hour retry window). Export failures surface as a distinct Prometheus metric (`gauntlet_siem_export_failures_total`) and generate a `GauntletSystemAlert` with `reason: SIEMExportDegraded` after consecutive failures. In-cluster `GauntletProbeResult` records serve as the resilient backup if the SIEM is persistently unavailable.
+Export is pluggable via an `AuditExportBackend` interface, consistent with the `DetectionBackend` and `NetworkPolicyBackend` patterns.
+
+### Export Formats
+
+The export record format is configurable via `audit.exportFormat` in Helm values. Each format transforms the same underlying `GauntletProbeResult` data into the target format before transmission.
+
+| Format | Identifier | Target SIEMs | Description |
+|---|---|---|---|
+| **JSON** | `json` | Splunk HEC, Elasticsearch, S3, generic webhook | Structured JSON — Gauntlet's native format. All fields preserved with full fidelity. Default. |
+| **CEF** | `cef` | ArcSight, QRadar (via CEF), legacy SIEMs | Common Event Format (ArcSight standard). Maps `controlEffectiveness` to CEF severity, probe metadata to CEF extension fields. |
+| **LEEF** | `leef` | IBM QRadar | Log Event Extended Format. Native QRadar format with Gauntlet-specific custom keys. |
+| **Syslog** | `syslog` | Any RFC 5424-compliant receiver | Structured syslog with SD-ELEMENT containing probe result fields. Universal fallback for SIEMs that accept syslog input. Transmitted via TLS (RFC 5425). |
+| **OCSF** | `ocsf` | AWS Security Lake, Amazon Security Hub, OCSF-native tools | Open Cybersecurity Schema Framework v1.1. Maps probe results to the OCSF `Security Finding` class (class_uid: 2001). Emerging standard with growing federal adoption. |
+
+Multiple export targets can each use a different format — a single Gauntlet deployment can export JSON to Splunk and OCSF to AWS Security Lake simultaneously.
+
+### Export Reliability
+
+Failed exports are retried with exponential backoff (5-second initial delay, 5-minute maximum, 24-hour retry window). Export failures surface as a distinct Prometheus metric (`gauntlet_siem_export_failures_total`) and generate a `GauntletSystemAlert` with `reason: SIEMExportDegraded` after consecutive failures. In-cluster `GauntletProbeResult` records serve as the resilient backup if the SIEM is persistently unavailable.
 
 **Fail-closed option**: When `audit.failClosedOnExportFailure: true` is set in the Helm values, the controller halts all probe scheduling when SIEM export is persistently failing. This ensures no probe executions occur without an audit trail being delivered to the SIEM. Recommended for NIST 800-53 High baseline systems.
 
@@ -719,7 +852,7 @@ Export is pluggable via an `AuditExportBackend` interface, consistent with the `
 The following events within Gauntlet generate audit records exported to the SIEM:
 
 - Controller startup and shutdown
-- Probe enablement and disablement (`dryRun` changes)
+- Probe execution mode changes (`executionMode` transitions: `dryRun` → `observe` → `enforce`)
 - Every probe execution outcome
 - AO authorization creation and expiration
 - `GauntletSystemAlert` creation and acknowledgment (including acknowledging principal identity)
@@ -742,6 +875,61 @@ Every probe result is tagged with specific NIST 800-53 controls. This makes the 
 | Admission Control | CM-6, CM-7 |
 | Secret Access | AC-3, AC-4 |
 | Detection Coverage | SI-3, SI-4, SI-7 |
+
+### Multi-Framework Control Mapping
+
+Federal agencies operate under diverse compliance regimes beyond NIST 800-53. A DoD contractor processing CUI needs CMMC mapping. A law enforcement system needs CJIS. A system handling tax data needs IRS 1075. An ISSO adopting Gauntlet should not have to maintain manual crosswalk spreadsheets to satisfy their specific compliance requirements.
+
+Every `GauntletProbeResult` carries a `controlMappings` field — a map from framework identifier to a list of control IDs within that framework. The active frameworks are configured via Helm values (`global.controlFrameworks`), and the controller populates mappings for all active frameworks on every result.
+
+**Supported frameworks:**
+
+| Framework ID | Framework | Example Control IDs |
+|---|---|---|
+| `nist-800-53` | NIST SP 800-53 Rev 5 | `AC-3`, `SC-7`, `AU-9` |
+| `cmmc` | Cybersecurity Maturity Model Certification (v2) | `AC.L2-3.1.1`, `SC.L2-3.13.1` |
+| `cjis` | Criminal Justice Information Services Security Policy | `5.4.1.1`, `5.10.1.2` |
+| `irs-1075` | IRS Publication 1075 (Tax Information Security) | `9.3.1.3`, `9.3.16.7` |
+| `hipaa` | HIPAA Security Rule (45 CFR 164) | `164.312(a)(1)`, `164.312(e)(1)` |
+| `nist-800-171` | NIST SP 800-171 Rev 3 (CUI Protection) | `3.1.1`, `3.13.1` |
+
+**Crosswalk data model**: Crosswalk tables are shipped as versioned, JSON-formatted data files within the Helm chart (not compiled into the controller binary). Each crosswalk file maps `(probe_type, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
+- **Auditable** — an assessor can inspect exactly which mappings are active
+- **Updateable** — agencies can override or extend crosswalks without rebuilding the controller image
+- **Versionable** — the active crosswalk version is recorded on every `GauntletProbeResult` in `spec.result.crosswalkVersion`
+
+Custom framework mappings are supported by providing a crosswalk file in the format above. Gauntlet does not validate custom framework control IDs — the ISSO is responsible for correctness of custom mappings.
+
+**Example `controlMappings` on a probe result:**
+```json
+{
+  "nist-800-53": ["AC-3", "AC-6"],
+  "cmmc": ["AC.L2-3.1.1", "AC.L2-3.1.5"],
+  "nist-800-171": ["3.1.1", "3.1.5"]
+}
+```
+
+The `spec.result.nistControls` field is retained for backward compatibility and populated identically to `controlMappings["nist-800-53"]`. New integrations should use `controlMappings`.
+
+### Control Effectiveness Normalization
+
+The 12 raw outcome values are technically precise but operationally complex — each probe type uses a different subset, and an ISSO reviewing results across surfaces must mentally normalize them to answer a single question: *is this control working?*
+
+Every `GauntletProbeResult` carries a derived `controlEffectiveness` field that normalizes the raw outcome into a four-value enum:
+
+| Effectiveness | Meaning | Raw Outcomes Mapped |
+|---|---|---|
+| `Effective` | The control is operating as intended | `Pass`, `Detected`, `Blocked`, `Rejected` |
+| `Ineffective` | The control is not operating — a gap exists | `Fail`, `Undetected`, `Accepted`, `NotEnforced` |
+| `Degraded` | The control cannot be fully validated — infrastructure issue, not a control gap | `BackendUnreachable`, `Indeterminate`, `NotApplicable` |
+| `Compromised` | Result integrity is violated — trust in the probe pipeline itself is broken | `TamperedResult` |
+
+The `controlEffectiveness` field is:
+- **Derived, not configurable** — the mapping is deterministic and not operator-modifiable, ensuring consistent interpretation across deployments
+- **The primary field for dashboards, reports, and alerting** — operators and ISSOs interact with `controlEffectiveness`; the raw `outcome` field remains for detailed forensic analysis
+- **Exposed as a Prometheus label** — `gauntlet_probe_executions_total{control_effectiveness="Effective"}` enables simple Grafana dashboards and Alertmanager rules without outcome-by-outcome enumeration
+
+The `gauntlet report` CLI (see Report Generation) and `GauntletIncident` creation logic both key off `controlEffectiveness`, not raw outcomes. Incidents are created only when `controlEffectiveness` is `Ineffective` or `Compromised` (in `enforce` execution mode).
 
 ---
 
@@ -767,6 +955,77 @@ The `GauntletIncident` resource is append-only and exported to the SIEM. Each in
 | `spec.webhookDeliveryStatus` | enum | `Pending`, `Delivered`, `Failed` |
 
 Per NIST 800-53 IR-6 and FISMA, mandatory reporting to US-CERT/CISA within defined timeframes is triggered by `GauntletIncident` events. The mandatory reporting window (e.g., 1 hour for critical, 24 hours for high) is configurable in Helm values and documented in the system's incident response plan. Gauntlet generates the incident; the agency's IR procedures govern the reporting workflow.
+
+---
+
+## Report Generation
+
+Probe results and SIEM export provide the raw data. But an ISSO's deliverables are **formatted reports** — continuous monitoring summaries for AO briefings, POA&M entries for control gaps, and assessment evidence packages for assessors. Gauntlet bridges this gap with a built-in report generation capability.
+
+### Report Types
+
+| Report | Output Formats | Description | NIST Reference |
+|---|---|---|---|
+| **Continuous Monitoring Summary** | OSCAL `assessment-results` JSON, PDF, Markdown | Control-by-control effectiveness summary for a time period. Shows pass/fail rates, trend data, and identified gaps per probe surface. Grouped by compliance framework when multiple frameworks are active. | CA-7, PM-31 |
+| **POA&M Generator** | OSCAL `plan-of-action-and-milestones` JSON, CSV | Automatically generates POA&M entries from `GauntletIncident` resources with `Ineffective` or `Compromised` control effectiveness. Includes control ID, weakness description, scheduled remediation date (based on CVE SLA equivalents), and milestone tracking. | CA-5 |
+| **Control Coverage Matrix** | PDF, Markdown, CSV | Maps every active `GauntletProbe` to its compliance framework controls, showing which controls have continuous validation coverage and which are not covered by any probe. Critical for gap analysis during ATO preparation. | CA-2 |
+| **Assessment Evidence Package** | OSCAL `assessment-results` JSON, ZIP archive | Bundles probe results, discovery recommendations, system alerts, and incident records for a defined time window into a single exportable package suitable for submission to an assessor. Includes cryptographic integrity verification (HMAC chain) of all included records. | CA-2, CA-4 |
+| **Executive Summary** | PDF, Markdown | High-level posture dashboard formatted for AO/ISSO consumption. Uses `controlEffectiveness` exclusively (no raw outcomes). Shows posture trend over time, active incidents, and discovery coverage ratio. | PM-9 |
+
+### CLI Interface
+
+```bash
+gauntlet report continuous-monitoring \
+  --from 2026-03-01 --to 2026-03-31 \
+  --frameworks nist-800-53,cmmc \
+  --format oscal-json \
+  --output march-2026-conmon.json
+
+gauntlet report poam \
+  --open-incidents-only \
+  --format csv \
+  --output poam-q1-2026.csv
+
+gauntlet report coverage-matrix \
+  --frameworks nist-800-53 \
+  --format pdf \
+  --output coverage-matrix.pdf
+
+gauntlet report evidence-package \
+  --from 2026-01-01 --to 2026-03-31 \
+  --include-results --include-incidents --include-alerts \
+  --format zip \
+  --output q1-2026-evidence.zip
+
+gauntlet report executive-summary \
+  --period monthly \
+  --format pdf \
+  --output march-2026-executive.pdf
+```
+
+### In-Cluster Report Generation (Optional)
+
+For agencies that require automated report delivery, a `GauntletReport` CRD can be configured to generate reports on a schedule:
+
+```yaml
+apiVersion: gauntlet.io/v1alpha1
+kind: GauntletReport
+metadata:
+  name: monthly-conmon
+spec:
+  type: continuous-monitoring
+  schedule: "0 6 1 * *"        # First of every month at 06:00 UTC
+  frameworks: ["nist-800-53"]
+  format: oscal-json
+  outputSecret: monthly-conmon-reports   # Results stored in a Kubernetes Secret
+  retention: 12                          # Keep last 12 reports
+```
+
+`GauntletReport` is an operational convenience CRD — it does not carry the same audit integrity requirements as `GauntletProbeResult`. The report content is derived entirely from the authoritative audit log; the report itself is not the audit record.
+
+### Report Data Sources
+
+Reports consume data exclusively from the in-cluster `GauntletProbeResult`, `GauntletIncident`, and `GauntletSystemAlert` resources. They do not query the SIEM — the in-cluster data is the source of truth for report generation. This means reports are available even if SIEM export is degraded, and report generation does not create a dependency on external infrastructure.
 
 ---
 
@@ -1006,19 +1265,33 @@ Gauntlet configuration is a security-relevant artifact subject to NIST 800-53 CM
 
 **CM-2 (Configuration Baseline)**: The Helm values file is the configuration baseline. Security-relevant values are documented in the Helm chart's `values.schema.json` with default values and enforced ranges:
 
+### Impact Level Cascade
+
+The `global.impactLevel` setting is the primary configuration axis. It cascades defaults for scheduling, retention, and operational behavior so that operators select their baseline once and receive appropriate defaults. Individual parameters can be overridden tighter (but not looser without `gauntlet-security-override` and an audit record).
+
+| Parameter | High (default) | Moderate | Low | Constraint |
+|---|---|---|---|---|
+| `probe.intervalSeconds` | 21600 (6hr) | 86400 (24hr) | 259200 (72hr) | 300–86400 |
+| `audit.retentionDays` | 365 | 365 | 180 | ≥ value for impact level |
+| `audit.siemRetentionYears` | 3 | 3 | 1 | Documented minimum; enforced at SIEM |
+| `audit.failClosedOnExportFailure` | `true` | `false` | `false` | Recommended `true` for High |
+| `global.executionMode` | `dryRun` | `dryRun` | `dryRun` | `dryRun`, `observe`, `enforce` |
+
+### Security-Relevant Parameters
+
 | Parameter | Constraint | Default | Rationale |
 |---|---|---|---|
-| `probe.intervalSeconds` | 300–86400 | 21600 (6hr) | Minimum 5 min; maximum 24 hr |
-| `audit.retentionDays` | ≥ 365 | 365 | FedRAMP High baseline AU-11 |
-| `audit.failClosedOnExportFailure` | bool | `false` | Recommended `true` for High baseline |
+| `global.impactLevel` | `high`, `moderate`, `low` | `high` | FIPS 199 impact level; cascades defaults above |
+| `global.executionMode` | `dryRun`, `observe`, `enforce` | `dryRun` | See Execution Modes section |
 | `tls.required` | Must be `true` | `true` | Disabling TLS is not a valid configuration |
-| `global.dryRun` | bool | `true` | Live execution requires explicit opt-in |
 | `global.fips` | bool | `true` on FIPS variant | FIPS cannot be disabled on FIPS images |
 | `global.requireAdmissionController` | bool | `true` | Escape hatch requires `gauntlet-security-override` role |
+| `global.controlFrameworks` | []string | `["nist-800-53"]` | Active compliance frameworks for control mapping |
+| `audit.exportFormat` | `json`, `cef`, `leef`, `syslog`, `ocsf` | `json` | SIEM export record format |
 
 Schema constraints are enforced at Helm install and upgrade time by the schema validation webhook, preventing drift from the approved security configuration.
 
-**CM-3 (Configuration Change Control)**: Changes to security-relevant Helm values require the `gauntlet-security-override` role and generate an audit record (see Bootstrap section). The Helm release history serves as the change log. Changes to probe definitions (`GauntletProbe` resources) that enable live execution require the `gauntlet-live-executor` role.
+**CM-3 (Configuration Change Control)**: Changes to security-relevant Helm values require the `gauntlet-security-override` role and generate an audit record (see Bootstrap section). The Helm release history serves as the change log. Changes to probe definitions (`GauntletProbe` resources) that transition `executionMode` from `dryRun` to `observe` or `enforce` require the `gauntlet-live-executor` role.
 
 **CM-7 (Least Functionality)**: Gauntlet components expose only the ports and APIs required for operation. No debug endpoints, admin APIs, or unnecessary services are enabled by default.
 
@@ -1034,68 +1307,143 @@ Schema constraints are enforced at Helm install and upgrade time by the schema v
 - Detection probes require explicit AO authorization; unauthorized adversarial probing of federal infrastructure is not permitted
 - Probe result integrity is cryptographically enforced end-to-end via HMAC; tampered results are detected and recorded
 - `GauntletProbeResult` resources are immutable after creation, enforced at admission by the configured admission controller — not by convention
-- Dry-run mode is the default; live execution requires the `gauntlet-live-executor` role
+- `dryRun` execution mode is the default; graduated adoption via `observe` → `enforce` requires the `gauntlet-live-executor` role
 - All cryptographic operations use FIPS 140-2 validated modules (BoringCrypto for Go, aws-lc-rs for Rust)
-- Minimum audit record retention: 365 days in-cluster, 3 years in SIEM
+- Minimum audit record retention is impact-level-dependent (365 days at High/Moderate, 180 days at Low); SIEM retention is 3 years at High/Moderate, 1 year at Low
 - Production-safe blast radius controls are enforced at the infrastructure layer, not just by convention
+- Custom probes are subject to identical security controls as built-in probes — no escape hatch from image signing, HMAC, or pod security
+- Control mappings are data-driven (versioned crosswalk files), not compiled into the controller — agencies can extend without rebuilding
+- Discovery is a core controller capability; the primary onboarding path is review-and-promote, not author-from-scratch
 
 ---
 
 ## Control Discovery and Probe Generation
 
-Agencies deploying Gauntlet must author `GauntletProbe` CRs for every control boundary they want validated. For clusters with dozens of namespaces, hundreds of NetworkPolicies, and multiple admission policies, this is tedious and error-prone. Gauntlet provides a **control discovery** capability that scans the cluster for existing security controls and generates `GauntletProbe` CRs as suggestions.
+Control discovery is Gauntlet's **primary onboarding path**. An ISSO deploying Gauntlet should not need to hand-author `GauntletProbe` YAML — they should install Gauntlet, review the automatically generated recommendations, and promote the ones that match their security plan.
 
 **This is not a compliance scanner.** Discovery does not tell you whether your controls are correct or sufficient — that is the domain of tools like Kubescape and kube-bench. Discovery tells you "here are the controls you have; here are the probes that would continuously verify they are working." It is onboarding automation for Gauntlet's own configuration.
+
+### GauntletProbeRecommendation CRD
+
+Discovery produces `GauntletProbeRecommendation` resources — a dedicated CRD in Gauntlet's API group that represents a suggested probe configuration awaiting operator review. Recommendations are not probes — they do not execute. They exist solely as a review surface.
+
+| Field | Type | Description |
+|---|---|---|
+| `spec.sourceResource` | ObjectReference | The cluster resource that triggered this recommendation (e.g., a specific NetworkPolicy) |
+| `spec.sourceResourceHash` | string | Hash of the source resource spec at discovery time — used for change detection |
+| `spec.confidence` | enum | `high`, `medium`, `low` — how confident discovery is in the generated probe configuration |
+| `spec.probeTemplate` | GauntletProbeSpec | The proposed probe configuration (always `executionMode: dryRun`) |
+| `spec.rationale` | string | Human-readable explanation of why this probe was recommended |
+| `spec.controlMappings` | map[string][]string | Compliance framework controls this probe would validate |
+| `status.state` | enum | `pending`, `promoted`, `dismissed`, `superseded` |
+| `status.promotedTo` | string | Name of the `GauntletProbe` resource if promoted |
+| `status.dismissedBy` | string | Kubernetes username who dismissed, if dismissed |
+| `status.dismissedReason` | string | Stated reason for dismissal |
+
+**Lifecycle**: `pending` → `promoted` (operator creates a GauntletProbe from the template) or `dismissed` (operator explicitly rejects). If the source resource changes (detected via `sourceResourceHash`), a new recommendation is created and the old one transitions to `superseded`. Dismissed recommendations are not re-generated for the same source resource unless the source resource changes.
+
+### Controller-Driven Discovery (Default)
+
+Discovery is a **core controller capability**, not an optional CronJob. On startup and on a configurable schedule (default: every 6 hours, aligned with the High baseline probe cadence), the controller's discovery reconciler:
+
+1. Scans the cluster for discoverable resources (see table below)
+2. Generates `GauntletProbeRecommendation` CRs for any resource not already covered by an existing `GauntletProbe` or a non-dismissed recommendation
+3. Detects changes to source resources backing existing probes and creates `superseded` recommendations with updated configurations
+
+Discovery runs with the `gauntlet-discovery` ServiceAccount, which has read-only permissions across the cluster. It never creates probes, never enables live execution, and never modifies existing resources.
+
+The operator's first interaction after install is: `kubectl get gauntletproberecommendations` — review, promote, or dismiss.
 
 ### Discoverable Resources
 
 | Cluster Resource | Generated Probe Type | Derivation |
 |---|---|---|
-| `NetworkPolicy` | `netpol` | Deny and allow paths derived from `podSelector`, `namespaceSelector`, `ports` |
+| `NetworkPolicy` | `netpol` | Deny and allow paths derived from `podSelector`, `namespaceSelector`, `ports`. Uses `targetNamespaceSelector` when multiple namespaces share the same policy shape. |
 | `ValidatingWebhookConfiguration` / Kyverno `ClusterPolicy` / OPA `ConstraintTemplate` | `admission` | Known-bad spec derived from policy schema; skeleton generated for generic webhooks |
 | `RoleBinding` / `ClusterRoleBinding` | `rbac` | Allow-path and cross-namespace deny-path tests derived from binding scope |
-| `Secret` resources across namespaces | `secret` | Cross-namespace access denial probes; high-value Secrets prioritized by type |
+| `Secret` resources across namespaces | `secret` | Cross-namespace access denial probes; high-value Secrets prioritized by type (TLS, dockerconfigjson, opaque with size > threshold) |
 | Falco rules / Tetragon `TracingPolicy` | `detection` | Rule syscall triggers mapped to MITRE technique IDs in the approved catalog |
 
 ### Output and Safety Model
 
-Discovery outputs `GauntletProbe` YAML with:
-- `metadata.annotations["gauntlet.io/discovered-from"]` — reference to the source resource
-- `metadata.annotations["gauntlet.io/discovery-confidence"]` — `high`, `medium`, or `low`
-- `spec.dryRun: true` — always; discovery never enables live execution
+All recommendations are generated with:
+- `spec.probeTemplate.executionMode: dryRun` — always; discovery never enables live execution
+- `spec.confidence` — explicitly communicated so the operator knows which recommendations need manual review versus which are high-confidence
+- `spec.controlMappings` — pre-populated with all active framework mappings so the ISSO can see which compliance controls would be covered
 
-Discovery is read-only. It never creates probes automatically. The `gauntlet-live-executor` role is still required to enable live execution on any generated probe. Discovery runs with a `gauntlet-discovery` ServiceAccount that has only read permissions.
+Discovery is read-only. It never creates probes automatically. The `gauntlet-live-executor` role is still required to enable live execution on any promoted probe.
 
 ### CLI Interface
 
+The `gauntlet discover` CLI provides the same discovery capability for offline use, GitOps workflows, or pre-install planning:
+
 ```bash
-gauntlet discover --output probes/                              # All probe types
-gauntlet discover --type netpol --namespace production          # Scoped
+gauntlet discover --output probes/                              # All probe types → YAML files
+gauntlet discover --type netpol --namespace production          # Scoped to a surface and namespace
 gauntlet discover --type detection --output probes/detection.yaml
-gauntlet discover --dry-run                                     # Preview only
+gauntlet discover --dry-run                                     # Preview only, no file output
+gauntlet discover --kubeconfig ~/.kube/staging                  # Target a different cluster
+gauntlet discover --promote recommendations/                    # Generate GauntletProbe YAML from exported recommendations
 ```
 
-### In-Cluster Mode (Optional)
+### Promotion Workflow
 
-A CronJob mode periodically scans for new or changed security controls and creates `GauntletProbeRecommendation` CRs that surface in `kubectl get`. Operators review recommendations and promote them to `GauntletProbe` resources. Dismissed recommendations are not re-generated for the same source resource.
+Promoting a recommendation to a live probe is a deliberate operator action:
+
+```bash
+# Review pending recommendations
+kubectl get gauntletproberecommendations --field-selector status.state=pending
+
+# Inspect a specific recommendation
+kubectl describe gauntletproberecommendation netpol-deny-prod-to-staging-abc123
+
+# Promote: creates a GauntletProbe from the recommendation template
+kubectl gauntlet promote netpol-deny-prod-to-staging-abc123
+
+# Or promote via YAML export + manual edit + apply (GitOps-compatible)
+kubectl get gauntletproberecommendation netpol-deny-prod-to-staging-abc123 -o yaml \
+  | gauntlet extract-probe \
+  | kubectl apply -f -
+
+# Dismiss with reason
+kubectl gauntlet dismiss netpol-deny-prod-to-staging-abc123 --reason "Covered by existing probe set"
+```
+
+The `kubectl gauntlet` plugin is shipped with the Gauntlet CLI binary. The promote and dismiss commands are convenience wrappers — all operations are also achievable via standard `kubectl` against the CRD API.
+
+### Discovery Metrics
+
+Discovery activity is observable via Prometheus:
+- `gauntlet_discovery_recommendations_total` (counter; labels: probe_type, confidence) — total recommendations generated
+- `gauntlet_discovery_pending_recommendations` (gauge; labels: probe_type) — current pending recommendations awaiting review
+- `gauntlet_discovery_coverage_ratio` (gauge; labels: probe_type) — ratio of discoverable resources that have a corresponding active `GauntletProbe`
 
 ---
 
 ## Differentiation from Existing Tooling
 
-| Tool | Continuous | Active Probing | Detection Validation | NIST 800-53 Mapped | SIEM Audit Export | OSS/CNCF-fit |
-|---|---|---|---|---|---|---|
-| Kubescape / kube-bench | No | No | No | Partial | No | Yes |
-| Stratus Red Team | No | Yes | No | No | No | Yes |
-| Falco / Tetragon | Yes | No (reactive) | No | No | Partial | Yes |
-| Cymulate / AttackIQ | Yes | Yes | Yes | Partial | Yes | No (commercial) |
-| AccuKnox | Yes | No (reactive) | No | No | No | Partial |
-| **Gauntlet** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
+| Tool | Continuous | Active Probing | Detection Validation | Multi-Framework Mapped | SIEM Audit Export | Report Generation | Custom Probes | OSS/CNCF-fit |
+|---|---|---|---|---|---|---|---|---|
+| Kubescape / kube-bench | No | No | No | Partial (800-53) | No | No | No | Yes |
+| Stratus Red Team | No | Yes | No | No | No | No | Yes | Yes |
+| Falco / Tetragon | Yes | No (reactive) | No | No | Partial | No | Yes (rules) | Yes |
+| Cymulate / AttackIQ | Yes | Yes | Yes | Partial | Yes | Yes | Yes | No (commercial) |
+| AccuKnox | Yes | No (reactive) | No | No | No | No | No | Partial |
+| **Gauntlet** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
 
 ---
 
 ## Summary
 
-Federal systems need more than a passing scan — they need continuous, evidence-backed proof that security controls are operationally effective. Existing tools tell you your controls are configured correctly. Gauntlet tells you they are **actually working** — right now, continuously, including the detection layer, with every result mapped to specific NIST 800-53 controls and exported to your SIEM as ATO evidence.
+Federal systems need more than a passing scan — they need continuous, evidence-backed proof that security controls are operationally effective. Existing tools tell you your controls are configured correctly. Gauntlet tells you they are **actually working** — right now, continuously, including the detection layer, with every result mapped to the compliance frameworks your agency requires and exported to your SIEM as ATO evidence.
+
+Gauntlet is designed to be adopted by any ISSO regardless of their agency's specific technology stack, compliance regime, or operational maturity:
+
+- **Any compliance framework**: NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, or custom crosswalks — configured, not hardcoded
+- **Any impact level**: High, Moderate, or Low baseline — with appropriate defaults cascaded automatically
+- **Any Kubernetes platform**: EKS, AKS, GKE, RKE2, or bare-metal Cilium/Calico — with pre-built profiles and degraded-capability transparency
+- **Any adoption pace**: `dryRun` → `observe` → `enforce` — graduated modes so the ISSO can validate before committing to incident pipelines
+- **Any probe surface**: Five built-in surfaces plus a custom probe extension model for agency-specific controls
+- **Any reporting need**: Automated continuous monitoring reports, POA&M generation, coverage matrices, and OSCAL-native evidence packages
 
 There is no cloud-native, open-source equivalent in the CNCF landscape that satisfies all of these requirements simultaneously. Gauntlet fills that gap.

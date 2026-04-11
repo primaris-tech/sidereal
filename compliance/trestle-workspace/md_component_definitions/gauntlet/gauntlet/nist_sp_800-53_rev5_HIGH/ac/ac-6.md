@@ -29,8 +29,7 @@ specific function.
 
 ### Per-Probe ServiceAccount Model
 
-Five probe classes each run under a dedicated ServiceAccount provisioned
-at Helm install time:
+Five built-in probe classes plus a discovery capability each run under dedicated ServiceAccounts provisioned at Helm install time. Custom probes use operator-registered ServiceAccounts subject to the same least-privilege constraints:
 
 | ServiceAccount | Permitted Operations | Cannot Perform |
 |---|---|---|

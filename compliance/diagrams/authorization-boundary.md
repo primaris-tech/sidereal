@@ -88,11 +88,13 @@ flowchart TB
 |---|---|---|
 | Controller Manager | Kubernetes Deployment | Go binary; BoringCrypto FIPS; `gauntlet-system` namespace |
 | Probe Runner Jobs | Kubernetes Jobs (ephemeral) | Short-lived; TTL-cleaned; per-probe ServiceAccount |
-| GauntletProbe CRDs | Kubernetes custom resources | Probe configuration |
-| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; 365-day minimum TTL |
-| GauntletIncident CRDs | Kubernetes custom resources | Control failure records |
+| GauntletProbe CRDs | Kubernetes custom resources | Probe configuration; supports built-in and custom probe types |
+| GauntletProbeResult CRDs | Kubernetes custom resources | Append-only audit records; impact-level-dependent TTL; multi-framework controlMappings |
+| GauntletIncident CRDs | Kubernetes custom resources | Control failure records (enforce execution mode only) |
 | GauntletSystemAlert CRDs | Kubernetes custom resources | Degraded state indicators |
 | GauntletAOAuthorization CRDs | Kubernetes custom resources | Detection probe authorization |
+| GauntletProbeRecommendation CRDs | Kubernetes custom resources | Discovery-generated probe suggestions |
+| GauntletReport CRDs | Kubernetes custom resources | Optional scheduled report generation |
 | Admission enforcement policies | Kubernetes custom resources | Admission-layer blast radius controls (per deployment profile) |
 | `gauntlet-system` NetworkPolicy | Kubernetes NetworkPolicy | Default-deny with explicit allow rules |
 | HMAC root Secret | Kubernetes Secret | KMS-encrypted for IL4/IL5 |

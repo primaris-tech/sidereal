@@ -42,7 +42,8 @@ constraints:
 | `audit.retentionDays` | Minimum 365 | Enforces AU-11 retention floor |
 | `siem.tlsCABundle` | Required when `siem.enabled: true` | Prevents plaintext SIEM export |
 | `fips.enabled` | Boolean, documented in SSP | FIPS mode is an auditable setting |
-| `probe.dryRun` | Default `true` on fresh install | Blast radius default; explicit opt-in required |
+| `global.executionMode` | Default `dryRun` on fresh install | Graduated adoption (`dryRun` → `observe` → `enforce`); explicit opt-in required via `gauntlet-live-executor` role |
+| `global.impactLevel` | `high`, `moderate`, `low` (default: `high`) | FIPS 199 impact level; cascades cadence, retention, and fail-closed defaults |
 
 These constraints cannot be overridden via `helm upgrade --set` without first
 modifying the schema, which requires a code change that flows through CI and
@@ -83,7 +84,7 @@ flips.
 Gauntlet's default configuration settings represent the most restrictive
 mode consistent with operation:
 
-- `probe.dryRun: true` — no live probes without explicit per-probe opt-in
+- `global.executionMode: dryRun` — no live probes without explicit opt-in via `gauntlet-live-executor` role; graduated path through `observe` then `enforce`
 - `probe.fingerprinting.enabled: true` — all probe actions fingerprinted
 - `resourceQuota.maxConcurrentJobs: 3` — bounded concurrent probe footprint
 - `audit.exportOnFailure: true` — failures always exported, not configurable

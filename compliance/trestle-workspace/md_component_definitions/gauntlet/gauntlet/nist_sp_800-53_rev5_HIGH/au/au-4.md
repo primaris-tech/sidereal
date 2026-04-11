@@ -1,8 +1,8 @@
 ---
 x-trestle-comp-def-rules:
   gauntlet:
-    - name: probe-result-365-day-ttl-siem-export
-      description: GauntletProbeResult records are retained for a minimum of 365 days by controller TTL enforcement, with continuous SIEM export providing durable off-cluster storage independent of etcd capacity
+    - name: probe-result-impact-level-ttl-siem-export
+      description: GauntletProbeResult records are retained for an impact-level-dependent minimum (365 days at High/Moderate, 180 days at Low) by controller TTL enforcement, with continuous SIEM export in configurable format (JSON/CEF/LEEF/Syslog/OCSF) providing durable off-cluster storage independent of etcd capacity
 x-trestle-global:
   profile:
     title: NIST SP 800-53 Rev 5 High Baseline
@@ -33,11 +33,11 @@ independently of etcd capacity constraints.
 `GauntletProbeResult` CRs are stored in the Kubernetes API server (etcd).
 Capacity is managed through several mechanisms:
 
-**Minimum retention floor**: The controller enforces a 365-day minimum TTL
-on all `GauntletProbeResult` CRs at admission time. A TTL annotation below
-the 365-day floor is rejected by the controller's validating admission
-webhook. This is a floor, not a ceiling — the agency may configure a longer
-in-cluster retention period.
+**Minimum retention floor**: The controller enforces an impact-level-dependent minimum TTL
+on all `GauntletProbeResult` CRs at admission time (365 days for High/Moderate, 180 days
+for Low). A TTL annotation below the floor for the configured `global.impactLevel` is rejected
+by the controller's validating admission webhook. This is a floor, not a ceiling — the agency
+may configure a longer in-cluster retention period.
 
 **Append-only protection**: The admission enforcement policy (e.g., Kyverno ClusterPolicy or OPA Constraint) denying UPDATE and
 DELETE operations on `GauntletProbeResult` resources (SR-9) ensures that

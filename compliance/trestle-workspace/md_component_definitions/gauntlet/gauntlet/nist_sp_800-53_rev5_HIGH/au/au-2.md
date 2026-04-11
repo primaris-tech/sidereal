@@ -34,7 +34,7 @@ configured SIEM target.
 | HMAC verification failure | Tampered result ConfigMap detected | GauntletProbeResult (outcome: TamperedResult) |
 | Controller startup | Controller pod starts | Kubernetes audit log + SIEM export |
 | Controller shutdown | Controller pod terminates | Kubernetes audit log + SIEM export |
-| Probe enablement | dryRun set to false on a GauntletProbe | SIEM export via CM-3 change audit |
+| Probe execution mode change | executionMode transitioned (dryRun → observe → enforce) on a GauntletProbe | SIEM export via CM-3 change audit |
 | Probe disablement | GauntletProbe paused or deleted | SIEM export via CM-3 change audit |
 | AO authorization creation | GauntletAOAuthorization resource created | SIEM export |
 | AO authorization expiration | GauntletAOAuthorization TTL reached | GauntletSystemAlert + SIEM export |

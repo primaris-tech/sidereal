@@ -1,9 +1,9 @@
-# Deployment Profile: opa-calico-tetragon
+# Deployment Profile: opa-aks
 
-> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
+> **Note**: This is one of six pre-built deployment profiles shipped with Gauntlet. See also: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `kyverno-gke`, `opa-rke2`. Custom profiles are supported for agency-specific configurations.
 
-**Profile ID**: `opa-calico-tetragon`
-**Description**: Gauntlet deployment profile for Calico-based clusters with OPA/Gatekeeper admission control and Tetragon runtime detection.
+**Profile ID**: `opa-aks`
+**Description**: Gauntlet deployment profile for Azure AKS clusters with Azure CNI, OPA/Gatekeeper admission control, and Falco runtime detection.
 
 ---
 
@@ -13,8 +13,8 @@
 |---|---|---|
 | Admission Enforcement | OPA/Gatekeeper | >= 3.14 |
 | Image Signature Verification | Sigstore policy-controller | >= 0.6 |
-| Detection Backend | Tetragon gRPC Event API | >= 1.0 |
-| CNI Observability | Calico Flow Log API | >= 3.26 |
+| Detection Backend | Falco gRPC Output API | >= 0.37 |
+| CNI Observability | None (Azure CNI — no native flow API) | — |
 | SIEM Export | [Agency-configured: Splunk HEC, Elasticsearch, S3] | — |
 
 ## Helm Profile Configuration
@@ -24,9 +24,16 @@ gauntlet:
   profile:
     admissionController: opa
     signatureVerifier: policy-controller
-    detectionBackend: tetragon
-    cniObservability: calico
+    detectionBackend: falco
+    cniObservability: none
+    networkPolicyVerification: tcp-inference
 ```
+
+## Degraded Capabilities
+
+| Capability | Impact | Mitigation |
+|---|---|---|
+| NetworkPolicy Verification | `tcp-inference` mode instead of `cni-verdict` | Azure CNI does not expose a flow-level observability API (no Hubble/Calico equivalent). The `tcp-inference` mode validates enforcement by attempting connections and observing TCP RST/timeout behavior. This provides functional validation but cannot report the CNI-level verdict reason. |
 
 ## Admission Policies Rendered
 
@@ -44,9 +51,8 @@ The Helm chart renders the following OPA/Gatekeeper resources for this profile:
 
 | System | Port | Protocol | Authentication |
 |---|---|---|---|
-| Kubernetes API Server | 443/TCP | mTLS | ServiceAccount token (1hr bound expiry) |
-| Tetragon gRPC | 54321/TCP | gRPC/TLS | mTLS, SAN validation |
-| Calico API | 5443/TCP | HTTPS/TLS | mTLS, SAN validation |
+| Kubernetes API Server (AKS) | 443/TCP | mTLS | ServiceAccount token (1hr bound expiry) via Workload Identity |
+| Falco gRPC | 50051/TCP | gRPC/TLS | mTLS, SAN validation |
 | SIEM endpoints | [Agency-configured] | HTTPS/TLS 1.2+ FIPS | [Agency-configured] |
 
 ## Bootstrap Verification Checklist
@@ -59,12 +65,12 @@ For this profile, the bootstrap verifier checks:
 4. All 6 ServiceAccounts exist with expected RBAC bindings
 5. Default-deny NetworkPolicy is in place in `gauntlet-system`
 6. HMAC root Secret is accessible
-7. Tetragon gRPC endpoint is reachable on port 54321
-8. Calico API endpoint is reachable on port 5443
+7. Falco gRPC endpoint is reachable on port 50051
+8. NetworkPolicy verification mode is set to `tcp-inference` (no CNI observability endpoint expected)
 
 ## SAP Test Commands
 
-These are the profile-specific commands for the SAP test procedures.
+These are the profile-specific commands for the SAP test procedures. Replace the generic `[profile-specific]` placeholders in the SAP template with these commands.
 
 ### TEST-SYS-01 — Image Signature Verification
 
@@ -105,14 +111,15 @@ kubectl get constraint gauntlet-proberesult-immutable -o yaml \
 # Expected: enforcementAction: deny
 ```
 
-### TEST-SYS-04 — NetworkPolicy Verification (Calico)
+### TEST-SYS-04 — NetworkPolicy Verification (tcp-inference)
 
 ```bash
 # Review the NetworkPolicy probe's most recent result
 kubectl get gauntletproberesults -n gauntlet-system \
   --field-selector='spec.probe.type=netpol' \
   --sort-by=.metadata.creationTimestamp -o yaml | tail -30
-# Expected: outcome: Pass (or Dropped), verificationMode: cni-verdict
+# Expected: outcome: Pass (or Dropped), verificationMode: tcp-inference
+# Note: cni-verdict is not available on Azure CNI; tcp-inference is the expected mode
 ```
 
 ### TEST-SYS-07 — Identity Separation

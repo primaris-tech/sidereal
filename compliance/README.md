@@ -14,6 +14,10 @@ capabilities to concrete tools.
 Pre-built profiles are in `profiles/`:
 - `kyverno-cilium-falco.md` — Kyverno + Cilium/Hubble + Falco (default)
 - `opa-calico-tetragon.md` — OPA/Gatekeeper + Calico + Tetragon
+- `kyverno-eks.md` — Kyverno + VPC CNI + Falco (Amazon EKS)
+- `opa-aks.md` — OPA/Gatekeeper + Azure CNI + Falco (Azure AKS)
+- `kyverno-gke.md` — Kyverno + Dataplane V2 + Falco (Google GKE)
+- `opa-rke2.md` — OPA/Gatekeeper + Tetragon (RKE2/k3s on-premises)
 
 Each profile document contains:
 - Capability-to-tool binding table

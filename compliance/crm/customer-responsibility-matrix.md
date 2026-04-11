@@ -1,9 +1,13 @@
 # Gauntlet Customer Responsibility Matrix
-## NIST 800-53 Rev 5 — High Baseline
+## NIST 800-53 Rev 5 — Configurable Baseline (High Default)
 
-This matrix defines responsibility allocation for every applicable NIST 800-53 High baseline
+This matrix defines responsibility allocation for every applicable NIST 800-53 baseline
 control between Gauntlet (the software) and the deploying agency. Agencies use this document
 to understand their residual security obligations before beginning their ATO process.
+
+Gauntlet's FIPS 199 impact level is operator-configurable (`global.impactLevel: high | moderate | low`). This CRM documents responsibilities at the High baseline. Agencies operating at Moderate or Low may find that some controls listed here are not required by their selected baseline — consult NIST SP 800-53B for baseline applicability.
+
+Gauntlet supports multi-framework compliance mapping (`global.controlFrameworks`). While this CRM is organized by NIST 800-53, probe results can simultaneously map to CMMC, CJIS, IRS 1075, HIPAA, and NIST 800-171 via configurable crosswalk tables.
 
 ### Responsibility Key
 
@@ -42,7 +46,7 @@ to understand their residual security obligations before beginning their ATO pro
 | AC-11 | Device Lock | N/A | No interactive user sessions in Gauntlet's operational context |
 | AC-12 | Session Termination | G | ServiceAccount token bound expiry configured to 1-hour maximum; sessions terminate automatically |
 | AC-14 | Permitted Actions Without Identification | C | Agency defines any permitted unauthenticated actions in their environment |
-| AC-16 | Security and Privacy Attributes | S | Gauntlet applies probe-id labels and NIST control family tags; agency manages broader attribute policy |
+| AC-16 | Security and Privacy Attributes | S | Gauntlet applies probe-id labels, NIST control tags, and multi-framework `controlMappings`; agency manages broader attribute policy |
 | AC-17 | Remote Access | C | Agency controls remote access to Kubernetes management plane |
 | AC-18 | Wireless Access | N/A | Not applicable to containerized operator deployment |
 | AC-19 | Access Control for Mobile Devices | N/A | Not applicable |
@@ -73,15 +77,15 @@ to understand their residual security obligations before beginning their ATO pro
 |---|---|---|---|
 | AU-1 | Policy and Procedures | S | Gauntlet provides audit design and AU-12 event enumeration; agency writes audit policy and procedures |
 | AU-2 | Event Logging | G | Gauntlet defines and generates all audit-relevant events per AU-12 enumeration in the engineering design |
-| AU-3 | Content of Audit Records | G | All audit records include: outcome, timestamp, probe ID, target namespace, NIST control mapping, principal identity, HMAC verification status |
-| AU-4 | Audit Log Storage Capacity | G | Configurable retention with 365-day minimum enforced; SIEM export provides long-term storage; in-cluster backup prevents capacity exhaustion |
+| AU-3 | Content of Audit Records | G | All audit records include: outcome, `controlEffectiveness`, timestamp, probe ID, target namespace, multi-framework `controlMappings`, principal identity, HMAC verification status |
+| AU-4 | Audit Log Storage Capacity | G | Configurable retention with impact-level-dependent minimums (365d High/Moderate, 180d Low); SIEM export provides long-term storage; in-cluster backup prevents capacity exhaustion |
 | AU-5 | Response to Audit Processing Failures | G | Export failures surfaced as Prometheus metrics with alerting; retry with backoff; records never silently dropped |
-| AU-6 | Audit Record Review, Analysis, and Reporting | S | Gauntlet exports structured records to SIEM; agency is responsible for review, analysis, and reporting procedures |
-| AU-7 | Audit Record Reduction and Report Generation | S | SIEM handles reduction and reporting; agency configures SIEM queries and report schedules |
+| AU-6 | Audit Record Review, Analysis, and Reporting | S | Gauntlet exports structured records to SIEM (JSON, CEF, LEEF, Syslog, or OCSF format) and generates continuous monitoring reports via `gauntlet report` CLI; agency is responsible for review, analysis, and formal reporting procedures |
+| AU-7 | Audit Record Reduction and Report Generation | G | Gauntlet provides built-in report generation: continuous monitoring summaries, POA&M generation, coverage matrices, and OSCAL-native evidence packages via `gauntlet report` CLI and optional `GauntletReport` CRD |
 | AU-8 | Time Stamps | G | All audit records include RFC 3339 timestamps; time synchronization inherited from Kubernetes platform |
 | AU-9 | Protection of Audit Information | G | HMAC signing of all results; admission enforcement policy enforces append-only GauntletProbeResult; TLS + payload signing on SIEM export; S3 object lock in COMPLIANCE mode |
 | AU-10 | Non-Repudiation | G | Individual Kubernetes principals required for all security-sensitive actions; HMAC verification chain from probe execution to audit record |
-| AU-11 | Audit Record Retention | S | Gauntlet enforces minimum 365-day in-cluster TTL; agency configures SIEM for 3-year total retention per their AU-11 policy |
+| AU-11 | Audit Record Retention | S | Gauntlet enforces impact-level-dependent in-cluster TTL minimums (365d High/Moderate, 180d Low); agency configures SIEM for long-term retention (3yr High/Moderate, 1yr Low) per their AU-11 policy |
 | AU-12 | Audit Record Generation | G | All components generate audit records; full event enumeration documented in engineering design |
 | AU-13 | Monitoring for Information Disclosure | C | Agency monitors for unauthorized disclosure of audit data |
 | AU-14 | Session Audit | I | Kubernetes API server audit logging |
@@ -95,9 +99,9 @@ to understand their residual security obligations before beginning their ATO pro
 | Control | Name | Responsibility | Notes |
 |---|---|---|---|
 | CA-1 | Policy and Procedures | C | Agency writes assessment, authorization, and monitoring policy |
-| CA-2 | Control Assessments | S | Gauntlet produces continuous NIST-mapped control evidence; agency conducts formal control assessments using Gauntlet evidence as primary input |
+| CA-2 | Control Assessments | S | Gauntlet produces continuous multi-framework-mapped control evidence with `controlEffectiveness` normalization and automated assessment evidence packages (`gauntlet report evidence-package`); agency conducts formal control assessments using Gauntlet evidence as primary input |
 | CA-3 | Information Exchange | S | Gauntlet documents all external connections with direction, data type, protocol, and security controls; agency executes required ISAs with each external system owner |
-| CA-5 | Plan of Action and Milestones | S | Gauntlet generates GauntletIncident resources from control failures; agency manages formal POA&M process and tracks remediation |
+| CA-5 | Plan of Action and Milestones | S | Gauntlet generates GauntletIncident resources from control failures (in `enforce` execution mode) and provides automated POA&M generation via `gauntlet report poam`; agency manages formal POA&M process and tracks remediation |
 | CA-6 | Authorization | C | AO authorization is the deploying agency's responsibility; detection probes require documented AO authorization referencing GauntletAOAuthorization CRD |
 | CA-7 | Continuous Monitoring | G | Core Gauntlet capability; continuous probe execution with NIST-mapped results is the continuous monitoring implementation |
 | CA-8 | Penetration Testing | S | Gauntlet detection probes require AO authorization per CA-8; agency conducts annual formal penetration testing as a separate activity |
@@ -114,7 +118,7 @@ to understand their residual security obligations before beginning their ATO pro
 | CM-3 | Configuration Change Control | G | Security-relevant Helm value changes require gauntlet-security-override role; changes generate audit records exported to SIEM |
 | CM-4 | Impact Analysis | S | Agency conducts impact analysis for Gauntlet changes; Gauntlet documents security-relevant configuration parameters to assist analysis |
 | CM-5 | Access Restrictions for Change | G | gauntlet-security-override role restricts who can modify security-relevant configuration |
-| CM-6 | Configuration Settings | G | Helm values schema defines valid configuration ranges; controller enforces settings (e.g., minimum 365-day TTL floor) |
+| CM-6 | Configuration Settings | G | Helm values schema defines valid configuration ranges; impact level cascades appropriate defaults; controller enforces settings (e.g., impact-level-dependent TTL floor) |
 | CM-7 | Least Functionality | G | No debug endpoints, admin APIs, or unnecessary services; probe runners have no shell, no package manager |
 | CM-8 | System Component Inventory | G | SBOM generated and published with each release; covers all Go/Rust dependencies, base images, and Helm chart dependencies |
 | CM-9 | Configuration Management Plan | G | CMP document provided in compliance/plans/ |
@@ -168,7 +172,7 @@ to understand their residual security obligations before beginning their ATO pro
 | IR-1 | Policy and Procedures | S | Gauntlet provides IRP template; agency writes incident response policy |
 | IR-2 | Incident Response Training | C | Agency trains personnel on incident response procedures |
 | IR-3 | Incident Response Testing | C | Agency tests incident response procedures on defined schedule |
-| IR-4 | Incident Handling | S | Gauntlet generates GauntletIncident resources for all control failures and exports to configured IR webhook; agency handles incidents per their IRP |
+| IR-4 | Incident Handling | S | Gauntlet generates GauntletIncident resources for control failures when `executionMode: enforce` (incidents are suppressed in `dryRun` and `observe` modes) and exports to configured IR webhook; agency handles incidents per their IRP |
 | IR-5 | Incident Monitoring | S | Gauntlet tracks control failure incidents via GauntletIncident resources; agency monitors and tracks incidents in their IR system |
 | IR-6 | Incident Reporting | S | Gauntlet generates incident records with mandatory reporting window configuration; agency executes required US-CERT/CISA reporting |
 | IR-7 | Incident Response Assistance | C | Agency provides incident response assistance resources |
@@ -216,7 +220,7 @@ to understand their residual security obligations before beginning their ATO pro
 | PL-4 | Rules of Behavior | S | Gauntlet provides RoB template in compliance/plans/; agency customizes and obtains signatures |
 | PL-8 | Security and Privacy Architectures | S | Gauntlet provides system boundary, data flow, and architecture documentation; agency incorporates into their enterprise security architecture |
 | PL-9 | Central Management | C | Agency manages centralized security control administration |
-| PL-10 | Baseline Selection | C | Agency selects and documents applicable NIST 800-53 baseline |
+| PL-10 | Baseline Selection | S | Agency selects and documents applicable NIST 800-53 baseline; Gauntlet's `global.impactLevel` setting auto-tunes operational parameters to the selected baseline |
 | PL-11 | Baseline Tailoring | C | Agency tailors baseline and documents in SSP |
 
 ---
@@ -257,7 +261,7 @@ to understand their residual security obligations before beginning their ATO pro
 | Control | Name | Responsibility | Notes |
 |---|---|---|---|
 | RA-1 | Policy and Procedures | C | Agency writes risk assessment policy |
-| RA-2 | Security Categorization | C | Agency categorizes Gauntlet per FIPS 199; Gauntlet documentation provides inputs (data types, functions) |
+| RA-2 | Security Categorization | S | Agency categorizes Gauntlet per FIPS 199 and sets `global.impactLevel` accordingly; Gauntlet cascades appropriate defaults for the selected impact level |
 | RA-3 | Risk Assessment | S | Gauntlet provides formal risk classifications for each probe type (detection: Medium, others: Low); agency conducts formal system-level risk assessment |
 | RA-5 | Vulnerability Monitoring and Scanning | S | Gauntlet scans its own dependencies (Dependabot, Grype, Trivy) and publishes results with each release; agency scans running Gauntlet deployment per their RA-5 program |
 | RA-7 | Risk Response | C | Agency manages risk response decisions |
@@ -322,7 +326,7 @@ to understand their residual security obligations before beginning their ATO pro
 | SI-9 | Information Input Restrictions | G | Admission control probes validate input restriction enforcement; GauntletProbe spec validated at admission |
 | SI-10 | Information Input Validation | G | Controller validates HMAC signatures and probe result format before accepting any result |
 | SI-11 | Error Handling | G | All error conditions produce defined outcomes (TamperedResult, BackendUnreachable, NotApplicable); no silent failures |
-| SI-12 | Information Management and Retention | G | 365-day minimum in-cluster retention enforced; 3-year SIEM retention required |
+| SI-12 | Information Management and Retention | G | Impact-level-dependent in-cluster retention enforced (365d High/Moderate, 180d Low); SIEM retention per impact level (3yr High/Moderate, 1yr Low) |
 | SI-13 | Predictable Failure Prevention | S | Gauntlet provides degraded mode and GauntletSystemAlert; agency monitors and responds to degraded state |
 | SI-14 | Non-Persistence | G | Probe Jobs are ephemeral (TTL-based cleanup); no persistent state in probe runners; result ConfigMaps cleaned up after controller reads |
 | SI-15 | Information Output Filtering | G | Probe results contain only defined fields; no raw system data or unfiltered output in audit records |

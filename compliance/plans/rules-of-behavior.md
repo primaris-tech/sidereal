@@ -29,7 +29,7 @@ RBAC roles:
 |---|---|
 | `gauntlet-reader` | View probe configuration and results |
 | `gauntlet-operator` | Configure probes; cannot enable live execution |
-| `gauntlet-live-executor` | Enable live probe execution (`dryRun: false`) |
+| `gauntlet-live-executor` | Enable live probe execution (`executionMode: observe` or `enforce`) |
 | `gauntlet-approver` | Create `GauntletAOAuthorization` resources |
 | `gauntlet-audit-admin` | Read-only access to audit records |
 | `gauntlet-security-override` | Modify security-relevant configuration |
@@ -92,32 +92,33 @@ All Gauntlet users must:
   system before deployment
 
 **Prohibited:**
-- Setting `dryRun: false` on any `GauntletProbe` resource (requires
-  `gauntlet-live-executor` role)
+- Setting `executionMode: observe` or `executionMode: enforce` on any
+  `GauntletProbe` resource (requires `gauntlet-live-executor` role)
 - Creating `GauntletProbe` resources targeting `kube-system` or other
   infrastructure namespaces without explicit ISSO approval
+- Registering custom probe types without ISSO approval
 - Modifying probe schedules below the FIPS 199 minimum cadence without
   documented AO approval
 
 ### 4.3 `gauntlet-live-executor` Role
 
 **Required:**
-- Obtain ISSO approval before enabling live execution (`dryRun: false`)
-  on any new probe or any probe that was previously in dry-run mode
+- Obtain ISSO approval before transitioning any probe to `executionMode: observe`
+  or `executionMode: enforce`
 - Verify that the target namespace is included in the ATO boundary before
-  enabling live execution
+  transitioning execution mode
 - Review probe blast radius controls (namespace scoping, ResourceQuota,
-  probe fingerprinting) before enabling live execution in a new namespace
+  probe fingerprinting) before transitioning execution mode in a new namespace
 
 **Prohibited:**
-- Enabling live execution in namespaces not included in the ATO boundary
+- Transitioning execution mode in namespaces not included in the ATO boundary
   without written AO approval and SSP update
-- Enabling live execution and `gauntlet-live-executor` role assignment
-  being held by the same individual who holds `gauntlet-operator` for the
-  same namespace (separation of duty requirement — AC-5)
+- `gauntlet-live-executor` role assignment being held by the same individual
+  who holds `gauntlet-operator` for the same namespace (separation of duty
+  requirement — AC-5)
 
 **Separation of Duty Note**: The `gauntlet-operator` role (configure probes)
-and `gauntlet-live-executor` role (enable live execution) must not be assigned
+and `gauntlet-live-executor` role (transition execution mode) must not be assigned
 to the same individual for the same system scope. The ISSO must enforce this
 separation during account provisioning and verify it through access reviews.
 
@@ -160,6 +161,8 @@ The AO authorization requirement is not procedural — it is a legal requirement
 - Modifying `global.requireAdmissionController: false` without AO approval
   and a documented compensating control
 - Disabling FIPS mode (`fips.enabled: false`) on any federal deployment
+- Modifying framework crosswalks (`global.controlFrameworks`) without
+  ISSO review and documented security impact analysis
 
 ### 4.6 `gauntlet-audit-admin` Role
 
