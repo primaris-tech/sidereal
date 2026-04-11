@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"context"
+
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/primaris-tech/sidereal/internal/probe"
+	"github.com/primaris-tech/sidereal/probes/secret"
+)
 
 func main() {
-	fmt.Println("sidereal-probe-secret: not yet implemented")
+	probe.RunWithClient(func(ctx context.Context, clientset kubernetes.Interface, cfg probe.Config) probe.Result {
+		return secret.Execute(ctx, clientset, cfg)
+	})
 }
