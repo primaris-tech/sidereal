@@ -1,0 +1,23 @@
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealIncident
+metadata:
+  name: incident-admission-prod-20260410-180034
+  namespace: sidereal-system
+  labels:
+    sidereal.cloud/probe-type: admission
+    sidereal.cloud/target-namespace: production
+    sidereal.cloud/severity: High
+spec:
+  probeResultRef: admission-policy-bypass-prod-20260410-180034
+  controlId: "CM-4"
+  mitreId: "T1610"
+  description: >-
+    Admission control probe detected that a known-bad pod spec
+    (privileged container with hostPID) was accepted by the admission
+    controller in namespace production. The Kyverno ClusterPolicy
+    'disallow-privileged-containers' did not reject the request,
+    indicating the policy is not enforcing as expected.
+  severity: High
+  targetNamespace: production
+  remediationStatus: Open
+  webhookDeliveryStatus: Delivered

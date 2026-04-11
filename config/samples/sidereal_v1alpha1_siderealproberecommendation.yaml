@@ -1,0 +1,50 @@
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbeRecommendation
+metadata:
+  name: netpol-deny-prod-to-staging-f8c2a1
+  namespace: sidereal-system
+  labels:
+    sidereal.cloud/probe-type: netpol
+    sidereal.cloud/confidence: high
+spec:
+  sourceResource:
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    name: deny-prod-to-staging
+    namespace: production
+  sourceResourceHash: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  confidence: high
+  probeTemplate:
+    type: netpol
+    targetNamespace: production
+    executionMode: dryRun
+    intervalSeconds: 21600
+    mitreAttackId: "T1046"
+    nistControls:
+      - "SC-7"
+      - "SC-7(5)"
+      - "AC-4"
+    controlMappings:
+      nist-800-53:
+        - "SC-7"
+        - "SC-7(5)"
+        - "AC-4"
+      cmmc:
+        - "SC.L2-3.13.1"
+        - "SC.L2-3.13.6"
+  rationale: >-
+    Discovered NetworkPolicy deny-prod-to-staging in namespace production
+    that denies all egress from production pods to the staging namespace.
+    A netpol probe can continuously verify that this deny rule is
+    operationally effective by attempting cross-namespace traffic and
+    confirming it is blocked by the CNI.
+  controlMappings:
+    nist-800-53:
+      - "SC-7"
+      - "SC-7(5)"
+      - "AC-4"
+    cmmc:
+      - "SC.L2-3.13.1"
+      - "SC.L2-3.13.6"
+status:
+  state: pending

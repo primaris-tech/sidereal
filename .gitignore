@@ -1,37 +1,30 @@
-# OS
-.DS_Store
-Thumbs.db
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test
+cover.out
+*.test
+
+# Go
+vendor/
+
+# Rust
+detection-probe/target/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
-# Go
-bin/
-vendor/
-*.exe
-*.test
-*.out
-coverage.txt
-
-# Rust
-detection-probe/target/
+# OS
+.DS_Store
+Thumbs.db
 
 # Helm
-deploy/helm/gauntlet/charts/
-
-# Build artifacts
-dist/
-*.tar.gz
-
-# Secrets (never commit)
-*.pem
-*.key
-*.env
-.env.*
-
-# OSCAL compiled output (generated, not source)
-compliance/trestle-workspace/component-definitions/
-compliance/oscal/
+deploy/static/

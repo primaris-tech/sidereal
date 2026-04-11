@@ -1,0 +1,15 @@
+FROM golang:1.25 AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+ENV GOEXPERIMENT=boringcrypto
+RUN CGO_ENABLED=0 GOOS=linux go build -o bootstrap ./cmd/probe-bootstrap/
+
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /
+COPY --from=builder /app/bootstrap /bootstrap
+USER 65532:65532
+ENTRYPOINT ["/bootstrap"]

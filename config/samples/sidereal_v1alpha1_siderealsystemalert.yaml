@@ -1,0 +1,16 @@
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealSystemAlert
+metadata:
+  name: tampered-result-20260411-120045
+  namespace: sidereal-system
+  labels:
+    sidereal.cloud/alert-reason: TamperedResult
+spec:
+  reason: TamperedResult
+  message: >-
+    HMAC verification failed for probe result
+    rbac-privilege-escalation-prod-20260411-120045. The result signature
+    does not match the expected HMAC-SHA256 digest. Probe surface rbac
+    has been suspended pending investigation and operator acknowledgment.
+  acknowledged: false
+  remediationAction: ""

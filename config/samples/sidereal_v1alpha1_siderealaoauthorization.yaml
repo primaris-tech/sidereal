@@ -1,0 +1,24 @@
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealAOAuthorization
+metadata:
+  name: ao-auth-detection-prod-fy2026q3
+  namespace: sidereal-system
+  labels:
+    sidereal.cloud/authorization-scope: detection
+spec:
+  aoName: "Jane Smith, CISO / Authorizing Official"
+  authorizedTechniques:
+    - "T1611"  # Escape to Host
+    - "T1059"  # Command and Scripting Interpreter
+  authorizedNamespaces:
+    - production
+  validFrom: "2026-04-01T00:00:00Z"
+  expiresAt: "2026-06-30T23:59:59Z"
+  justification: >-
+    Authorize continuous detection validation for container escape
+    (T1611) and command execution (T1059) techniques in the production
+    namespace. Required for FedRAMP High continuous monitoring per
+    CA-2 and CA-8. Risk accepted per agency risk assessment RA-2026-047.
+  catalogVersion: "v1.2.0"
+status:
+  active: true

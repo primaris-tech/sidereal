@@ -1,0 +1,207 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: siderealproberesults.sidereal.cloud
+spec:
+  group: sidereal.cloud
+  names:
+    kind: SiderealProbeResult
+    listKind: SiderealProbeResultList
+    plural: siderealproberesults
+    shortNames:
+    - spr
+    singular: siderealproberesult
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.probe.type
+      name: Probe Type
+      type: string
+    - jsonPath: .spec.probe.targetNamespace
+      name: Namespace
+      type: string
+    - jsonPath: .spec.result.outcome
+      name: Outcome
+      type: string
+    - jsonPath: .spec.result.controlEffectiveness
+      name: Effectiveness
+      type: string
+    - jsonPath: .spec.result.integrityStatus
+      name: Integrity
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          SiderealProbeResult is an append-only audit record for a probe execution.
+          Results are HMAC-verified and immutable after creation.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SiderealProbeResultSpec defines the content of a probe result
+              audit record.
+            properties:
+              audit:
+                description: Audit contains export tracking.
+                properties:
+                  exportStatus:
+                    default: Pending
+                    description: ExportStatus tracks SIEM export state.
+                    enum:
+                    - Pending
+                    - Exported
+                    - Failed
+                    type: string
+                  exportedAt:
+                    description: ExportedAt is the RFC 3339 timestamp of successful
+                      export.
+                    type: string
+                required:
+                - exportStatus
+                type: object
+              execution:
+                description: Execution contains execution metadata.
+                properties:
+                  durationMs:
+                    description: DurationMs is the execution duration in milliseconds.
+                    format: int64
+                    type: integer
+                  jobName:
+                    description: JobName is the Kubernetes Job that ran this probe.
+                    type: string
+                  timestamp:
+                    description: Timestamp is the RFC 3339 UTC nanosecond timestamp
+                      of execution start.
+                    type: string
+                required:
+                - durationMs
+                - jobName
+                - timestamp
+                type: object
+              probe:
+                description: Probe identifies the probe that produced this result.
+                properties:
+                  aoAuthorizationRef:
+                    description: AOAuthorizationRef is the authorization used (detection
+                      probes only).
+                    type: string
+                  id:
+                    description: ID is the unique execution identifier (UUID).
+                    type: string
+                  targetNamespace:
+                    description: TargetNamespace is the namespace that was probed.
+                    type: string
+                  type:
+                    description: Type is the probe type.
+                    enum:
+                    - rbac
+                    - netpol
+                    - admission
+                    - secret
+                    - detection
+                    - custom
+                    type: string
+                required:
+                - id
+                - targetNamespace
+                - type
+                type: object
+              result:
+                description: Result contains the probe's findings.
+                properties:
+                  controlEffectiveness:
+                    description: ControlEffectiveness is the normalized effectiveness
+                      derived from the outcome.
+                    enum:
+                    - Effective
+                    - Ineffective
+                    - Degraded
+                    - Compromised
+                    type: string
+                  controlMappings:
+                    additionalProperties:
+                      items:
+                        type: string
+                      type: array
+                    description: ControlMappings maps framework IDs to control IDs
+                      for this result.
+                    type: object
+                  crosswalkVersion:
+                    description: CrosswalkVersion is the version of the crosswalk
+                      data used to populate ControlMappings.
+                    type: string
+                  detail:
+                    description: Detail is a human-readable description of the result.
+                    type: string
+                  integrityStatus:
+                    description: IntegrityStatus indicates HMAC verification result.
+                    enum:
+                    - Verified
+                    - TamperedResult
+                    type: string
+                  mitreAttackId:
+                    description: MitreAttackID is the MITRE ATT&CK technique ID.
+                    type: string
+                  nistControls:
+                    description: NistControls is retained for backward compatibility.
+                      Populated identically to ControlMappings["nist-800-53"].
+                    items:
+                      type: string
+                    type: array
+                  outcome:
+                    description: Outcome is the raw probe outcome.
+                    enum:
+                    - Pass
+                    - Fail
+                    - Detected
+                    - Undetected
+                    - Blocked
+                    - Rejected
+                    - Accepted
+                    - NotApplicable
+                    - BackendUnreachable
+                    - NotEnforced
+                    - Indeterminate
+                    - TamperedResult
+                    type: string
+                  verificationMode:
+                    description: VerificationMode indicates the NetworkPolicy verification
+                      mode used (netpol probes only).
+                    type: string
+                required:
+                - controlEffectiveness
+                - integrityStatus
+                - outcome
+                type: object
+            required:
+            - audit
+            - execution
+            - probe
+            - result
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources: {}

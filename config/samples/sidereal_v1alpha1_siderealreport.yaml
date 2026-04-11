@@ -1,0 +1,16 @@
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealReport
+metadata:
+  name: monthly-conmon-pdf
+  namespace: sidereal-system
+  labels:
+    sidereal.cloud/report-type: continuous-monitoring
+spec:
+  type: continuous-monitoring
+  schedule: "0 6 1 * *"  # First of every month at 06:00 UTC
+  frameworks:
+    - "nist-800-53"
+    - "cmmc"
+  format: pdf
+  outputSecret: monthly-conmon-reports
+  retention: 12  # Keep last 12 reports

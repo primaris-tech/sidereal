@@ -1,0 +1,321 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: siderealproberecommendations.sidereal.cloud
+spec:
+  group: sidereal.cloud
+  names:
+    kind: SiderealProbeRecommendation
+    listKind: SiderealProbeRecommendationList
+    plural: siderealproberecommendations
+    shortNames:
+    - sprec
+    singular: siderealproberecommendation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.sourceResource.kind
+      name: Source Kind
+      type: string
+    - jsonPath: .spec.sourceResource.name
+      name: Source Name
+      type: string
+    - jsonPath: .spec.confidence
+      name: Confidence
+      type: string
+    - jsonPath: .status.state
+      name: State
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          SiderealProbeRecommendation is a discovery-generated probe suggestion.
+          The controller scans the cluster for existing security controls and generates
+          recommendations that ISSOs can review and promote to active probes.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SiderealProbeRecommendationSpec defines a discovery-generated
+              probe suggestion.
+            properties:
+              confidence:
+                description: Confidence indicates how fully the probe was derivable
+                  from the source.
+                enum:
+                - high
+                - medium
+                - low
+                type: string
+              controlMappings:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                description: ControlMappings contains suggested multi-framework control
+                  mappings.
+                type: object
+              probeTemplate:
+                description: |-
+                  ProbeTemplate is the complete SiderealProbe spec to create if promoted.
+                  Always has executionMode: dryRun.
+                properties:
+                  admissionProbe:
+                    description: AdmissionProbe contains configuration specific to
+                      admission control probes.
+                    properties:
+                      knownBadSpec:
+                        description: KnownBadSpec is an operator-provided pod spec
+                          that should be rejected.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      targetPolicy:
+                        description: TargetPolicy is the name of the specific admission
+                          policy to test.
+                        type: string
+                    type: object
+                  aoAuthorizationRef:
+                    description: AOAuthorizationRef is the name of the SiderealAOAuthorization
+                      resource. Required for detection probes.
+                    type: string
+                  controlMappings:
+                    additionalProperties:
+                      items:
+                        type: string
+                      type: array
+                    description: ControlMappings maps framework IDs to control IDs
+                      for multi-framework compliance tagging.
+                    type: object
+                  customProbe:
+                    description: CustomProbe contains configuration specific to custom
+                      probes.
+                    properties:
+                      config:
+                        description: Config is opaque JSON configuration passed to
+                          the custom probe container.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      image:
+                        description: Image is the container image for the custom probe
+                          (must be digest-pinned and cosign-signed).
+                        type: string
+                      serviceAccountName:
+                        description: ServiceAccountName is the pre-registered ServiceAccount
+                          for this custom probe.
+                        type: string
+                    required:
+                    - image
+                    - serviceAccountName
+                    type: object
+                  executionMode:
+                    default: dryRun
+                    description: |-
+                      ExecutionMode controls operational behavior: dryRun (default), observe, or enforce.
+                      Transitioning to enforce requires the sidereal-live-executor role.
+                    enum:
+                    - dryRun
+                    - observe
+                    - enforce
+                    type: string
+                  intervalSeconds:
+                    default: 21600
+                    description: IntervalSeconds is the time between probe executions.
+                    format: int32
+                    maximum: 86400
+                    minimum: 300
+                    type: integer
+                  mitreAttackId:
+                    description: MitreAttackID is the MITRE ATT&CK technique ID this
+                      probe validates against.
+                    type: string
+                  probeType:
+                    description: ProbeType is the type of security control to validate.
+                    enum:
+                    - rbac
+                    - netpol
+                    - admission
+                    - secret
+                    - detection
+                    - custom
+                    type: string
+                  targetNamespace:
+                    description: TargetNamespace is the explicit namespace to probe.
+                      Mutually exclusive with TargetNamespaceSelector.
+                    type: string
+                  targetNamespaceSelector:
+                    description: TargetNamespaceSelector selects namespaces by label.
+                      Mutually exclusive with TargetNamespace.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  verificationWindowSeconds:
+                    default: 60
+                    description: VerificationWindowSeconds is the window for detection
+                      backend polling (detection probes only).
+                    format: int32
+                    maximum: 300
+                    minimum: 10
+                    type: integer
+                required:
+                - executionMode
+                - intervalSeconds
+                - probeType
+                type: object
+              rationale:
+                description: Rationale explains why this probe was generated.
+                type: string
+              sourceResource:
+                description: SourceResource references the cluster resource that prompted
+                  this recommendation.
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: |-
+                      If referring to a piece of an object instead of an entire object, this string
+                      should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within a pod, this would take on a value like:
+                      "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]" (container with
+                      index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                      referencing a part of an object.
+                    type: string
+                  kind:
+                    description: |-
+                      Kind of the referent.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                    type: string
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                    type: string
+                  resourceVersion:
+                    description: |-
+                      Specific resourceVersion to which this reference is made, if any.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                    type: string
+                  uid:
+                    description: |-
+                      UID of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              sourceResourceHash:
+                description: SourceResourceHash is a hash of the source resource for
+                  change detection.
+                type: string
+            required:
+            - confidence
+            - probeTemplate
+            - rationale
+            - sourceResource
+            - sourceResourceHash
+            type: object
+          status:
+            description: SiderealProbeRecommendationStatus defines the observed state
+              of the recommendation.
+            properties:
+              dismissedBy:
+                description: DismissedBy is the Kubernetes username of the principal
+                  who dismissed this recommendation.
+                type: string
+              dismissedReason:
+                description: DismissedReason is the reason for dismissal.
+                type: string
+              promotedTo:
+                description: PromotedTo is the name of the SiderealProbe created when
+                  this recommendation was promoted.
+                type: string
+              state:
+                default: pending
+                description: 'State tracks the lifecycle: pending, promoted, dismissed,
+                  or superseded.'
+                enum:
+                - pending
+                - promoted
+                - dismissed
+                - superseded
+                type: string
+              supersededBy:
+                description: SupersededBy is the name of the newer recommendation
+                  that replaced this one.
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
