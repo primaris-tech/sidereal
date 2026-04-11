@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"context"
+
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/primaris-tech/sidereal/internal/probe"
+	"github.com/primaris-tech/sidereal/probes/rbac"
+)
 
 func main() {
-	fmt.Println("sidereal-probe-rbac: not yet implemented")
+	probe.RunWithClient(func(ctx context.Context, clientset kubernetes.Interface, cfg probe.Config) probe.Result {
+		return rbac.Execute(ctx, clientset, cfg)
+	})
 }
