@@ -123,6 +123,15 @@ func NewInClusterClientset() (kubernetes.Interface, error) {
 // HMAC key loading, probe execution, result signing, and ConfigMap writing.
 // The executeFn performs the actual probe logic.
 func Run(executeFn func(ctx context.Context, cfg Config) Result) {
+	RunWithClient(func(ctx context.Context, clientset kubernetes.Interface, cfg Config) Result {
+		return executeFn(ctx, cfg)
+	})
+}
+
+// RunWithClient is like Run but also passes the in-cluster Kubernetes clientset
+// to the execute function. Use this when the probe needs to make API calls
+// (e.g., SelfSubjectAccessReview for RBAC probes).
+func RunWithClient(executeFn func(ctx context.Context, clientset kubernetes.Interface, cfg Config) Result) {
 	cfg := LoadConfigFromEnv()
 	key := MustLoadHMACKey(cfg.HMACKeyPath)
 
@@ -135,7 +144,7 @@ func Run(executeFn func(ctx context.Context, cfg Config) Result) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	result := executeFn(ctx, cfg)
+	result := executeFn(ctx, clientset, cfg)
 
 	MustSignAndWriteResult(ctx, clientset, "sidereal-system", cfg.ProbeID, key, result)
 }
