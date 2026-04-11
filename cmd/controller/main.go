@@ -14,6 +14,7 @@ import (
 
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
 	"github.com/primaris-tech/sidereal/internal/controller"
+	"github.com/primaris-tech/sidereal/internal/crosswalk"
 	_ "github.com/primaris-tech/sidereal/internal/metrics"
 )
 
@@ -71,6 +72,18 @@ func main() {
 		Client: mgr.GetClient(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ProbeScheduler")
+		os.Exit(1)
+	}
+
+	crosswalkResolver := crosswalk.NewResolver()
+	// Crosswalk files are loaded from the Helm chart at /etc/sidereal/crosswalks/ in production.
+	// In development, the resolver starts empty and controlMappings come from the probe spec.
+
+	if err := (&controller.ResultReconciler{
+		Client:    mgr.GetClient(),
+		Crosswalk: crosswalkResolver,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ResultReconciler")
 		os.Exit(1)
 	}
 
