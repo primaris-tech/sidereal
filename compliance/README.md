@@ -61,6 +61,7 @@ compliance/
     assessment-plans/         # SAP template (generated)
     assessment-results/       # Runtime output from SiderealProbeResult (generated)
     plan-of-action-and-milestones/ # POA&M (generated from SiderealIncident)
+  crosswalks/                  # Framework crosswalk data files and analysis
   oscal/                      # Final compiled OSCAL artifacts for distribution
   plans/                      # Supporting plans (standalone markdown)
   diagrams/                   # Architecture, boundary, and data flow diagrams
@@ -74,6 +75,12 @@ compliance/
 4. Copy compiled artifact to `oscal/` for distribution
 
 CI runs steps 2 and 3 automatically on every commit.
+
+## STIG Coverage
+
+Sidereal maps 15 Kubernetes STIG rules (V2R4) to its probe surfaces for continuous operational validation. These are the rules where active probing adds value beyond static configuration scanning (all CAT I and CAT II). See `crosswalks/kubernetes-stig-analysis.md` for the full breakdown.
+
+The remaining ~76 STIG rules are configuration checks (kubelet flags, file permissions, TLS settings). Agencies should pair Sidereal with a configuration scanner (kube-bench, OpenSCAP, Compliance Operator) for full STIG coverage.
 
 ## For Deploying Agencies
 

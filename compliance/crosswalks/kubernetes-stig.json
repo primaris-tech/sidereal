@@ -1,0 +1,216 @@
+{
+  "framework_id": "kubernetes-stig",
+  "framework_name": "DISA Kubernetes Security Technical Implementation Guide",
+  "framework_version": "V2R4",
+  "crosswalk_version": "1.0.0",
+  "description": "Maps Sidereal probe types and their NIST 800-53 controls to Kubernetes STIG rule IDs. Only includes STIG rules where Sidereal provides operational validation beyond static configuration checks.",
+  "mappings": [
+    {
+      "probe_type": "rbac",
+      "nist_control": "AC-2",
+      "stig_rules": [
+        {
+          "id": "V-242381",
+          "stig_id": "CNTR-K8-000220",
+          "title": "Controller Manager must use individual service account credentials",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes verify that workloads use distinct ServiceAccounts and that SA boundaries are enforced, not just that the flag is set."
+        },
+        {
+          "id": "V-242383",
+          "stig_id": "CNTR-K8-000290",
+          "title": "User-managed resources must be created in dedicated namespaces",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes enumerate resources in default/kube-public/kube-node-lease namespaces to verify no user workloads exist there."
+        }
+      ]
+    },
+    {
+      "probe_type": "rbac",
+      "nist_control": "AC-3",
+      "stig_rules": [
+        {
+          "id": "V-242435",
+          "stig_id": "CNTR-K8-002010",
+          "title": "Must prevent non-privileged users from executing privileged functions",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes attempt unauthorized API operations with non-privileged ServiceAccounts and verify they are denied. Validates RBAC enforcement, not just policy existence."
+        }
+      ]
+    },
+    {
+      "probe_type": "rbac",
+      "nist_control": "AC-6",
+      "stig_rules": [
+        {
+          "id": "V-242417",
+          "stig_id": "CNTR-K8-001360",
+          "title": "Must separate user functionality from management functionality",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes verify namespace-level separation between user workloads and management-plane components."
+        }
+      ]
+    },
+    {
+      "probe_type": "netpol",
+      "nist_control": "SC-7",
+      "stig_rules": [
+        {
+          "id": "V-242410",
+          "stig_id": "CNTR-K8-000920",
+          "title": "API Server must enforce ports, protocols, services (PPS) registration process",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes test whether traffic on unapproved ports is blocked by NetworkPolicy enforcement at the CNI layer."
+        },
+        {
+          "id": "V-242411",
+          "stig_id": "CNTR-K8-000930",
+          "title": "Scheduler must enforce ports, protocols, services (PPS) registration process",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes verify scheduler port exposure complies with PPS requirements."
+        },
+        {
+          "id": "V-242412",
+          "stig_id": "CNTR-K8-000940",
+          "title": "Controller Manager must enforce ports, protocols, services (PPS) registration process",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes verify controller-manager port exposure complies with PPS requirements."
+        },
+        {
+          "id": "V-242413",
+          "stig_id": "CNTR-K8-000950",
+          "title": "etcd must enforce ports, protocols, services (PPS) registration process",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes verify etcd port exposure complies with PPS requirements."
+        },
+        {
+          "id": "V-242414",
+          "stig_id": "CNTR-K8-000960",
+          "title": "Cluster must use non-privileged host ports for user pods",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes scan running pods for privileged port usage (< 1024) and verify enforcement."
+        }
+      ]
+    },
+    {
+      "probe_type": "netpol",
+      "nist_control": "SC-8",
+      "stig_rules": [
+        {
+          "id": "V-242395",
+          "stig_id": "CNTR-K8-000420",
+          "title": "Kubernetes dashboard must not be enabled",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes continuously query for dashboard pods (k8s-app=kubernetes-dashboard) and verify none are running. Detects re-deployment between scans."
+        }
+      ]
+    },
+    {
+      "probe_type": "admission",
+      "nist_control": "CM-6",
+      "stig_rules": [
+        {
+          "id": "V-242436",
+          "stig_id": "CNTR-K8-002110",
+          "title": "API Server must have ValidatingAdmissionWebhook enabled",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes verify the webhook is not just enabled but actively responding to admission requests."
+        },
+        {
+          "id": "V-254800",
+          "stig_id": "CNTR-K8-new",
+          "title": "Must have Pod Security Admission control file configured",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes submit a non-compliant pod spec and verify it is rejected by the Pod Security Admission controller. Validates enforcement, not just configuration."
+        }
+      ]
+    },
+    {
+      "probe_type": "admission",
+      "nist_control": "CM-7",
+      "stig_rules": [
+        {
+          "id": "V-242437",
+          "stig_id": "CNTR-K8-002120",
+          "title": "Must enforce Pod Security Standards or equivalent",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes submit privileged container specs, hostPath mounts, and capability escalations to verify they are rejected. Tests the enforcement layer end-to-end."
+        }
+      ]
+    },
+    {
+      "probe_type": "secret",
+      "nist_control": "AC-3",
+      "stig_rules": [
+        {
+          "id": "V-242415",
+          "stig_id": "CNTR-K8-001160",
+          "title": "Secrets must not be stored as environment variables",
+          "severity": "CAT I",
+          "sidereal_validation": "Probes enumerate pod specs across target namespaces for secretKeyRef in environment variables. Continuous validation catches new deployments that introduce violations."
+        }
+      ]
+    },
+    {
+      "probe_type": "secret",
+      "nist_control": "AC-4",
+      "stig_rules": [
+        {
+          "id": "V-242415",
+          "stig_id": "CNTR-K8-001160",
+          "title": "Secrets must not be stored as environment variables",
+          "severity": "CAT I",
+          "sidereal_validation": "Cross-namespace secret access probes verify information flow enforcement. Secrets-as-env-vars represent an uncontrolled information flow."
+        }
+      ]
+    },
+    {
+      "probe_type": "detection",
+      "nist_control": "SI-4",
+      "stig_rules": [
+        {
+          "id": "V-242403",
+          "stig_id": "CNTR-K8-000700",
+          "title": "API Server must generate audit records for all write operations",
+          "severity": "CAT II",
+          "sidereal_validation": "Detection probes fire a synthetic action and independently verify the audit/detection pipeline captured it. Validates the full audit chain end-to-end."
+        }
+      ]
+    }
+  ],
+  "config_only_rules": {
+    "description": "STIG rules that are pure configuration checks. Sidereal's discovery engine may generate SiderealProbeRecommendation entries noting these are outside probe scope, but does not actively validate them. Tools like kube-bench, OpenSCAP, or the Compliance Operator are better suited for these checks.",
+    "categories": [
+      {
+        "category": "TLS and Cryptographic Configuration",
+        "rule_count": 22,
+        "representative_rules": ["V-242376", "V-242377", "V-242378", "V-242418", "V-242468"],
+        "rationale": "Static flag checks on API server, kubelet, etcd, scheduler. No behavioral validation needed."
+      },
+      {
+        "category": "Certificate and PKI File Ownership/Permissions",
+        "rule_count": 20,
+        "representative_rules": ["V-242405", "V-242444", "V-242445", "V-242466", "V-242467"],
+        "rationale": "File ownership and permission checks on node filesystem. Requires host-level access, not API-level probing."
+      },
+      {
+        "category": "API Server and Kubelet Flags",
+        "rule_count": 18,
+        "representative_rules": ["V-242382", "V-242386", "V-242387", "V-242388", "V-242390"],
+        "rationale": "Static process argument checks. Binary present-or-absent; no behavioral dimension."
+      },
+      {
+        "category": "Audit Log Configuration",
+        "rule_count": 6,
+        "representative_rules": ["V-242401", "V-242402", "V-242461", "V-242462", "V-242463", "V-242464"],
+        "rationale": "Audit log path, size, retention, and backup flags. Config-level only. (V-242403, the operational audit validation rule, IS mapped above.)"
+      },
+      {
+        "category": "Node Hardening",
+        "rule_count": 4,
+        "representative_rules": ["V-242393", "V-242394", "V-242434", "V-242399"],
+        "rationale": "SSH, kernel protection, dynamic kubelet config. Node-level checks outside Kubernetes API scope."
+      }
+    ]
+  }
+}

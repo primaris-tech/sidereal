@@ -95,7 +95,7 @@ sidereal/
 
 - NIST 800-53 **High** baseline as default, but **impact level is configurable** (`high`/`moderate`/`low`) — cascades cadence, retention, and operational defaults
 - Self-hosted per-agency deployment model (FedRAMP managed service deferred)
-- **Multi-framework compliance mapping**: NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171 — configurable via Helm, extensible via custom crosswalk files
+- **Multi-framework compliance mapping**: NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171, Kubernetes STIG — configurable via Helm, extensible via custom crosswalk files
 - **Graduated execution modes**: `dryRun` → `observe` → `enforce` — ISSOs can validate before activating incident pipelines
 - **Deployment profile abstraction**: Sidereal references abstract capabilities, not specific tools. Six pre-built profiles ship: `kyverno-cilium-falco`, `opa-calico-tetragon`, `kyverno-eks`, `opa-aks`, `kyverno-gke`, `opa-rke2`. Custom profiles supported.
 - **Namespace label selectors**: `targetNamespaceSelector` in addition to explicit `targetNamespace` — one probe definition covers all matching namespaces

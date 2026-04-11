@@ -892,6 +892,7 @@ Every `SiderealProbeResult` carries a `controlMappings` field — a map from fra
 | `irs-1075` | IRS Publication 1075 (Tax Information Security) | `9.3.1.3`, `9.3.16.7` |
 | `hipaa` | HIPAA Security Rule (45 CFR 164) | `164.312(a)(1)`, `164.312(e)(1)` |
 | `nist-800-171` | NIST SP 800-171 Rev 3 (CUI Protection) | `3.1.1`, `3.13.1` |
+| `kubernetes-stig` | DISA Kubernetes STIG | `V-242435`, `V-242437` |
 
 **Crosswalk data model**: Crosswalk tables are shipped as versioned, JSON-formatted data files within the Helm chart (not compiled into the controller binary). Each crosswalk file maps `(probe_type, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
 - **Auditable** — an assessor can inspect exactly which mappings are active
