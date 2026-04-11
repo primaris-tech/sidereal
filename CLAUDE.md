@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-Sidereal is in the **pre-implementation phase**. The repository contains:
+Sidereal is in **active implementation**. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
-- No implementation code yet — the implementation plan is at `.claude/plans/keen-bouncing-unicorn.md`
+- Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md`
+- **Phases 0-2 complete**: Go module, all 8 CRD types, controller skeleton with health/metrics
 
-**Repo**: `primaris-tech/sidereal` on GitHub (private). Branch protection not yet configured (requires GitHub Team plan or public repo).
+**Repo**: `primaris-tech/sidereal` on GitHub (private).
 
-**Before writing implementation code**: YubiKey SSH signing must be set up, branch protection must be configured, and CODEOWNERS must be in place. See "Development Security" section below and the engineering spec's "Development Security Lifecycle" section.
+**Current phase**: Phase 3 (HMAC key derivation and result signing) is next on the critical path.
 
 ## What Sidereal Is
 
@@ -109,11 +110,28 @@ sidereal/
 - Supply chain: cosign signatures + CycloneDX SBOM + SLSA Level 2 provenance + Sigstore Rekor transparency log
 - Helm primary delivery, `helm template` static manifests generated in CI
 
+## Git Workflow
+
+**Branching strategy**: Feature branches per implementation phase, merged to `main` via PR.
+- Branch naming: `phase-N/short-name` (e.g., `phase-3/hmac`, `phase-4/scheduler`)
+- `main` must always be compilable and testable
+- Each PR represents a coherent, working increment
+- Short-lived branches only — one phase per branch, merged promptly
+- No long-lived develop/release branches during the build phase
+
+**Tagging**: `v0.1.0-alpha` after Phases 0-6 (critical path foundation). `v0.1.0` after all probe runners are working.
+
+**Deferred until multi-contributor or public release**:
+- Branch protection (requires GitHub Pro/Team or public repo)
+- CODEOWNERS enforcement
+- Required reviewers
+- Gitflow / release branches
+
 ## Development Security
 
-- **Commit signing**: YubiKey-backed SSH resident keys (`ed25519-sk`); all commits must be signed
-- **Branch protection**: PRs required, signed commits required, status checks required, no force push
-- **CODEOWNERS**: Security-critical paths (`internal/hmac/`, `detection-probe/`, `build/`, `.github/workflows/`, admission policies) require 2 reviewers
+- **Commit signing** (active): YubiKey-backed SSH resident keys (`ed25519-sk`); all commits signed and verified on GitHub
+- **Branch protection** (deferred): PRs required, signed commits required, status checks required, no force push. Blocked on GitHub plan — will enable when repo goes public or plan is upgraded.
+- **CODEOWNERS** (deferred): Security-critical paths (`internal/hmac/`, `detection-probe/`, `build/`, `.github/workflows/`, admission policies) require 2 reviewers. Depends on branch protection.
 - **CI hardening**: All GitHub Actions pinned by SHA (not tag); `GITHUB_TOKEN` read-only by default; CI has no access to signing infrastructure
 - **Image signing**: Keyless via Sigstore OIDC (Fulcio + Rekor); KMS-backed key as alternative for air-gapped
 - **Release gating**: GitHub Environment approval gate — human must approve before signing keys are accessible
