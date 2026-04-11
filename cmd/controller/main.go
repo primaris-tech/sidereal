@@ -13,6 +13,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
+	"github.com/primaris-tech/sidereal/internal/controller"
 	_ "github.com/primaris-tech/sidereal/internal/metrics"
 )
 
@@ -63,6 +64,13 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
+	if err := (&controller.ProbeSchedulerReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ProbeScheduler")
 		os.Exit(1)
 	}
 
