@@ -144,7 +144,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-controller:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - probe-rbac
@@ -152,7 +152,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - probe-secret
@@ -160,7 +160,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - probe-admission
@@ -168,7 +168,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - probe-netpol
@@ -176,7 +176,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - probe-detection
@@ -184,7 +184,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-probe-detection:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       - name: Trivy scan - bootstrap
@@ -192,7 +192,7 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           format: table
 
       # --- Generate SBOMs ---

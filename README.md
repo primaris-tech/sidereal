@@ -278,6 +278,16 @@ Sidereal is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
+## Known Issues
+
+| CVE | Severity | Component | Impact | Status |
+|---|---|---|---|---|
+| CVE-2026-0861 | HIGH | glibc 2.36 (base-debian12) | Integer overflow in memalign. Exploitation requires attacker control of size and alignment arguments near PTRDIFF_MAX, which is not reachable in Sidereal's single-purpose containers. | No fix available in Debian bookworm. Debian classified as minor (`<no-dsa>`). Will remediate when bookworm backport is released or when migrating to Debian 13 base images. |
+
+The detection probe image (`scratch` base) is not affected.
+
+---
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting. We use GitHub's private vulnerability reporting feature. Please do not open public issues for security vulnerabilities.
