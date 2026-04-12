@@ -58,14 +58,18 @@ kind load docker-image ghcr.io/primaris-tech/sidereal-probe-admission:latest --n
 kind load docker-image ghcr.io/primaris-tech/sidereal-probe-netpol:latest --name sidereal-test
 kind load docker-image ghcr.io/primaris-tech/sidereal-bootstrap:latest --name sidereal-test
 
-# Install the Helm chart
+# Install the Helm chart (override image tags to match local builds)
 helm install sidereal deploy/helm/sidereal/ \
   --namespace sidereal-system \
   --create-namespace \
   --set global.impactLevel=low \
   --set global.executionMode=observe \
   --set global.fips=false \
-  --set global.requireAdmissionController=false
+  --set global.requireAdmissionController=false \
+  --set controller.image.tag=latest \
+  --set probe.goImage.tag=latest \
+  --set probe.detectionImage.tag=latest \
+  --set probe.bootstrapImage.tag=latest
 ```
 
 From GHCR (released images):
