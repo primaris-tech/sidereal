@@ -1,0 +1,57 @@
+---
+title: Sidereal
+description: Continuous security control validation for Kubernetes
+template: splash
+hero:
+  tagline: Most security tools tell you your controls are configured. Sidereal tells you they are actually working.
+  actions:
+    - text: Get Started
+      link: /getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/primaris-tech/sidereal
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why Sidereal?
+
+Configuration is not enforcement. A NetworkPolicy can be defined and not enforcing. An admission webhook can be configured and silently disabled. Between the last scan and this moment, any of these controls could have drifted.
+
+Sidereal is a Kubernetes-native operator that actively probes your cluster's security controls on a continuous schedule, verifies they are operationally effective, and produces the compliance evidence your ISSO needs from a single tool.
+
+<CardGrid>
+	<Card title="Continuous Active Validation" icon="approve-check">
+		Probes run on configurable schedules, firing real actions against real enforcement layers. Not cached configuration state.
+	</Card>
+	<Card title="Multi-Framework Compliance" icon="document">
+		Every result tagged with NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171, and Kubernetes STIG controls automatically.
+	</Card>
+	<Card title="Detection Layer Validation" icon="warning">
+		Fires known-bad syscall patterns, then independently verifies the detection pipeline (Falco/Tetragon) caught them.
+	</Card>
+	<Card title="ISSO-Ready Reports" icon="list-format">
+		Continuous monitoring summaries, POA&M entries, coverage matrices, and OSCAL evidence packages generated from probe results.
+	</Card>
+</CardGrid>
+
+## Probe Surfaces
+
+| Surface | What It Validates |
+|---|---|
+| **RBAC** | ServiceAccount permission boundaries are enforced and denying unauthorized operations |
+| **NetworkPolicy** | East-west traffic restrictions are actively blocking unauthorized paths at the CNI layer |
+| **Admission Control** | Admission policies reject non-compliant workload specs |
+| **Secret Access** | Workloads cannot access secrets outside their authorized namespace |
+| **Detection Coverage** | Known-bad behaviors trigger expected alerts in your detection pipeline |
+| **Custom** | Operator-extensible probe surface for agency-specific controls |
+
+## Graduated Adoption
+
+Start safe, build confidence, then enforce.
+
+1. **`dryRun`** -- validates configuration without executing probes (default on install)
+2. **`observe`** -- probes execute live, results are recorded, no incidents generated
+3. **`enforce`** -- full operation with incident creation and IR webhook delivery
