@@ -24,6 +24,11 @@ ifeq (,$(GOBIN))
 GOBIN = $(shell go env GOPATH)/bin
 endif
 
+# envtest setup
+LOCALBIN ?= $(shell pwd)/bin
+ENVTEST ?= go run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+ENVTEST_K8S_VERSION ?= 1.31.0
+
 .PHONY: all
 all: generate manifests build
 
@@ -96,8 +101,9 @@ test: ## Run unit tests
 	go test ./... -coverprofile cover.out
 
 .PHONY: test-e2e
-test-e2e: ## Run end-to-end tests (requires kind cluster)
-	go test ./test/e2e/... -v -count=1
+test-e2e: envtest ## Run end-to-end tests (requires envtest binaries)
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
+		go test ./test/e2e/... -v -count=1 -timeout 300s
 
 .PHONY: test-integration
 test-integration: ## Run integration tests
@@ -165,6 +171,12 @@ test-detection-probe: ## Test Rust detection probe
 .PHONY: lint-detection-probe
 lint-detection-probe: ## Lint Rust detection probe
 	cd detection-probe && cargo clippy -- -D warnings
+
+##@ Tools
+
+.PHONY: envtest
+envtest: ## Download envtest binaries
+	@$(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path > /dev/null
 
 ##@ Clean
 
