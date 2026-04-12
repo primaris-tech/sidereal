@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -137,6 +138,8 @@ func RecommendationName(source corev1.ObjectReference, suffix string) string {
 	if suffix != "" {
 		name = fmt.Sprintf("%s-%s", name, suffix)
 	}
+	// Kubernetes resource names must be lowercase RFC 1123 subdomains.
+	name = strings.ToLower(name)
 	// Kubernetes name limit.
 	if len(name) > 253 {
 		hash := sha256.Sum256([]byte(name))

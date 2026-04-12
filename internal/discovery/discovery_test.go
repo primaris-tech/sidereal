@@ -288,12 +288,12 @@ func TestRecommendationName(t *testing.T) {
 	}
 
 	name := RecommendationName(source, "")
-	if name != "sidereal-rec-NetworkPolicy-production-deny-all" {
+	if name != "sidereal-rec-networkpolicy-production-deny-all" {
 		t.Errorf("unexpected name: %s", name)
 	}
 
 	nameWithSuffix := RecommendationName(source, "deny")
-	if nameWithSuffix != "sidereal-rec-NetworkPolicy-production-deny-all-deny" {
+	if nameWithSuffix != "sidereal-rec-networkpolicy-production-deny-all-deny" {
 		t.Errorf("unexpected name with suffix: %s", nameWithSuffix)
 	}
 }
