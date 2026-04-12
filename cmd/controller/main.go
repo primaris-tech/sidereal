@@ -15,6 +15,7 @@ import (
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
 	"github.com/primaris-tech/sidereal/internal/controller"
 	"github.com/primaris-tech/sidereal/internal/crosswalk"
+	"github.com/primaris-tech/sidereal/internal/discovery"
 	_ "github.com/primaris-tech/sidereal/internal/metrics"
 )
 
@@ -84,6 +85,36 @@ func main() {
 		Crosswalk: crosswalkResolver,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ResultReconciler")
+		os.Exit(1)
+	}
+
+	if err := (&controller.IncidentReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "IncidentReconciler")
+		os.Exit(1)
+	}
+
+	if err := (&controller.AlertReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AlertReconciler")
+		os.Exit(1)
+	}
+
+	if err := (&controller.AuthorizationReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AuthorizationReconciler")
+		os.Exit(1)
+	}
+
+	if err := (&controller.DiscoveryReconciler{
+		Client:   mgr.GetClient(),
+		Engine:   discovery.NewEngine(),
+		Interval: controller.DefaultDiscoveryInterval,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DiscoveryReconciler")
 		os.Exit(1)
 	}
 
