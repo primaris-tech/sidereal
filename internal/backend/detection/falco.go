@@ -2,7 +2,6 @@ package detection
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -175,18 +174,6 @@ func containsProbeID(fields map[string]string, output, probeID string) bool {
 		}
 	}
 	return strings.Contains(output, probeID)
-}
-
-// extractJSONField attempts to extract a field from JSON-formatted data.
-// Used as a fallback when Falco emits JSON output format.
-func extractJSONField(data []byte, field string) string {
-	var m map[string]interface{}
-	if err := json.Unmarshal(data, &m); err == nil {
-		if v, ok := m[field]; ok {
-			return fmt.Sprintf("%v", v)
-		}
-	}
-	return ""
 }
 
 // Close releases the gRPC connection.

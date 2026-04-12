@@ -228,21 +228,6 @@ func createProbe(t *testing.T, probe *siderealv1alpha1.SiderealProbe) *siderealv
 	return probe
 }
 
-// createProbeResult creates a SiderealProbeResult and registers cleanup.
-func createProbeResult(t *testing.T, result *siderealv1alpha1.SiderealProbeResult) *siderealv1alpha1.SiderealProbeResult {
-	t.Helper()
-	if result.Namespace == "" {
-		result.Namespace = controller.SystemNamespace
-	}
-	if err := k8sClient.Create(ctx, result); err != nil {
-		t.Fatalf("failed to create probe result: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = k8sClient.Delete(ctx, result)
-	})
-	return result
-}
-
 // simulateProbeResult creates the ConfigMap and HMAC Secret that a probe runner
 // would produce, then creates a completed Job so the ResultReconciler picks it up.
 func simulateProbeResult(t *testing.T, probeID, probeType, probeName, targetNamespace, outcome, detail string, rootKey []byte) {
