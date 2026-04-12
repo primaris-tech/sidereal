@@ -74,13 +74,13 @@ build: ## Build all Go binaries
 
 .PHONY: build-fips
 build-fips: ## Build all Go binaries with BoringCrypto FIPS
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/controller ./cmd/controller/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-rbac ./cmd/probe-rbac/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-netpol ./cmd/probe-netpol/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-admission ./cmd/probe-admission/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-secret ./cmd/probe-secret/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-bootstrap ./cmd/probe-bootstrap/
-	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/sidereal ./cmd/sidereal/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/controller ./cmd/controller/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/probe-rbac ./cmd/probe-rbac/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/probe-netpol ./cmd/probe-netpol/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/probe-admission ./cmd/probe-admission/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/probe-secret ./cmd/probe-secret/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/probe-bootstrap ./cmd/probe-bootstrap/
+	GOEXPERIMENT=boringcrypto go build -trimpath -o bin/sidereal ./cmd/sidereal/
 
 .PHONY: build-controller
 build-controller: ## Build controller binary only
