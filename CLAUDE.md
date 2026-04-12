@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-Sidereal is in **active implementation**. The repository contains:
+Sidereal **v0.1.0** is feature-complete. All 22 implementation phases are done. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
-- Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md`
-- **Phases 0-22 complete**: Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework, all 4 Go probe runners (RBAC, Secret, Admission, NetworkPolicy), detection backends (Falco/Tetragon), Rust detection probe with technique catalog, SIEM export pipeline (5 formats, 3 backends), incident controller with IR webhook, SystemAlert acknowledgment gate, AO Authorization lifecycle, bootstrap verifier, report generation engine (5 report types), custom probe extensibility, Helm chart with profile-aware rendering, FIPS 140-2 build configuration, CI/CD pipeline (GitHub Actions), E2E integration test suite, and discovery reconciler with CLI. 260 Go tests + 8 Rust tests + E2E suite.
+- Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md` (completed)
+- Full operator implementation: 8 CRDs, 6 controller reconcilers, 5 built-in probe runners + custom extensibility, Rust detection probe (9 MITRE ATT&CK techniques), HMAC integrity, multi-framework crosswalk (7 frameworks), SIEM export (5 formats, 3 backends), incident/alert/authorization lifecycle, discovery engine with CLI, report generation (5 types), Helm chart (6 profiles), FIPS 140-2 builds, CI/CD pipeline. 260 Go tests + 15 Rust tests + 46 E2E tests.
 
 **Repo**: `primaris-tech/sidereal` on GitHub (private).
 
-**Current phase**: All implementation phases complete. Ready for v0.1.0 tagging.
+**Status**: Tagged v0.1.0. Post-v0.1.0 work includes: community feedback, E2E test hardening on real clusters, additional crosswalk refinement, and eventual public release.
 
 ## What Sidereal Is
 
@@ -89,10 +89,11 @@ sidereal/
 │   ├── admission/                      # Admission Control probe logic
 │   └── netpol/                         # NetworkPolicy probe logic
 ├── internal/
-│   ├── controller/                     # Reconcilers (scheduler, result, incident, alert, authorization, bootstrap)
+│   ├── controller/                     # Reconcilers (scheduler, result, incident, alert, authorization, discovery, bootstrap)
+│   ├── discovery/                      # Cluster discovery engine (5 discoverers)
 │   ├── hmac/                           # HMAC key derivation and verification
 │   ├── probe/                          # Shared probe runner framework
-│   ├── crosswalk/                      # Multi-framework control mapping
+│   ├── crosswalk/                      # Multi-framework control mapping (7 frameworks)
 │   ├── report/                         # Report generation engine (5 report types)
 │   ├── webhook/                        # IR webhook client
 │   ├── metrics/                        # Prometheus metrics
@@ -100,9 +101,11 @@ sidereal/
 │       ├── detection/                  # Falco + Tetragon gRPC backends
 │       ├── networkpolicy/              # Hubble + Calico + TCP inference backends
 │       └── export/                     # Splunk + Elasticsearch + S3 + 5 format serializers
-├── detection-probe/                    # Rust detection probe (syscall catalog)
+├── detection-probe/                    # Rust detection probe (9 MITRE ATT&CK techniques)
 ├── deploy/helm/sidereal/              # Helm chart with profile-aware templates
-├── build/                              # Dockerfiles
+├── build/                              # Dockerfiles (FIPS builds)
+├── test/e2e/                           # E2E integration tests (envtest)
+├── hack/                               # Utility scripts (FIPS verification)
 └── compliance/                         # ATO documentation package
 ```
 
