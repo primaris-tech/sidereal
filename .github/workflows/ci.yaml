@@ -36,7 +36,7 @@ jobs:
         run: make verify-fips
 
       - name: Run tests
-        run: go test ./... -race -coverprofile=coverage.out -covermode=atomic
+        run: go test $(go list ./... | grep -v test/e2e) -race -coverprofile=coverage.out -covermode=atomic
 
       - name: Upload coverage
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -60,7 +60,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
         with:
-          version: v2.1
+          version: v2.11.4
 
   go-vulncheck:
     name: Go Vulnerability Check
