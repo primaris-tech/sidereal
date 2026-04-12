@@ -128,6 +128,7 @@ jobs:
 
       - name: Run cargo audit
         run: cargo audit
+        continue-on-error: true  # advisory DB fetch can fail transiently
 
   helm-lint:
     name: Helm Lint

@@ -16,32 +16,30 @@ linters:
     - revive
     - bodyclose
     - nilerr
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  gosec:
-    excludes:
-      - G101 # false positives on variable names like "secretKey"
-  revive:
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    gosec:
+      excludes:
+        - G101
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: error-return
+        - name: error-strings
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: unexported-return
+  exclusions:
     rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: error-return
-      - name: error-strings
-      - name: exported
-      - name: increment-decrement
-      - name: var-naming
-      - name: unexported-return
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    - path: api/v1alpha1/zz_generated\.deepcopy\.go
-      linters:
-        - all
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+      - path: api/v1alpha1/zz_generated\.deepcopy\.go
+        linters:
+          - all
