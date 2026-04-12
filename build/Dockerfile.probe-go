@@ -1,15 +1,46 @@
+# Sidereal Go Probe Runner (multi-probe)
+# FIPS 140-2 validated build: BoringCrypto (CMVP #3678)
+#
+# Build with PROBE_CMD arg to select probe:
+#   docker build --build-arg PROBE_CMD=probe-rbac -t ghcr.io/primaris-tech/sidereal-probe-rbac:latest -f build/Dockerfile.probe-go .
+#   docker build --build-arg PROBE_CMD=probe-secret -t ghcr.io/primaris-tech/sidereal-probe-secret:latest -f build/Dockerfile.probe-go .
+#   docker build --build-arg PROBE_CMD=probe-admission -t ghcr.io/primaris-tech/sidereal-probe-admission:latest -f build/Dockerfile.probe-go .
+#   docker build --build-arg PROBE_CMD=probe-netpol -t ghcr.io/primaris-tech/sidereal-probe-netpol:latest -f build/Dockerfile.probe-go .
+
 FROM golang:1.25 AS builder
 
 ARG PROBE_CMD=probe-rbac
+
 WORKDIR /app
+
+# Cache dependency layer
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-ENV GOEXPERIMENT=boringcrypto
-RUN CGO_ENABLED=0 GOOS=linux go build -o probe ./cmd/${PROBE_CMD}/
 
+# BoringCrypto FIPS build
+ENV GOEXPERIMENT=boringcrypto
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o probe ./cmd/${PROBE_CMD}/
+
+# Verify BoringCrypto symbols are linked
+RUN go tool nm probe | grep -q '_Cfunc__goboringcrypto_' \
+    || (echo "FATAL: BoringCrypto symbols not found in probe binary" && exit 1)
+
+# Runtime stage: distroless nonroot
 FROM gcr.io/distroless/static-debian12:nonroot
+
+ARG PROBE_CMD=probe-rbac
+
+LABEL org.opencontainers.image.title="sidereal-${PROBE_CMD}" \
+      org.opencontainers.image.description="Sidereal ${PROBE_CMD} - Kubernetes security probe runner" \
+      org.opencontainers.image.vendor="Primaris Technologies" \
+      org.opencontainers.image.source="https://github.com/primaris-tech/sidereal" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      io.sidereal.fips="boringcrypto" \
+      io.sidereal.component="${PROBE_CMD}"
+
 WORKDIR /
 COPY --from=builder /app/probe /probe
 USER 65532:65532

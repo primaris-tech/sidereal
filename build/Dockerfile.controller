@@ -1,14 +1,38 @@
+# Sidereal Controller Manager
+# FIPS 140-2 validated build: BoringCrypto (CMVP #3678)
+#
+# Build: docker build -t ghcr.io/primaris-tech/sidereal-controller:latest -f build/Dockerfile.controller .
+
 FROM golang:1.25 AS builder
 
 WORKDIR /app
+
+# Cache dependency layer
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-ENV GOEXPERIMENT=boringcrypto
-RUN CGO_ENABLED=0 GOOS=linux go build -o controller ./cmd/controller/
 
+# BoringCrypto FIPS build
+ENV GOEXPERIMENT=boringcrypto
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o controller ./cmd/controller/
+
+# Verify BoringCrypto symbols are linked
+RUN go tool nm controller | grep -q '_Cfunc__goboringcrypto_' \
+    || (echo "FATAL: BoringCrypto symbols not found in controller binary" && exit 1)
+
+# Runtime stage: distroless nonroot
 FROM gcr.io/distroless/static-debian12:nonroot
+
+LABEL org.opencontainers.image.title="sidereal-controller" \
+      org.opencontainers.image.description="Sidereal Controller Manager - Kubernetes security control validation operator" \
+      org.opencontainers.image.vendor="Primaris Technologies" \
+      org.opencontainers.image.source="https://github.com/primaris-tech/sidereal" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      io.sidereal.fips="boringcrypto" \
+      io.sidereal.component="controller"
+
 WORKDIR /
 COPY --from=builder /app/controller /controller
 USER 65532:65532

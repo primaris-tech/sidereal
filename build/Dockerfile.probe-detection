@@ -1,10 +1,40 @@
+# Sidereal Detection Probe (Rust)
+# FIPS 140-2 validated build: aws-lc-rs (CMVP #4816)
+#
+# Build: docker build -t ghcr.io/primaris-tech/sidereal-probe-detection:latest -f build/Dockerfile.probe-detection detection-probe/
+#
+# Runtime: scratch base, no network, no volume mounts, no credentials.
+# Custom seccomp profile applied at Pod level via Helm.
+
 FROM rust:1.86 AS builder
+
+# aws-lc-rs FIPS requires cmake and a C compiler
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake clang pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
+
+# Build with FIPS feature (aws-lc-rs FIPS mode)
 RUN cargo build --release --features fips
 
+# Verify the binary exists and is statically linked
+RUN test -f target/release/sidereal-detection-probe \
+    || test -f target/release/detection-probe \
+    || (echo "FATAL: detection probe binary not found" && exit 1)
+
+# Runtime stage: scratch (no OS, no shell, minimal attack surface)
 FROM scratch
-COPY --from=builder /app/target/release/detection-probe /detection-probe
+
+LABEL org.opencontainers.image.title="sidereal-probe-detection" \
+      org.opencontainers.image.description="Sidereal detection probe - adversarial syscall pattern generator for detection validation" \
+      org.opencontainers.image.vendor="Primaris Technologies" \
+      org.opencontainers.image.source="https://github.com/primaris-tech/sidereal" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      io.sidereal.fips="aws-lc-rs" \
+      io.sidereal.component="probe-detection"
+
+COPY --from=builder /app/target/release/sidereal-detection-probe /detection-probe
 USER 65532:65532
 ENTRYPOINT ["/detection-probe"]

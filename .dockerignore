@@ -1,0 +1,31 @@
+# Build artifacts
+bin/
+cover.out
+detection-probe/target/
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in build context)
+*.md
+!go.md
+compliance/
+docs/
+
+# Helm chart (not needed in binary builds)
+deploy/
+
+# CI/CD
+.github/
+
+# OS files
+.DS_Store
+Thumbs.db
