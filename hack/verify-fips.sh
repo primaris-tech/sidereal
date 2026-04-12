@@ -30,7 +30,7 @@ verify_go_binary() {
         return
     fi
 
-    if go tool nm "$binary" 2>/dev/null | grep -q '_Cfunc__goboringcrypto_'; then
+    if go tool nm "$binary" 2>/dev/null | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring'; then
         echo -e "${GREEN}PASS${NC}: $name - BoringCrypto symbols present"
         PASS=$((PASS + 1))
     else

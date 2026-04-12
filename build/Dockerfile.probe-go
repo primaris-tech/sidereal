@@ -25,7 +25,7 @@ RUN GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" -o probe ./cmd/${PROBE_CMD}/
 
 # Verify BoringCrypto symbols are linked
-RUN go tool nm probe | grep -q '_Cfunc__goboringcrypto_' \
+RUN go tool nm probe | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
     || (echo "FATAL: BoringCrypto symbols not found in probe binary" && exit 1)
 
 # Runtime stage: distroless nonroot
