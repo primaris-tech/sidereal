@@ -1,0 +1,27 @@
+# Enforce Mode — full incident pipeline
+#
+# When executionMode is "enforce", Sidereal creates SiderealIncident
+# resources for any probe result with controlEffectiveness of
+# "Ineffective" or "Compromised". Incidents are delivered to the
+# configured IR webhook if one is set up.
+#
+# Only use enforce mode after validating probe accuracy in observe mode.
+#
+# Incident severity is derived from control effectiveness:
+#   Compromised  -> Critical
+#   Ineffective  -> High
+#   Degraded     -> Medium
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: rbac-enforce-production
+  namespace: sidereal-system
+spec:
+  probeType: rbac
+  targetNamespace: production
+  executionMode: enforce
+  intervalSeconds: 21600
+  controlMappings:
+    nist-800-53:
+      - AC-6(5)
+      - AC-2

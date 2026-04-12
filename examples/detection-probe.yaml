@@ -1,0 +1,31 @@
+# Detection Probe — verifies the detection pipeline catches known-bad behavior
+#
+# This probe fires a synthetic syscall pattern (T1059.004: Unix Shell execve)
+# from a sandboxed container, then the controller independently queries the
+# detection backend (Falco/Tetragon) to verify an alert was raised.
+#
+# IMPORTANT: Detection probes require an active SiderealAOAuthorization.
+# See ao-authorization.yaml for the authorization template.
+#
+# Requires: Falco or Tetragon installed and running.
+#
+# Expected outcome:
+#   Detected   — detection backend raised an alert for the technique (Effective)
+#   Undetected — no alert was raised within the verification window (Ineffective)
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: detection-t1059
+  namespace: sidereal-system
+spec:
+  probeType: detection
+  targetNamespace: default
+  executionMode: observe
+  intervalSeconds: 21600
+  verificationWindowSeconds: 60
+  mitreAttackId: T1059.004
+  aoAuthorizationRef: detection-auth-q2-2026
+  controlMappings:
+    nist-800-53:
+      - SI-4
+      - AU-6

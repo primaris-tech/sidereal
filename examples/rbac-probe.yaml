@@ -1,0 +1,23 @@
+# RBAC Probe — verifies that ServiceAccount permission boundaries are enforced
+#
+# This probe attempts unauthorized API operations with the sidereal-probe-rbac
+# ServiceAccount in the target namespace and verifies they are denied.
+#
+# Expected outcome:
+#   Pass       — all unauthorized operations were denied (Effective)
+#   Fail       — one or more unauthorized operations were allowed (Ineffective)
+#   Indeterminate — API errors prevented evaluation (Degraded)
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: rbac-production
+  namespace: sidereal-system
+spec:
+  probeType: rbac
+  targetNamespace: production
+  executionMode: observe
+  intervalSeconds: 21600  # 6 hours
+  controlMappings:
+    nist-800-53:
+      - AC-6(5)
+      - AC-2

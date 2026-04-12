@@ -1,0 +1,27 @@
+# Namespace Selector Probe — one probe covering all matching namespaces
+#
+# Instead of creating one probe per namespace, use targetNamespaceSelector
+# to cover all namespaces matching a label. Sidereal creates a separate
+# Job for each matching namespace on every execution cycle.
+#
+# This is useful for organizations with many application namespaces that
+# share the same RBAC and NetworkPolicy patterns.
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: rbac-all-apps
+  namespace: sidereal-system
+spec:
+  probeType: rbac
+  targetNamespaceSelector:
+    matchLabels:
+      sidereal.cloud/probe-target: "true"
+  executionMode: observe
+  intervalSeconds: 21600
+  controlMappings:
+    nist-800-53:
+      - AC-6(5)
+---
+# Label your namespaces to include them:
+#   kubectl label namespace production sidereal.cloud/probe-target=true
+#   kubectl label namespace staging sidereal.cloud/probe-target=true

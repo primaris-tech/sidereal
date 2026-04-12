@@ -1,0 +1,27 @@
+# AO Authorization — time-bounded authorization for detection probes
+#
+# Detection probes fire real (simulated) adversarial syscall patterns.
+# An Authorizing Official must explicitly authorize which techniques
+# can run, in which namespaces, and for how long.
+#
+# Update validFrom/expiresAt and authorizedTechniques for your environment.
+# The controller will create a SystemAlert when this authorization expires.
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealAOAuthorization
+metadata:
+  name: detection-auth-q2-2026
+  namespace: sidereal-system
+spec:
+  aoName: "Jane Smith, ISSO"
+  justification: "Authorized for continuous detection coverage validation per CONMON plan"
+  validFrom: "2026-04-01T00:00:00Z"
+  expiresAt: "2026-07-01T00:00:00Z"
+  catalogVersion: "1.0"
+  authorizedTechniques:
+    - T1059.004   # Unix Shell
+    - T1611       # Escape to Host
+    - T1613       # Container Discovery
+  authorizedNamespaces:
+    - default
+    - production
+    - staging
