@@ -15,10 +15,7 @@ use crate::catalog::TechniqueResult;
 
 /// Execute the T1611 Escape to Host syscall pattern.
 pub fn execute() -> TechniqueResult {
-    let mut details = Vec::new();
-
-    details.push(attempt_unshare());
-    details.push(attempt_mount());
+    let details = vec![attempt_unshare(), attempt_mount()];
 
     TechniqueResult {
         technique_id: "T1611".to_string(),

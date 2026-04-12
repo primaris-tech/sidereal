@@ -15,7 +15,7 @@ COPY . .
 
 # BoringCrypto FIPS build
 ENV GOEXPERIMENT=boringcrypto
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" -o controller ./cmd/controller/
 
 # Verify BoringCrypto symbols are linked
@@ -23,7 +23,7 @@ RUN go tool nm controller | grep -q '_Cfunc__goboringcrypto_' \
     || (echo "FATAL: BoringCrypto symbols not found in controller binary" && exit 1)
 
 # Runtime stage: distroless nonroot
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/base-debian12:nonroot
 
 LABEL org.opencontainers.image.title="sidereal-controller" \
       org.opencontainers.image.description="Sidereal Controller Manager - Kubernetes security control validation operator" \
