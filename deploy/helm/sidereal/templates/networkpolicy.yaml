@@ -1,0 +1,86 @@
+# Default deny all ingress and egress in sidereal-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sidereal-default-deny
+  namespace: sidereal-system
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow controller egress to Kubernetes API server.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sidereal-controller-egress
+  namespace: sidereal-system
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+  policyTypes:
+    - Egress
+  egress:
+    # Kubernetes API server.
+    - ports:
+        - port: 443
+          protocol: TCP
+        - port: 6443
+          protocol: TCP
+    # DNS.
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+{{- if eq .Values.profile.detectionBackend "falco" }}
+    # Falco gRPC.
+    - ports:
+        - port: 50051
+          protocol: TCP
+{{- end }}
+{{- if eq .Values.profile.detectionBackend "tetragon" }}
+    # Tetragon gRPC.
+    - ports:
+        - port: 54321
+          protocol: TCP
+{{- end }}
+{{- if eq .Values.profile.cniObservability "hubble" }}
+    # Hubble Relay gRPC.
+    - ports:
+        - port: 4245
+          protocol: TCP
+{{- end }}
+{{- if eq .Values.profile.cniObservability "calico" }}
+    # Calico API.
+    - ports:
+        - port: 5443
+          protocol: TCP
+{{- end }}
+---
+# Allow metrics scraping ingress to controller.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sidereal-controller-ingress
+  namespace: sidereal-system
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+          protocol: TCP
+        - port: 8081
+          protocol: TCP

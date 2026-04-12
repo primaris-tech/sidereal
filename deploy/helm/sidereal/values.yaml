@@ -1,0 +1,115 @@
+global:
+  # FIPS 199 impact level. Cascades defaults for cadence, retention, and fail-closed behavior.
+  # high: 6h cadence, 365d retention, fail-closed on export failure
+  # moderate: 12h cadence, 365d retention, no fail-closed
+  # low: 24h cadence, 180d retention, no fail-closed
+  impactLevel: high
+
+  # Default execution mode for probes. dryRun -> observe -> enforce (graduated).
+  executionMode: dryRun
+
+  # FIPS 140-2 validated cryptography. Requires BoringCrypto Go build.
+  fips: true
+
+  # Require a supported admission controller (Kyverno or OPA/Gatekeeper).
+  requireAdmissionController: true
+
+  # Compliance frameworks to enable. Controls which crosswalk files are loaded.
+  controlFrameworks:
+    - nist-800-53
+
+# Deployment profile — selects which backend integrations are deployed.
+profile:
+  # Admission controller: kyverno or opa
+  admissionController: kyverno
+  # Image signature verifier: kyverno or policy-controller
+  signatureVerifier: kyverno
+  # Detection backend: falco, tetragon, or none
+  detectionBackend: falco
+  # CNI observability mode: hubble, calico, or tcp-inference
+  cniObservability: tcp-inference
+
+# Controller Manager configuration.
+controller:
+  image:
+    repository: ghcr.io/primaris-tech/sidereal-controller
+    tag: ""  # defaults to appVersion
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Probe runner configuration.
+probe:
+  # Default interval between probe executions (seconds). Overridden per-probe.
+  intervalSeconds: 21600
+  goImage:
+    repository: ghcr.io/primaris-tech/sidereal-probe-go
+    tag: ""
+    pullPolicy: IfNotPresent
+  detectionImage:
+    repository: ghcr.io/primaris-tech/sidereal-probe-detection
+    tag: ""
+    pullPolicy: IfNotPresent
+  bootstrapImage:
+    repository: ghcr.io/primaris-tech/sidereal-probe-bootstrap
+    tag: ""
+    pullPolicy: IfNotPresent
+
+# Audit and SIEM export configuration.
+audit:
+  # Retention in days for probe results. Minimum per impact level.
+  retentionDays: 365
+  # Fail-closed: halt probe scheduling if SIEM export fails consecutively.
+  failClosedOnExportFailure: true
+
+# Export targets — supports multiple simultaneous targets with different formats.
+export:
+  targets: []
+  # Example:
+  # - backend: splunk
+  #   format: json
+  #   endpoint: https://splunk.example.com:8088
+  #   secretRef: splunk-hec-token
+  # - backend: s3
+  #   format: ocsf
+  #   endpoint: https://s3.us-east-1.amazonaws.com
+  #   bucket: audit-bucket
+  #   region: us-east-1
+  #   secretRef: s3-credentials
+
+# Detection backend endpoints (used when profile.detectionBackend is set).
+detection:
+  falco:
+    endpoint: falco-grpc.falco:50051
+  tetragon:
+    endpoint: tetragon.kube-system:54321
+
+# CNI observability endpoints (used when profile.cniObservability is set).
+cni:
+  hubble:
+    endpoint: hubble-relay.kube-system:4245
+  calico:
+    endpoint: https://calico-api.calico-system:5443
+
+# TLS configuration.
+tls:
+  required: true
+
+# Custom probe extensibility.
+customProbes:
+  serviceAccounts: []
+  # Example:
+  # - name: my-custom-probe
+  #   namespace: sidereal-system
+
+# Resource quota for sidereal-system namespace.
+resourceQuota:
+  maxJobs: 10
+  maxCPU: "4"
+  maxMemory: 8Gi

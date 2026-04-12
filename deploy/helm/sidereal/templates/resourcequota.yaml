@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sidereal-system-quota
+  namespace: sidereal-system
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  hard:
+    count/jobs.batch: {{ .Values.resourceQuota.maxJobs | quote }}
+    limits.cpu: {{ .Values.resourceQuota.maxCPU | quote }}
+    limits.memory: {{ .Values.resourceQuota.maxMemory | quote }}

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sidereal-controller-manager
+  namespace: sidereal-system
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      {{- include "sidereal.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: controller
+  template:
+    metadata:
+      labels:
+        {{- include "sidereal.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: controller
+    spec:
+      serviceAccountName: sidereal-controller
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: manager
+          image: {{ include "sidereal.controllerImage" . }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          args:
+            - --impact-level={{ .Values.global.impactLevel }}
+            - --execution-mode={{ .Values.global.executionMode }}
+          {{- if ne .Values.profile.detectionBackend "none" }}
+            - --detection-backend={{ .Values.profile.detectionBackend }}
+          {{- end }}
+            - --cni-observability={{ .Values.profile.cniObservability }}
+          env:
+            - name: SIDEREAL_NAMESPACE
+              value: sidereal-system
+            - name: IMPACT_LEVEL
+              value: {{ .Values.global.impactLevel }}
+            - name: EXECUTION_MODE
+              value: {{ .Values.global.executionMode }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: hmac-root
+              mountPath: /var/run/secrets/sidereal
+              readOnly: true
+      volumes:
+        - name: hmac-root
+          secret:
+            secretName: sidereal-hmac-root

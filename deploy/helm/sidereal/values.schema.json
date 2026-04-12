@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "impactLevel": {
+          "type": "string",
+          "enum": ["high", "moderate", "low"],
+          "default": "high"
+        },
+        "executionMode": {
+          "type": "string",
+          "enum": ["dryRun", "observe", "enforce"],
+          "default": "dryRun"
+        },
+        "fips": {
+          "type": "boolean",
+          "default": true
+        },
+        "requireAdmissionController": {
+          "type": "boolean",
+          "default": true
+        },
+        "controlFrameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["nist-800-53", "cmmc", "cjis", "irs-1075", "hipaa", "nist-800-171", "kubernetes-stig"]
+          },
+          "default": ["nist-800-53"]
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "admissionController": {
+          "type": "string",
+          "enum": ["kyverno", "opa"]
+        },
+        "signatureVerifier": {
+          "type": "string",
+          "enum": ["kyverno", "policy-controller"]
+        },
+        "detectionBackend": {
+          "type": "string",
+          "enum": ["falco", "tetragon", "none"]
+        },
+        "cniObservability": {
+          "type": "string",
+          "enum": ["hubble", "calico", "tcp-inference"]
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "properties": {
+        "intervalSeconds": {
+          "type": "integer",
+          "minimum": 300,
+          "maximum": 86400
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 180
+        },
+        "failClosedOnExportFailure": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tls": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}
