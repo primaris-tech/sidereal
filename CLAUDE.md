@@ -156,6 +156,6 @@ sidereal/
 - **CI hardening**: All GitHub Actions pinned by SHA (not tag); `GITHUB_TOKEN` read-only by default; CI has no access to signing infrastructure
 - **Image signing**: Keyless via Sigstore OIDC (Fulcio + Rekor); KMS-backed key as alternative for air-gapped
 - **Release gating**: GitHub Environment approval gate — human must approve before signing keys are accessible
-- **Dependencies**: Go deps vendored (`go mod vendor`); `govulncheck` + `cargo audit` in CI; Dependabot for updates
+- **Dependencies**: Go module proxy (no vendoring); `govulncheck` + `cargo audit` in CI; Dependabot for updates
 - **Registry**: GHCR (GitHub Container Registry)
 - **Account security**: FIDO2/WebAuthn (YubiKey) required for all maintainers — no TOTP/SMS
