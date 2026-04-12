@@ -201,7 +201,7 @@ jobs:
         run: syft . -o cyclonedx-json=sbom-go.cdx.json
 
       - name: Generate Rust SBOM (cargo-cyclonedx)
-        run: cd detection-probe && cargo cyclonedx --format json && cp bom.json ../sbom-rust.cdx.json
+        run: cd detection-probe && cargo cyclonedx --format json && cp sidereal-detection-probe.cdx.json ../sbom-rust.cdx.json
 
       # --- Sign images and attest SBOMs ---
 

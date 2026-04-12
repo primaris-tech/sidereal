@@ -35,3 +35,8 @@ Thumbs.db
 
 # Helm
 deploy/static/
+
+# Website
+website/node_modules/
+website/dist/
+website/.astro/
