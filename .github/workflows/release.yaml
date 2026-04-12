@@ -220,17 +220,16 @@ jobs:
           )
 
           for img in "${IMAGES[@]}"; do
-            FULL="${REGISTRY}/${img}:${VERSION}"
-            DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${FULL}" 2>/dev/null || echo "${FULL}")
+            REF="${REGISTRY}/${img}:${VERSION}"
 
-            echo "Signing ${FULL}..."
-            cosign sign --yes "${DIGEST}"
+            echo "Signing ${REF}..."
+            cosign sign --yes "${REF}"
 
-            echo "Attesting SBOM for ${FULL}..."
+            echo "Attesting SBOM for ${REF}..."
             if [[ "${img}" == *"detection"* ]]; then
-              cosign attest --yes --type cyclonedx --predicate sbom-rust.cdx.json "${DIGEST}"
+              cosign attest --yes --type cyclonedx --predicate sbom-rust.cdx.json "${REF}"
             else
-              cosign attest --yes --type cyclonedx --predicate sbom-go.cdx.json "${DIGEST}"
+              cosign attest --yes --type cyclonedx --predicate sbom-go.cdx.json "${REF}"
             fi
           done
 

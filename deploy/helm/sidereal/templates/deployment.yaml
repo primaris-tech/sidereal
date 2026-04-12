@@ -28,13 +28,6 @@ spec:
         - name: manager
           image: {{ include "sidereal.controllerImage" . }}
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
-          args:
-            - --impact-level={{ .Values.global.impactLevel }}
-            - --execution-mode={{ .Values.global.executionMode }}
-          {{- if ne .Values.profile.detectionBackend "none" }}
-            - --detection-backend={{ .Values.profile.detectionBackend }}
-          {{- end }}
-            - --cni-observability={{ .Values.profile.cniObservability }}
           env:
             - name: SIDEREAL_NAMESPACE
               value: sidereal-system
