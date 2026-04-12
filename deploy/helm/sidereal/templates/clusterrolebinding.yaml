@@ -1,0 +1,27 @@
+{{- $labels := include "sidereal.labels" . -}}
+{{- $bindings := dict
+  "sidereal-controller" "sidereal-controller"
+  "sidereal-probe-rbac" "sidereal-probe-rbac"
+  "sidereal-probe-netpol" "sidereal-probe-netpol"
+  "sidereal-probe-admission" "sidereal-probe-admission"
+  "sidereal-probe-secret" "sidereal-probe-secret"
+  "sidereal-probe-detection" "sidereal-probe-detection"
+  "sidereal-discovery" "sidereal-discovery"
+}}
+{{- range $role, $sa := $bindings }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $role }}
+  labels:
+    {{- $labels | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $role }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $sa }}
+    namespace: sidereal-system
+{{- end }}

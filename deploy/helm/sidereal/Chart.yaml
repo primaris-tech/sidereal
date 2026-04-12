@@ -1,0 +1,18 @@
+apiVersion: v2
+name: sidereal
+description: Kubernetes-native security operator for continuous security control validation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.26.0-0"
+home: https://github.com/primaris-tech/sidereal
+sources:
+  - https://github.com/primaris-tech/sidereal
+keywords:
+  - security
+  - compliance
+  - nist
+  - fedramp
+  - kubernetes
+  - operator
+  - continuous-monitoring

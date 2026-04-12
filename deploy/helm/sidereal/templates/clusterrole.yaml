@@ -1,0 +1,147 @@
+---
+# Controller Manager — CRD read/write + Job creation.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-controller
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["sidereal.cloud"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["sidereal.cloud"]
+    resources: ["*/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list"]
+---
+# RBAC Probe — SelfSubjectAccessReview + RoleBinding read.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-probe-rbac
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectaccessreviews"]
+    verbs: ["create"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+---
+# NetworkPolicy Probe — TCP connection only, result ConfigMap write.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-probe-netpol
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+---
+# Admission Probe — Pod dry-run create, result ConfigMap write.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-probe-admission
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
+    verbs: ["list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+---
+# Secret Probe — Secret GET/LIST (expected to fail), result ConfigMap write.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-probe-secret
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+---
+# Detection Probe — no API access needed (syscall-only), result ConfigMap write by controller.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-probe-detection
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules: []
+---
+# Discovery — read-only cluster inspection.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-discovery
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "serviceaccounts"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["sidereal.cloud"]
+    resources: ["siderealprobes", "siderealproberecommendations"]
+    verbs: ["get", "list", "watch", "create", "update"]
+---
+# Human role: live executor (required for observe/enforce mode).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-live-executor
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["sidereal.cloud"]
+    resources: ["siderealprobes"]
+    verbs: ["get", "list", "update", "patch"]
+---
+# Human role: security override (required to loosen impact-level defaults).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sidereal-security-override
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["sidereal.cloud"]
+    resources: ["siderealprobes"]
+    verbs: ["get", "list", "update", "patch"]

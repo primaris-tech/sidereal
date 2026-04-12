@@ -1,12 +1,12 @@
 # Binaries
 bin/
-probe-bootstrap
-probe-rbac
-probe-secret
-probe-admission
-probe-netpol
-controller
-sidereal
+/probe-bootstrap
+/probe-rbac
+/probe-secret
+/probe-admission
+/probe-netpol
+/controller
+/sidereal
 *.exe
 *.dll
 *.so
