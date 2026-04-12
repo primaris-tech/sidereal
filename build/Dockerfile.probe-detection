@@ -8,9 +8,9 @@
 
 FROM rust:1.86 AS builder
 
-# aws-lc-rs FIPS requires cmake and a C compiler
+# aws-lc-rs FIPS requires cmake, a C compiler, and Go (for FIPS self-test harness)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake clang pkg-config \
+    cmake clang pkg-config golang \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
