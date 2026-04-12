@@ -8,11 +8,11 @@ Sidereal is in **active implementation**. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
 - Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md`
-- **Phases 0-20 complete**: Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework, all 4 Go probe runners (RBAC, Secret, Admission, NetworkPolicy), detection backends (Falco/Tetragon), Rust detection probe with technique catalog, SIEM export pipeline (5 formats, 3 backends), incident controller with IR webhook, SystemAlert acknowledgment gate, AO Authorization lifecycle, bootstrap verifier, report generation engine (5 report types), custom probe extensibility, Helm chart with profile-aware rendering, FIPS 140-2 build configuration, and CI/CD pipeline (GitHub Actions). 248 Go tests + 8 Rust tests.
+- **Phases 0-21 complete**: Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework, all 4 Go probe runners (RBAC, Secret, Admission, NetworkPolicy), detection backends (Falco/Tetragon), Rust detection probe with technique catalog, SIEM export pipeline (5 formats, 3 backends), incident controller with IR webhook, SystemAlert acknowledgment gate, AO Authorization lifecycle, bootstrap verifier, report generation engine (5 report types), custom probe extensibility, Helm chart with profile-aware rendering, FIPS 140-2 build configuration, CI/CD pipeline (GitHub Actions), and E2E integration test suite (18 test files, envtest). 248 Go tests + 8 Rust tests + E2E suite.
 
 **Repo**: `primaris-tech/sidereal` on GitHub (private).
 
-**Current phase**: Phase 21 (E2E integration tests) is next. Remaining: Phases 21-22 (E2E integration tests, discovery reconciler).
+**Current phase**: Phase 22 (discovery reconciler) is next. This is the final phase before v0.1.0.
 
 ## What Sidereal Is
 
