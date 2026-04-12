@@ -130,19 +130,26 @@ Custom profiles are supported for any combination of supported implementations.
 
 ## Project Status
 
-Sidereal is in the **pre-implementation phase**. The repository contains:
+Sidereal **v0.1.0** is feature-complete. The operator is fully implemented and ready for initial deployment and testing.
 
-- **[Engineering Specification](sidereal-engineering-summary.md)**: the canonical design document covering architecture, probe design, blast radius controls, key management, development security lifecycle, and all 10 adoptability enhancements
-- **[Compliance Package](compliance/)**: complete ATO documentation package:
-  - 40 OSCAL control implementation narratives (NIST 800-53 Rev 5 High baseline)
-  - System Security Plan template
-  - Security Assessment Plan template (33 test procedures)
-  - Customer Responsibility Matrix
-  - 6 deployment profile binding documents
-  - 4 architecture diagrams (authorization boundary, system architecture, data flows, network topology)
-  - 5 supporting plans (Configuration Management, Incident Response, Contingency, Privacy Impact Assessment, Rules of Behavior)
+**What's included:**
+- All 8 CRDs and 6 controller reconcilers
+- 5 built-in probe runners (RBAC, NetworkPolicy, Admission, Secret, Detection) plus custom probe extensibility
+- Rust detection probe with MITRE ATT&CK technique catalog
+- HMAC result integrity with per-execution HKDF-SHA256 key derivation
+- Multi-framework compliance mapping (7 frameworks)
+- SIEM export pipeline (5 formats, 3 backends)
+- Incident controller with IR webhook delivery
+- Discovery reconciler with probe recommendation lifecycle
+- Report generation (5 report types)
+- Helm chart with 6 deployment profiles
+- FIPS 140-2 build configuration (BoringCrypto for Go, aws-lc-rs for Rust)
+- CI/CD pipeline (GitHub Actions with image signing, SBOM, Trivy scanning)
+- 260 Go unit tests + 8 Rust tests + 46 E2E integration tests
 
-Implementation has not started. See the engineering specification for the planned implementation stack (Go controller with kubebuilder, Rust detection probe, Helm delivery).
+**Documentation:**
+- **[Engineering Specification](sidereal-engineering-summary.md)**: canonical design document covering architecture, probe design, blast radius controls, key management, and development security lifecycle
+- **[Compliance Package](compliance/)**: complete ATO documentation package with 40 OSCAL controls, SSP/SAP templates, CRM, 6 deployment profile binding documents, and architecture diagrams
 
 ---
 
@@ -176,22 +183,99 @@ Implementation has not started. See the engineering specification for the planne
 
 ## Quick Start
 
-*Coming soon. Implementation has not yet started.*
+### Prerequisites
+
+- Kubernetes cluster (1.28+)
+- Helm 3.12+
+- An admission controller (Kyverno or OPA/Gatekeeper)
+- A detection backend (Falco or Tetragon) for detection probes
+
+### Install
+
+```bash
+# Add the Sidereal Helm repository
+helm install sidereal oci://ghcr.io/primaris-tech/charts/sidereal \
+  --namespace sidereal-system \
+  --create-namespace \
+  --set profile.name=kyverno-cilium-falco \
+  --set global.impactLevel=moderate \
+  --set global.executionMode=dryRun
+```
+
+### Discover existing controls
+
+```bash
+# Let Sidereal scan your cluster and generate probe recommendations
+kubectl get siderealproberecommendations -n sidereal-system
+
+# Or use the CLI for an offline preview
+sidereal discover --dry-run
+```
+
+### Promote a recommendation to an active probe
+
+```bash
+# Review a recommendation
+kubectl describe sprec <recommendation-name> -n sidereal-system
+
+# Promote it (creates a SiderealProbe in dryRun mode)
+kubectl patch sprec <recommendation-name> -n sidereal-system \
+  --type merge --subresource status \
+  -p '{"status":{"state":"promoted","promotedTo":"<probe-name>"}}'
+```
+
+### Graduate to live execution
+
+```bash
+# Move from dryRun to observe (probes execute, no incidents)
+kubectl patch siderealprobe <probe-name> -n sidereal-system \
+  --type merge -p '{"spec":{"executionMode":"observe"}}'
+
+# After validation, move to enforce (full incident pipeline)
+kubectl patch siderealprobe <probe-name> -n sidereal-system \
+  --type merge -p '{"spec":{"executionMode":"enforce"}}'
+```
+
+### Generate reports
+
+```bash
+# Continuous monitoring summary
+sidereal report continuous-monitoring --format markdown
+
+# POA&M with open incidents
+sidereal report poam --open-incidents-only --format csv
+
+# Evidence package for assessors
+sidereal report evidence-package --format zip
+```
+
+### View results
+
+```bash
+# Check probe results
+kubectl get siderealproberesults -n sidereal-system
+
+# Check incidents (enforce mode only)
+kubectl get siderealincidents -n sidereal-system
+
+# Check system alerts
+kubectl get siderealsystemalerts -n sidereal-system
+```
 
 ---
 
 ## Contributing
 
-*Contributing guidelines will be published when implementation begins.*
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and pull request requirements.
 
 ---
 
 ## License
 
-*License selection pending.*
+Sidereal is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
 ## Security
 
-*Vulnerability disclosure process will be documented in SECURITY.md when implementation begins. The planned process uses GitHub's private vulnerability reporting feature.*
+See [SECURITY.md](SECURITY.md) for vulnerability reporting. We use GitHub's private vulnerability reporting feature. Please do not open public issues for security vulnerabilities.
