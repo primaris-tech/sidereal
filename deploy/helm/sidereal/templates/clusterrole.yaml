@@ -30,7 +30,10 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["networking.k8s.io"]
     resources: ["networkpolicies"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings", "clusterrolebindings"]
+    verbs: ["get", "list", "watch"]
 ---
 # RBAC Probe — SelfSubjectAccessReview + RoleBinding read.
 apiVersion: rbac.authorization.k8s.io/v1
