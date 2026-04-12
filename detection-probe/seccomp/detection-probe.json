@@ -1,0 +1,69 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "defaultErrnoRet": 1,
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_AARCH64"
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "read",
+        "write",
+        "close",
+        "fstat",
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "rt_sigreturn",
+        "exit",
+        "exit_group",
+        "futex",
+        "set_robust_list",
+        "get_robust_list",
+        "rseq",
+        "getrandom",
+        "clock_gettime",
+        "clock_getres",
+        "gettimeofday",
+        "sigaltstack",
+        "arch_prctl",
+        "set_tid_address",
+        "prlimit64",
+        "sched_getaffinity",
+        "sched_yield",
+        "newfstatat",
+        "openat",
+        "ioctl"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Base runtime syscalls for Rust binary execution"
+    },
+    {
+      "names": [
+        "unshare",
+        "mount",
+        "umount2"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "T1611: Escape to Host - unshare(CLONE_NEWNS) and mount() attempts"
+    },
+    {
+      "names": [
+        "clone",
+        "clone3",
+        "fork",
+        "vfork",
+        "execve",
+        "wait4",
+        "getpid",
+        "getppid"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "T1059: Command Execution - fork+execve of known-bad paths"
+    }
+  ]
+}
