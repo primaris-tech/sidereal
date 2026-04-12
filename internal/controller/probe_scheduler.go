@@ -80,6 +80,11 @@ var probeCommands = map[siderealv1alpha1.ProbeType][]string{
 // ProbeSchedulerReconciler reconciles SiderealProbe resources by scheduling probe Jobs.
 type ProbeSchedulerReconciler struct {
 	client.Client
+
+	// RegisteredCustomSAs is the set of ServiceAccount names pre-registered
+	// via Helm values for custom probe use. Custom probes referencing an
+	// unregistered SA will be rejected. If nil, all SAs are allowed (for testing).
+	RegisteredCustomSAs map[string]bool
 }
 
 // SetupWithManager registers the reconciler with the controller manager.
@@ -243,6 +248,13 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 	logger := log.FromContext(ctx)
 	probeID := uuid.New().String()
 
+	// Validate custom probe ServiceAccount is registered.
+	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom {
+		if err := r.validateCustomProbe(probe); err != nil {
+			return err
+		}
+	}
+
 	// In dryRun mode, log the Job spec but don't create it.
 	if probe.Spec.ExecutionMode == siderealv1alpha1.ExecutionModeDryRun {
 		logger.Info("dryRun: would create probe job",
@@ -351,6 +363,11 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 		env = append(env, corev1.EnvVar{Name: "TECHNIQUE_ID", Value: probe.Spec.MitreAttackID})
 	}
 
+	// Add custom probe config (opaque JSON passed through to the container).
+	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom && probe.Spec.CustomProbe != nil && probe.Spec.CustomProbe.Config != nil {
+		env = append(env, corev1.EnvVar{Name: "PROBE_CONFIG", Value: string(probe.Spec.CustomProbe.Config.Raw)})
+	}
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("sidereal-probe-%s", probeID[:8]),
@@ -441,4 +458,32 @@ func (r *ProbeSchedulerReconciler) commandForProbe(probe *siderealv1alpha1.Sider
 		return cmd
 	}
 	return []string{"/probe"}
+}
+
+// validateCustomProbe validates that a custom probe's configuration meets
+// security requirements:
+//  1. CustomProbe spec must be present
+//  2. Image must be specified
+//  3. ServiceAccountName must be specified
+//  4. ServiceAccountName must be pre-registered (if RegisteredCustomSAs is set)
+func (r *ProbeSchedulerReconciler) validateCustomProbe(probe *siderealv1alpha1.SiderealProbe) error {
+	if probe.Spec.CustomProbe == nil {
+		return fmt.Errorf("custom probe %q missing customProbe spec", probe.Name)
+	}
+	if probe.Spec.CustomProbe.Image == "" {
+		return fmt.Errorf("custom probe %q missing image", probe.Name)
+	}
+	if probe.Spec.CustomProbe.ServiceAccountName == "" {
+		return fmt.Errorf("custom probe %q missing serviceAccountName", probe.Name)
+	}
+
+	// Validate SA is registered (skip if RegisteredCustomSAs is nil, e.g., in tests).
+	if r.RegisteredCustomSAs != nil {
+		if !r.RegisteredCustomSAs[probe.Spec.CustomProbe.ServiceAccountName] {
+			return fmt.Errorf("custom probe %q references unregistered ServiceAccount %q; register via Helm values customProbes.serviceAccounts",
+				probe.Name, probe.Spec.CustomProbe.ServiceAccountName)
+		}
+	}
+
+	return nil
 }
