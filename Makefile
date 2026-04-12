@@ -1,10 +1,18 @@
 # Sidereal Makefile
 # Kubernetes-native security operator for continuous control validation
 
-# Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/primaris-tech/sidereal-controller:latest
-IMG_PROBE_GO ?= ghcr.io/primaris-tech/sidereal-probe-go:latest
-IMG_PROBE_DETECTION ?= ghcr.io/primaris-tech/sidereal-probe-detection:latest
+# Image registry and version
+REGISTRY ?= ghcr.io/primaris-tech
+VERSION ?= latest
+
+# Image URLs
+IMG ?= $(REGISTRY)/sidereal-controller:$(VERSION)
+IMG_PROBE_RBAC ?= $(REGISTRY)/sidereal-probe-rbac:$(VERSION)
+IMG_PROBE_SECRET ?= $(REGISTRY)/sidereal-probe-secret:$(VERSION)
+IMG_PROBE_ADMISSION ?= $(REGISTRY)/sidereal-probe-admission:$(VERSION)
+IMG_PROBE_NETPOL ?= $(REGISTRY)/sidereal-probe-netpol:$(VERSION)
+IMG_PROBE_DETECTION ?= $(REGISTRY)/sidereal-probe-detection:$(VERSION)
+IMG_BOOTSTRAP ?= $(REGISTRY)/sidereal-bootstrap:$(VERSION)
 
 # controller-gen and other tool binaries
 CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.20.1
@@ -59,9 +67,27 @@ build: ## Build all Go binaries
 	go build -o bin/probe-bootstrap ./cmd/probe-bootstrap/
 	go build -o bin/sidereal ./cmd/sidereal/
 
+.PHONY: build-fips
+build-fips: ## Build all Go binaries with BoringCrypto FIPS
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/controller ./cmd/controller/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-rbac ./cmd/probe-rbac/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-netpol ./cmd/probe-netpol/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-admission ./cmd/probe-admission/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-secret ./cmd/probe-secret/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/probe-bootstrap ./cmd/probe-bootstrap/
+	GOEXPERIMENT=boringcrypto go build -trimpath -ldflags="-s -w" -o bin/sidereal ./cmd/sidereal/
+
 .PHONY: build-controller
 build-controller: ## Build controller binary only
 	go build -o bin/controller ./cmd/controller/
+
+.PHONY: verify-fips
+verify-fips: ## Verify FIPS cryptography in built binaries
+	@./hack/verify-fips.sh
+
+.PHONY: verify-fips-docker
+verify-fips-docker: ## Verify FIPS labels on Docker images
+	@./hack/verify-fips.sh --docker
 
 ##@ Test
 
@@ -84,13 +110,29 @@ docker-build: ## Build controller Docker image
 	docker build -t $(IMG) -f build/Dockerfile.controller .
 
 .PHONY: docker-build-probes
-docker-build-probes: ## Build probe Docker images
-	docker build -t $(IMG_PROBE_GO) -f build/Dockerfile.probe-go .
+docker-build-probes: ## Build all probe Docker images
+	docker build --build-arg PROBE_CMD=probe-rbac -t $(IMG_PROBE_RBAC) -f build/Dockerfile.probe-go .
+	docker build --build-arg PROBE_CMD=probe-secret -t $(IMG_PROBE_SECRET) -f build/Dockerfile.probe-go .
+	docker build --build-arg PROBE_CMD=probe-admission -t $(IMG_PROBE_ADMISSION) -f build/Dockerfile.probe-go .
+	docker build --build-arg PROBE_CMD=probe-netpol -t $(IMG_PROBE_NETPOL) -f build/Dockerfile.probe-go .
 	docker build -t $(IMG_PROBE_DETECTION) -f build/Dockerfile.probe-detection detection-probe/
 
+.PHONY: docker-build-bootstrap
+docker-build-bootstrap: ## Build bootstrap Docker image
+	docker build -t $(IMG_BOOTSTRAP) -f build/Dockerfile.bootstrap .
+
+.PHONY: docker-build-all
+docker-build-all: docker-build docker-build-probes docker-build-bootstrap ## Build all Docker images
+
 .PHONY: docker-push
-docker-push: ## Push controller Docker image
+docker-push: ## Push all Docker images
 	docker push $(IMG)
+	docker push $(IMG_PROBE_RBAC)
+	docker push $(IMG_PROBE_SECRET)
+	docker push $(IMG_PROBE_ADMISSION)
+	docker push $(IMG_PROBE_NETPOL)
+	docker push $(IMG_PROBE_DETECTION)
+	docker push $(IMG_BOOTSTRAP)
 
 ##@ Helm
 

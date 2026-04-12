@@ -8,11 +8,11 @@ Sidereal is in **active implementation**. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
 - Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md`
-- **Phases 0-6 complete** (tagged `v0.1.0-alpha`): Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework. 72 tests.
+- **Phases 0-18 complete**: Go module, all 8 CRD types, controller skeleton, HMAC integrity layer, probe scheduler, result reconciler with crosswalk, shared probe runner framework, all 4 Go probe runners (RBAC, Secret, Admission, NetworkPolicy), detection backends (Falco/Tetragon), Rust detection probe with technique catalog, SIEM export pipeline (5 formats, 3 backends), incident controller with IR webhook, SystemAlert acknowledgment gate, AO Authorization lifecycle, bootstrap verifier, report generation engine (5 report types), custom probe extensibility, and Helm chart with profile-aware rendering. 248 Go tests + 8 Rust tests.
 
 **Repo**: `primaris-tech/sidereal` on GitHub (private).
 
-**Current phase**: Phase 7 (RBAC probe runner — first real probe) is next. All phases after 6 can be developed in parallel.
+**Current phase**: Phase 19 (FIPS build configuration) is next. Remaining: Phases 19-22 (FIPS builds, CI/CD pipeline, E2E integration tests, discovery reconciler).
 
 ## What Sidereal Is
 
@@ -74,15 +74,36 @@ Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection
 ```
 sidereal/
 ├── sidereal-engineering-summary.md     # Canonical engineering specification
-├── compliance/
-│   ├── trestle-workspace/              # 40 OSCAL control files (Trestle markdown → OSCAL JSON)
-│   ├── plans/                          # CMP, IRP, CP, PIA template, Rules of Behavior
-│   ├── diagrams/                       # Authorization boundary, system architecture, data flows, network topology
-│   ├── ssp/                            # System Security Plan template
-│   ├── sap/                            # Security Assessment Plan template
-│   ├── crm/                            # Customer Responsibility Matrix
-│   └── profiles/                       # Deployment profile binding documents
-└── (implementation code — not yet created)
+├── api/v1alpha1/                       # CRD type definitions (8 CRDs)
+├── cmd/
+│   ├── controller/                     # Controller Manager entrypoint
+│   ├── probe-rbac/                     # RBAC probe runner
+│   ├── probe-secret/                   # Secret Access probe runner
+│   ├── probe-admission/                # Admission Control probe runner
+│   ├── probe-netpol/                   # NetworkPolicy probe runner
+│   ├── probe-bootstrap/                # Bootstrap verification (Helm pre-install hook)
+│   └── sidereal/                       # CLI binary
+├── probes/
+│   ├── rbac/                           # RBAC probe logic
+│   ├── secret/                         # Secret Access probe logic
+│   ├── admission/                      # Admission Control probe logic
+│   └── netpol/                         # NetworkPolicy probe logic
+├── internal/
+│   ├── controller/                     # Reconcilers (scheduler, result, incident, alert, authorization, bootstrap)
+│   ├── hmac/                           # HMAC key derivation and verification
+│   ├── probe/                          # Shared probe runner framework
+│   ├── crosswalk/                      # Multi-framework control mapping
+│   ├── report/                         # Report generation engine (5 report types)
+│   ├── webhook/                        # IR webhook client
+│   ├── metrics/                        # Prometheus metrics
+│   └── backend/
+│       ├── detection/                  # Falco + Tetragon gRPC backends
+│       ├── networkpolicy/              # Hubble + Calico + TCP inference backends
+│       └── export/                     # Splunk + Elasticsearch + S3 + 5 format serializers
+├── detection-probe/                    # Rust detection probe (syscall catalog)
+├── deploy/helm/sidereal/              # Helm chart with profile-aware templates
+├── build/                              # Dockerfiles
+└── compliance/                         # ATO documentation package
 ```
 
 ## Compliance Toolchain
