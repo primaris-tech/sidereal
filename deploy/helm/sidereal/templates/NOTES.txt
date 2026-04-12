@@ -1,0 +1,29 @@
+Sidereal has been installed in namespace {{ .Release.Namespace }}.
+
+Impact level: {{ .Values.global.impactLevel }}
+Execution mode: {{ .Values.global.executionMode }}
+Profile: {{ .Values.profile.name | default "custom" }}
+
+Verify the installation:
+
+  kubectl get pods -n {{ .Release.Namespace }}
+  kubectl get siderealsystemalerts -n {{ .Release.Namespace }}
+
+Discover existing controls:
+
+  kubectl get siderealproberecommendations -n {{ .Release.Namespace }}
+
+Promote a recommendation to an active probe:
+
+  kubectl get sprec -n {{ .Release.Namespace }}
+  kubectl describe sprec <name> -n {{ .Release.Namespace }}
+
+View probe results:
+
+  kubectl get siderealproberesults -n {{ .Release.Namespace }}
+
+Generate a report:
+
+  sidereal report continuous-monitoring --format markdown
+
+Documentation: https://github.com/primaris-tech/sidereal

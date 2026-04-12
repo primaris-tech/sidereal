@@ -1,0 +1,18 @@
+{
+  "framework_id": "nist-800-171",
+  "framework_name": "NIST SP 800-171 Rev 2",
+  "crosswalk_version": "1.0.0",
+  "mappings": [
+    {"probe_type": "rbac", "nist_control": "AC-2", "control_ids": ["3.1.1"]},
+    {"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["3.1.1", "3.1.2"]},
+    {"probe_type": "rbac", "nist_control": "AC-6", "control_ids": ["3.1.5", "3.1.6"]},
+    {"probe_type": "rbac", "nist_control": "AC-6(5)", "control_ids": ["3.1.5"]},
+    {"probe_type": "netpol", "nist_control": "AC-4", "control_ids": ["3.1.3"]},
+    {"probe_type": "netpol", "nist_control": "SC-7", "control_ids": ["3.13.1", "3.13.6"]},
+    {"probe_type": "admission", "nist_control": "CM-6", "control_ids": ["3.4.2"]},
+    {"probe_type": "admission", "nist_control": "CM-7", "control_ids": ["3.4.7", "3.4.8"]},
+    {"probe_type": "secret", "nist_control": "SC-28", "control_ids": ["3.13.16"]},
+    {"probe_type": "detection", "nist_control": "AU-6", "control_ids": ["3.3.5"]},
+    {"probe_type": "detection", "nist_control": "SI-4", "control_ids": ["3.14.6", "3.14.7"]}
+  ]
+}

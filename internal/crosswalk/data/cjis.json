@@ -1,0 +1,17 @@
+{
+  "framework_id": "cjis",
+  "framework_name": "FBI CJIS Security Policy v5.9.5",
+  "crosswalk_version": "1.0.0",
+  "mappings": [
+    {"probe_type": "rbac", "nist_control": "AC-2", "control_ids": ["CJIS-5.5.2"]},
+    {"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["CJIS-5.5.2.1"]},
+    {"probe_type": "rbac", "nist_control": "AC-6", "control_ids": ["CJIS-5.5.2.2"]},
+    {"probe_type": "netpol", "nist_control": "AC-4", "control_ids": ["CJIS-5.10.1.1"]},
+    {"probe_type": "netpol", "nist_control": "SC-7", "control_ids": ["CJIS-5.10.1.2"]},
+    {"probe_type": "admission", "nist_control": "CM-6", "control_ids": ["CJIS-5.10.4.1"]},
+    {"probe_type": "admission", "nist_control": "CM-7", "control_ids": ["CJIS-5.10.4.1"]},
+    {"probe_type": "secret", "nist_control": "SC-28", "control_ids": ["CJIS-5.10.1.3"]},
+    {"probe_type": "detection", "nist_control": "AU-6", "control_ids": ["CJIS-5.4.1.1"]},
+    {"probe_type": "detection", "nist_control": "SI-4", "control_ids": ["CJIS-5.10.1.5"]}
+  ]
+}

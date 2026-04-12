@@ -77,8 +77,14 @@ func main() {
 	}
 
 	crosswalkResolver := crosswalk.NewResolver()
-	// Crosswalk files are loaded from the Helm chart at /etc/sidereal/crosswalks/ in production.
-	// In development, the resolver starts empty and controlMappings come from the probe spec.
+	// Load crosswalk files: Helm ConfigMap mount in production, bundled data in development.
+	crosswalkDirs := []string{"/etc/sidereal/crosswalks/"}
+	for _, dir := range crosswalkDirs {
+		if err := crosswalkResolver.LoadFromDir(dir); err != nil {
+			setupLog.Info("crosswalk directory not available, skipping", "dir", dir, "error", err)
+		}
+	}
+	setupLog.Info("crosswalk resolver initialized", "frameworks", crosswalkResolver.FrameworkCount())
 
 	if err := (&controller.ResultReconciler{
 		Client:    mgr.GetClient(),
