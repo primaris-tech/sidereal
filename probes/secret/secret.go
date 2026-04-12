@@ -81,7 +81,6 @@ func Execute(ctx context.Context, clientset kubernetes.Interface, cfg probe.Conf
 
 	tests := DefaultTests(cfg.TargetNamespace)
 
-	var results []TestResult
 	var failures []string
 	var apiErrors []string
 
@@ -91,7 +90,6 @@ func Execute(ctx context.Context, clientset kubernetes.Interface, cfg probe.Conf
 			apiErrors = append(apiErrors, fmt.Sprintf("%s: %v", tc.Description, err))
 			continue
 		}
-		results = append(results, tr)
 		if !tr.Denied {
 			failures = append(failures, fmt.Sprintf("ACCESSIBLE: %s", tc.Description))
 		}

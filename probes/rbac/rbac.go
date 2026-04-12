@@ -114,7 +114,6 @@ func Execute(ctx context.Context, clientset kubernetes.Interface, cfg probe.Conf
 
 	tests := append(DefaultDenyTests(cfg.TargetNamespace), DefaultAllowTests(cfg.TargetNamespace)...)
 
-	var results []TestResult
 	var failures []string
 	var apiErrors []string
 
@@ -124,7 +123,6 @@ func Execute(ctx context.Context, clientset kubernetes.Interface, cfg probe.Conf
 			apiErrors = append(apiErrors, fmt.Sprintf("%s: %v", tc.Description, err))
 			continue
 		}
-		results = append(results, tr)
 		if !tr.Passed {
 			if tc.ExpectAllowed {
 				failures = append(failures, fmt.Sprintf("OVER-DENIED: %s (expected allowed, got denied)", tc.Description))

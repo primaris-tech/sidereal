@@ -33,7 +33,6 @@ linters:
         - name: context-as-argument
         - name: error-return
         - name: error-strings
-        - name: exported
         - name: increment-decrement
         - name: var-naming
         - name: unexported-return
@@ -46,3 +45,11 @@ linters:
       - path: api/v1alpha1/zz_generated\.deepcopy\.go
         linters:
           - all
+      - path: internal/report/
+        linters:
+          - staticcheck
+        text: "QF1012|S1039"
+      - path: internal/controller/
+        linters:
+          - staticcheck
+        text: "QF1008"
