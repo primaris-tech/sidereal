@@ -445,3 +445,175 @@ func TestCustomProbeUsesCustomSA(t *testing.T) {
 		t.Errorf("expected custom image, got %q", img)
 	}
 }
+
+func TestValidateCustomProbe_Valid(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{
+		RegisteredCustomSAs: map[string]bool{
+			"my-custom-sa": true,
+		},
+	}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				Image:              "registry.example.com/probe@sha256:abc123",
+				ServiceAccountName: "my-custom-sa",
+			},
+		},
+	}
+
+	if err := reconciler.validateCustomProbe(probe); err != nil {
+		t.Errorf("expected valid custom probe, got error: %v", err)
+	}
+}
+
+func TestValidateCustomProbe_UnregisteredSA(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{
+		RegisteredCustomSAs: map[string]bool{
+			"approved-sa": true,
+		},
+	}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				Image:              "registry.example.com/probe@sha256:abc123",
+				ServiceAccountName: "unapproved-sa",
+			},
+		},
+	}
+
+	err := reconciler.validateCustomProbe(probe)
+	if err == nil {
+		t.Error("expected error for unregistered SA")
+	}
+}
+
+func TestValidateCustomProbe_MissingSpec(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+		},
+	}
+
+	if err := reconciler.validateCustomProbe(probe); err == nil {
+		t.Error("expected error for missing customProbe spec")
+	}
+}
+
+func TestValidateCustomProbe_MissingImage(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				ServiceAccountName: "my-sa",
+			},
+		},
+	}
+
+	if err := reconciler.validateCustomProbe(probe); err == nil {
+		t.Error("expected error for missing image")
+	}
+}
+
+func TestValidateCustomProbe_MissingSA(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				Image: "registry.example.com/probe@sha256:abc123",
+			},
+		},
+	}
+
+	if err := reconciler.validateCustomProbe(probe); err == nil {
+		t.Error("expected error for missing SA")
+	}
+}
+
+func TestValidateCustomProbe_NilRegistryAllowsAll(t *testing.T) {
+	// When RegisteredCustomSAs is nil, skip SA validation (test mode).
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				Image:              "registry.example.com/probe@sha256:abc123",
+				ServiceAccountName: "any-sa",
+			},
+		},
+	}
+
+	if err := reconciler.validateCustomProbe(probe); err != nil {
+		t.Errorf("expected nil registry to allow all SAs, got error: %v", err)
+	}
+}
+
+func TestCustomProbeJobHasConfigEnv(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType:     siderealv1alpha1.ProbeTypeCustom,
+			ExecutionMode: siderealv1alpha1.ExecutionModeObserve,
+			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
+				Image:              "registry.example.com/probe@sha256:abc123",
+				ServiceAccountName: "my-sa",
+				Config: &runtime.RawExtension{
+					Raw: []byte(`{"threshold":42,"checkType":"deep"}`),
+				},
+			},
+		},
+	}
+
+	job := reconciler.buildProbeJob(probe, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "production", "hmac-secret")
+
+	// Find PROBE_CONFIG env var.
+	var probeConfig string
+	for _, env := range job.Spec.Template.Spec.Containers[0].Env {
+		if env.Name == "PROBE_CONFIG" {
+			probeConfig = env.Value
+		}
+	}
+
+	if probeConfig == "" {
+		t.Error("expected PROBE_CONFIG env var for custom probe")
+	}
+	if probeConfig != `{"threshold":42,"checkType":"deep"}` {
+		t.Errorf("unexpected PROBE_CONFIG value: %q", probeConfig)
+	}
+}
+
+func TestBuiltInProbeJobNoConfigEnv(t *testing.T) {
+	reconciler := &ProbeSchedulerReconciler{}
+
+	probe := &siderealv1alpha1.SiderealProbe{
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			ProbeType:     siderealv1alpha1.ProbeTypeRBAC,
+			ExecutionMode: siderealv1alpha1.ExecutionModeObserve,
+		},
+	}
+
+	job := reconciler.buildProbeJob(probe, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "production", "hmac-secret")
+
+	for _, env := range job.Spec.Template.Spec.Containers[0].Env {
+		if env.Name == "PROBE_CONFIG" {
+			t.Error("built-in probes should not have PROBE_CONFIG env var")
+		}
+	}
+}
