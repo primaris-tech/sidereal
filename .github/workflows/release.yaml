@@ -1,0 +1,299 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/primaris-tech
+
+jobs:
+  build-and-push:
+    name: Build, Scan, Sign & Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # cosign keyless signing via Sigstore OIDC
+    environment: release  # requires manual approval gate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@56f84321dbccf38fb67ce29ab63e4754056677e0 # stable
+        with:
+          toolchain: stable
+
+      - name: Install build dependencies (Rust FIPS)
+        run: sudo apt-get update && sudo apt-get install -y cmake clang pkg-config
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@3454372f970b8a3e5b881bcc84e880cbb9514f15 # v3.8.2
+
+      - name: Install syft
+        uses: anchore/sbom-action/download-syft@e11c554f704a0b820cbf8c51673f6945e0731532 # v0.20.0
+
+      - name: Install cargo-cyclonedx
+        run: cargo install cargo-cyclonedx
+
+      # --- Build all images ---
+
+      - name: Build controller image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.controller
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-controller:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build probe-rbac image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.probe-go
+          build-args: PROBE_CMD=probe-rbac
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build probe-secret image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.probe-go
+          build-args: PROBE_CMD=probe-secret
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build probe-admission image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.probe-go
+          build-args: PROBE_CMD=probe-admission
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build probe-netpol image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.probe-go
+          build-args: PROBE_CMD=probe-netpol
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build probe-detection image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: detection-probe
+          file: build/Dockerfile.probe-detection
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-probe-detection:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build bootstrap image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198e19c3bc62d6 # v6.18.0
+        with:
+          context: .
+          file: build/Dockerfile.bootstrap
+          push: true
+          tags: ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --- Trivy scan all images ---
+
+      - name: Trivy scan - controller
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-controller:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - probe-rbac
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - probe-secret
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - probe-admission
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - probe-netpol
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - probe-detection
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-detection:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      - name: Trivy scan - bootstrap
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table
+
+      # --- Generate SBOMs ---
+
+      - name: Generate Go SBOM (syft)
+        run: syft . -o cyclonedx-json=sbom-go.cdx.json
+
+      - name: Generate Rust SBOM (cargo-cyclonedx)
+        run: cd detection-probe && cargo cyclonedx --format json && cp bom.json ../sbom-rust.cdx.json
+
+      # --- Sign images and attest SBOMs ---
+
+      - name: Sign and attest all images
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          IMAGES=(
+            "sidereal-controller"
+            "sidereal-probe-rbac"
+            "sidereal-probe-secret"
+            "sidereal-probe-admission"
+            "sidereal-probe-netpol"
+            "sidereal-probe-detection"
+            "sidereal-bootstrap"
+          )
+
+          for img in "${IMAGES[@]}"; do
+            FULL="${REGISTRY}/${img}:${VERSION}"
+            DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${FULL}" 2>/dev/null || echo "${FULL}")
+
+            echo "Signing ${FULL}..."
+            cosign sign --yes "${DIGEST}"
+
+            echo "Attesting SBOM for ${FULL}..."
+            if [[ "${img}" == *"detection"* ]]; then
+              cosign attest --yes --type cyclonedx --predicate sbom-rust.cdx.json "${DIGEST}"
+            else
+              cosign attest --yes --type cyclonedx --predicate sbom-go.cdx.json "${DIGEST}"
+            fi
+          done
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@ea165f8d65b6db9a2b7fea1e392a33c40418c9d6 # v4.6.2
+        with:
+          name: sboms
+          path: |
+            sbom-go.cdx.json
+            sbom-rust.cdx.json
+
+  helm-package:
+    name: Package & Push Helm Chart
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.17.3
+
+      - name: Log in to GHCR (Helm OCI)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package Helm chart
+        run: |
+          helm package deploy/helm/sidereal/ \
+            --version "${{ steps.version.outputs.version }}" \
+            --app-version "${{ steps.version.outputs.version }}"
+
+      - name: Push Helm chart to GHCR
+        run: helm push sidereal-${{ steps.version.outputs.version }}.tgz oci://ghcr.io/primaris-tech/charts
+
+  static-manifests:
+    name: Generate Static Manifests
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.17.3
+
+      - name: Generate static manifests for all profiles
+        run: make manifests-static
+
+      - name: Upload static manifests
+        uses: actions/upload-artifact@ea165f8d65b6db9a2b7fea1e392a33c40418c9d6 # v4.6.2
+        with:
+          name: static-manifests
+          path: deploy/static/
