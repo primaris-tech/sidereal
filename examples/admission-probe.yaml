@@ -1,0 +1,25 @@
+# Admission Control Probe — verifies admission policies reject non-compliant specs
+#
+# This probe submits a known-bad resource spec (e.g., privileged container) via
+# dry-run and verifies the admission controller rejects it.
+#
+# Requires: Kyverno or OPA/Gatekeeper installed and configured.
+#
+# Expected outcome:
+#   Rejected      — admission controller rejected the spec (Effective)
+#   Accepted      — spec was allowed through (Ineffective)
+#   Indeterminate — webhook not responding or evaluation unclear (Degraded)
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: admission-production
+  namespace: sidereal-system
+spec:
+  probeType: admission
+  targetNamespace: production
+  executionMode: observe
+  intervalSeconds: 21600
+  controlMappings:
+    nist-800-53:
+      - CM-7(5)
+      - CM-7(2)

@@ -1,0 +1,27 @@
+# NetworkPolicy Probe — verifies network segmentation enforcement
+#
+# This probe tests whether NetworkPolicy deny paths are enforced by the CNI.
+# It attempts cross-namespace network flows that should be blocked.
+#
+# Verification modes (set by deployment profile):
+#   cni-verdict   — queries Hubble/Calico for the CNI's own drop verdict
+#   tcp-inference — attempts a TCP connection and infers from timeout/reset
+#   responder     — uses a Sidereal-deployed responder pod
+#
+# Expected outcome:
+#   Blocked     — traffic was blocked by NetworkPolicy (Effective)
+#   NotEnforced — traffic was allowed despite policy (Ineffective)
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: netpol-production
+  namespace: sidereal-system
+spec:
+  probeType: netpol
+  targetNamespace: production
+  executionMode: observe
+  intervalSeconds: 21600
+  controlMappings:
+    nist-800-53:
+      - SC-7
+      - AC-4

@@ -157,6 +157,8 @@ Sidereal **v0.1.0** is feature-complete. The operator is fully implemented and r
 
 | Document | Description |
 |---|---|
+| [Getting Started Guide](docs/getting-started.md) | Step-by-step deployment on a kind cluster with your first probe |
+| [Example Manifests](examples/) | Sample SiderealProbe, AO Authorization, and namespace selector configurations |
 | [Engineering Specification](sidereal-engineering-summary.md) | Canonical design document covering architecture, probe design, security model, and all design decisions |
 | [Compliance README](compliance/README.md) | Guide to the ATO documentation package |
 | [Customer Responsibility Matrix](compliance/crm/customer-responsibility-matrix.md) | Control-by-control responsibility split between Sidereal and the deploying agency |
