@@ -10,6 +10,7 @@ fips = ["aws-lc-rs/fips"]
 
 [dependencies]
 aws-lc-rs = { version = "1", optional = true }
-nix = { version = "0.29", features = ["sched", "mount", "signal", "process"] }
+libc = "0.2"
+nix = { version = "0.29", features = ["sched", "mount", "signal", "process", "user"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
