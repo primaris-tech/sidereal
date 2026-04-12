@@ -374,6 +374,7 @@ name = "sidereal-detection-probe"
 version = "0.1.0"
 dependencies = [
  "aws-lc-rs",
+ "libc",
  "nix",
  "serde",
  "serde_json",
