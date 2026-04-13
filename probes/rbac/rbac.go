@@ -22,6 +22,10 @@ type TestCase struct {
 	// Description is a human-readable label for the test.
 	Description string
 
+	// Group is the API group of the resource (e.g., "rbac.authorization.k8s.io").
+	// Empty string means the core API group.
+	Group string
+
 	// Resource is the Kubernetes resource to check (e.g., "secrets", "pods").
 	Resource string
 
@@ -90,6 +94,7 @@ func DefaultAllowTests(targetNamespace string) []TestCase {
 	return []TestCase{
 		{
 			Description:   "LIST rolebindings in target namespace",
+			Group:         "rbac.authorization.k8s.io",
 			Resource:      "rolebindings",
 			Verb:          "list",
 			Namespace:     targetNamespace,
@@ -97,6 +102,7 @@ func DefaultAllowTests(targetNamespace string) []TestCase {
 		},
 		{
 			Description:   "GET rolebindings in target namespace",
+			Group:         "rbac.authorization.k8s.io",
 			Resource:      "rolebindings",
 			Verb:          "get",
 			Namespace:     targetNamespace,
@@ -164,7 +170,7 @@ func checkAccess(ctx context.Context, clientset kubernetes.Interface, tc TestCas
 			ResourceAttributes: &authzv1.ResourceAttributes{
 				Namespace:   tc.Namespace,
 				Verb:        tc.Verb,
-				Group:       "",
+				Group:       tc.Group,
 				Resource:    tc.Resource,
 				Subresource: tc.SubResource,
 			},

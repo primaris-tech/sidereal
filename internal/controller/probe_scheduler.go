@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,10 +62,10 @@ var probeServiceAccounts = map[siderealv1alpha1.ProbeType]string{
 // probeImages maps probe types to their container images.
 // These are overridden by Helm values in production.
 var probeImages = map[siderealv1alpha1.ProbeType]string{
-	siderealv1alpha1.ProbeTypeRBAC:      "ghcr.io/primaris-tech/sidereal-probe-go:latest",
-	siderealv1alpha1.ProbeTypeNetPol:    "ghcr.io/primaris-tech/sidereal-probe-go:latest",
-	siderealv1alpha1.ProbeTypeAdmission: "ghcr.io/primaris-tech/sidereal-probe-go:latest",
-	siderealv1alpha1.ProbeTypeSecret:    "ghcr.io/primaris-tech/sidereal-probe-go:latest",
+	siderealv1alpha1.ProbeTypeRBAC:      "ghcr.io/primaris-tech/sidereal-probe-rbac:latest",
+	siderealv1alpha1.ProbeTypeNetPol:    "ghcr.io/primaris-tech/sidereal-probe-netpol:latest",
+	siderealv1alpha1.ProbeTypeAdmission: "ghcr.io/primaris-tech/sidereal-probe-admission:latest",
+	siderealv1alpha1.ProbeTypeSecret:    "ghcr.io/primaris-tech/sidereal-probe-secret:latest",
 	siderealv1alpha1.ProbeTypeDetection: "ghcr.io/primaris-tech/sidereal-probe-detection:latest",
 }
 
@@ -387,10 +388,21 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 					AutomountServiceAccountToken: ptr.To(true),
 					Containers: []corev1.Container{
 						{
-							Name:    "probe",
-							Image:   image,
-							Command: command,
-							Env:     env,
+							Name:            "probe",
+							Image:           image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command:         command,
+							Env:             env,
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("50m"),
+									corev1.ResourceMemory: resource.MustParse("64Mi"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("200m"),
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+								},
+							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsNonRoot:             ptr.To(true),
 								ReadOnlyRootFilesystem:   ptr.To(true),
