@@ -16,9 +16,6 @@ export default defineConfig({
 			favicon: '/favicon.svg',
 			customCss: ['./src/styles/custom.css'],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/primaris-tech/sidereal' }],
-			editLink: {
-				baseUrl: 'https://github.com/primaris-tech/sidereal/edit/main/website/',
-			},
 			sidebar: [
 				{
 					label: 'Getting Started',
