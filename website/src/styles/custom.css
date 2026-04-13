@@ -1,12 +1,21 @@
 /* Sidereal — deep space observatory + imperial gold */
 
 :root {
-	/* Gold accent — imperial trim, stellar instruments */
-	--sl-color-accent-low: #1c1a10;
+	/* Gold accent — shared across themes */
 	--sl-color-accent: #c9a84c;
+
+	/* Hue overrides for Starlight's color system */
+	--sl-hue-accent: 43;
+	--sl-hue-blue: 217;
+}
+
+/* Dark theme — deep navy palette */
+:root[data-theme='dark'] {
+	/* Accent scale */
+	--sl-color-accent-low: #1c1a10;
 	--sl-color-accent-high: #f5edd0;
 
-	/* Text */
+	/* Text scale */
 	--sl-color-white: #e2e4e9;
 	--sl-color-gray-1: #c4c7cf;
 	--sl-color-gray-2: #9da1ac;
@@ -16,18 +25,28 @@
 	--sl-color-gray-6: #161a28;
 	--sl-color-black: #0f1320;
 
-	/* Hue overrides for Starlight's color system */
-	--sl-hue-accent: 43;
-	--sl-hue-blue: 217;
-}
-
-/* Page background — deep navy, slightly lifted */
-:root[data-theme='dark'] {
+	/* Backgrounds */
 	--sl-color-bg: #0f1320;
 	--sl-color-bg-nav: #131728;
 	--sl-color-bg-sidebar: #131728;
 	--sl-color-hairline-light: #1a1f30;
 	--sl-color-hairline: #252938;
+}
+
+/* Light theme — warm off-white with gold accents */
+:root[data-theme='light'] {
+	--sl-color-accent-low: #fdf5e0;
+	--sl-color-accent-high: #6b4c12;
+}
+
+/* Nav icon — invert fill colors for light theme */
+[data-theme='light'] header .site-title svg path[fill="#E9E8D5"],
+[data-theme='light'] header .site-title svg path[fill="#e9e8d5"] {
+	fill: #1a1f30;
+}
+
+[data-theme='light'] header .site-title svg path[fill="#161923"] {
+	fill: #ffffff;
 }
 
 /* Hero layout — logo stacked above tagline, centered */

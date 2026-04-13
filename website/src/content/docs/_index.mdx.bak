@@ -6,7 +6,8 @@ hero:
   title: ' '
   tagline: Most security tools tell you your controls are configured. Sidereal tells you they are actually working.
   image:
-    file: ../../assets/sidereal-logo.svg
+    dark: ../../assets/sidereal-logo.svg
+    light: ../../assets/sidereal-logo-light.svg
     alt: Sidereal
   actions:
     - text: Get Started

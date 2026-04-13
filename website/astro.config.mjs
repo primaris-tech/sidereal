@@ -60,6 +60,13 @@ export default defineConfig({
 						{ label: 'CLI', slug: 'reference/cli' },
 					],
 				},
+				{
+					label: 'Project',
+					items: [
+						{ label: 'License', slug: 'license' },
+						{ label: 'Privacy', slug: 'privacy' },
+					],
+				},
 			],
 		}),
 	],

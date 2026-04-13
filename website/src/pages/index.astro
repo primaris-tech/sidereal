@@ -1,0 +1,1188 @@
+---
+import "../styles/custom.css";
+
+import siderealIconRaw from "../assets/sidereal-icon.svg?raw";
+import siderealLogoUrl from "../assets/sidereal-logo.svg?url";
+import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="Kubernetes-native security operator for continuous security control validation. Verify your controls are operationally effective, not just configured."
+        />
+        <title>
+            Sidereal — Continuous Security Control Validation for Kubernetes
+        </title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script is:inline>
+            try {
+                const stored = localStorage.getItem("starlight-theme");
+                const preferred = window.matchMedia(
+                    "(prefers-color-scheme: light)",
+                ).matches
+                    ? "light"
+                    : "dark";
+                document.documentElement.setAttribute(
+                    "data-theme",
+                    stored || preferred,
+                );
+            } catch {}
+        </script>
+    </head>
+    <body>
+        <!-- NAV -->
+        <header class="lp-header">
+            <div class="lp-header-inner">
+                <a href="/" class="lp-site-title">
+                    <span class="lp-icon" set:html={siderealIconRaw} />
+                    <span class="lp-site-name">SIDEREAL</span>
+                </a>
+                <nav class="lp-nav">
+                    <a href="/getting-started/introduction/" class="lp-nav-link"
+                        >Documentation</a
+                    >
+                    <a
+                        href="https://github.com/primaris-tech/sidereal"
+                        class="lp-nav-link"
+                        target="_blank"
+                        rel="noopener noreferrer">GitHub</a
+                    >
+                    <button
+                        class="lp-theme-toggle"
+                        id="theme-toggle"
+                        aria-label="Toggle theme"
+                        title="Toggle theme"
+                    >
+                        <svg
+                            class="icon-sun"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="5"></circle><line
+                                x1="12"
+                                y1="1"
+                                x2="12"
+                                y2="3"></line><line
+                                x1="12"
+                                y1="21"
+                                x2="12"
+                                y2="23"></line><line
+                                x1="4.22"
+                                y1="4.22"
+                                x2="5.64"
+                                y2="5.64"></line><line
+                                x1="18.36"
+                                y1="18.36"
+                                x2="19.78"
+                                y2="19.78"></line><line
+                                x1="1"
+                                y1="12"
+                                x2="3"
+                                y2="12"></line><line
+                                x1="21"
+                                y1="12"
+                                x2="23"
+                                y2="12"></line><line
+                                x1="4.22"
+                                y1="19.78"
+                                x2="5.64"
+                                y2="18.36"></line><line
+                                x1="18.36"
+                                y1="5.64"
+                                x2="19.78"
+                                y2="4.22"></line>
+                        </svg>
+                        <svg
+                            class="icon-moon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                            ></path>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- HERO -->
+        <section class="lp-hero">
+            <div class="lp-hero-inner">
+                <div class="lp-hero-logo">
+                    <img
+                        src={siderealLogoUrl}
+                        alt="Sidereal"
+                        class="logo-dark"
+                    />
+                    <img
+                        src={siderealLogoLightUrl}
+                        alt="Sidereal"
+                        class="logo-light"
+                    />
+                </div>
+                <div class="lp-hero-content">
+                    <p class="lp-eyebrow">
+                        Continuous Security Control Validation
+                    </p>
+                    <h1 class="lp-hero-title">
+                        Your controls are configured. Are they working?
+                    </h1>
+                    <p class="lp-hero-tagline">
+                        A NetworkPolicy can be defined and not enforcing. An
+                        admission webhook can be configured and silently
+                        disabled. Sidereal probes your cluster's security
+                        controls on a continuous schedule and audits whether
+                        they are operationally effective.
+                    </p>
+                    <div class="lp-hero-actions">
+                        <a
+                            href="/getting-started/introduction/"
+                            class="lp-btn lp-btn-primary">Get Started</a
+                        >
+                        <a
+                            href="https://github.com/primaris-tech/sidereal"
+                            class="lp-btn lp-btn-secondary"
+                            target="_blank"
+                            rel="noopener noreferrer">View on GitHub</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STACK CONTEXT -->
+        <section class="lp-section">
+            <div class="lp-container">
+                <h2 class="lp-section-title">
+                    Filling the operational validation gap
+                </h2>
+                <p class="lp-section-lead">
+                    Configuration scanners, detection tools, and attack
+                    simulators are each valuable parts of a security stack. They
+                    do their jobs well. Sidereal is built for the operational
+                    validation layer that sits alongside them, by continuously
+                    probing whether controls are active, mapped to compliance
+                    frameworks, and generating the evidence your ISSO needs.
+                </p>
+                <div class="lp-swivel-chair">
+                    <h3>The swivel chair problem</h3>
+                    <p>
+                        An ISSO validating Kubernetes security controls today
+                        pivots between disconnected tools: Kubescape for
+                        posture, Falco dashboards for detection, the SIEM for
+                        audit records, manual crosswalks to NIST 800-53,
+                        hand-built reports, spreadsheet POA&amp;Ms. Each tool
+                        covers one piece. None of them connect the pieces. The
+                        ISSO becomes the integration layer.
+                    </p>
+                    <p>
+                        Sidereal is a single operator that probes controls, maps
+                        results to frameworks, exports to your SIEM, and
+                        generates the evidence package. No manual integration
+                        required.
+                    </p>
+                </div>
+                <div class="lp-comparison">
+                    <div class="lp-comparison-card">
+                        <h3>Configuration scanners</h3>
+                        <p class="lp-comparison-examples">
+                            Kubescape, kube-bench, Trivy
+                        </p>
+                        <p>
+                            Verify that security configurations are present and
+                            match known benchmarks. Well-suited for posture
+                            assessment and CIS compliance checks.
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal adds active probing to verify those
+                            configurations are operationally enforcing, not just
+                            defined.
+                        </div>
+                    </div>
+                    <div class="lp-comparison-card">
+                        <h3>Attack simulators</h3>
+                        <p class="lp-comparison-examples">
+                            Stratus Red Team, Atomic Red Team
+                        </p>
+                        <p>
+                            Purpose-built for adversary simulation and red team
+                            exercises. They generate realistic attack telemetry
+                            to test detection and response capabilities.
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal runs on a continuous schedule and maps
+                            every result to compliance controls for ongoing
+                            assurance.
+                        </div>
+                    </div>
+                    <div class="lp-comparison-card">
+                        <h3>Detection tools</h3>
+                        <p class="lp-comparison-examples">Falco, Tetragon</p>
+                        <p>
+                            Monitor runtime behavior and alert on suspicious
+                            activity. A critical layer of any Kubernetes
+                            security stack and a direct input to incident
+                            response.
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal validates that your detection pipeline is
+                            actively alerting as expected, so you know it is
+                            working before an incident occurs.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WHAT -->
+        <section class="lp-section lp-section-alt">
+            <div class="lp-container">
+                <h2 class="lp-section-title">What Sidereal does</h2>
+                <p class="lp-section-lead">
+                    Sidereal is a Kubernetes-native operator for continuous
+                    security control validation on federal systems. It runs
+                    targeted, low-impact probes against a live cluster to verify
+                    that security controls are operationally effective, not
+                    merely configured. Results are mapped to compliance
+                    frameworks and written to an append-only, HMAC-verified
+                    audit log.
+                </p>
+                <div class="lp-card-grid">
+                    <div class="lp-card">
+                        <h3>Continuous Active Validation</h3>
+                        <p>
+                            Probes run on configurable schedules, firing real
+                            actions against real enforcement layers. Not cached
+                            configuration state.
+                        </p>
+                    </div>
+                    <div class="lp-card">
+                        <h3>Multi-Framework Compliance</h3>
+                        <p>
+                            Every result tagged with NIST 800-53, CMMC, CJIS,
+                            IRS 1075, HIPAA, NIST 800-171, and Kubernetes STIG
+                            controls automatically.
+                        </p>
+                    </div>
+                    <div class="lp-card">
+                        <h3>Detection Layer Validation</h3>
+                        <p>
+                            Fires known-bad syscall patterns, then independently
+                            verifies the detection pipeline (Falco or Tetragon)
+                            raised the expected alert.
+                        </p>
+                    </div>
+                    <div class="lp-card">
+                        <h3>ISSO-Ready Reports</h3>
+                        <p>
+                            Continuous monitoring summaries, POA&amp;M entries,
+                            coverage matrices, and OSCAL evidence packages
+                            generated from probe results.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW -->
+        <section class="lp-section">
+            <div class="lp-container">
+                <h2 class="lp-section-title">How it works</h2>
+                <div class="lp-steps">
+                    <div class="lp-step">
+                        <div class="lp-step-number">1</div>
+                        <h3>Deploy</h3>
+                        <p>
+                            Install via Helm into the <code
+                                >sidereal-system</code
+                            > namespace. Choose a deployment profile for your CNI
+                            and admission controller. Default execution mode is <code
+                                >dryRun</code
+                            >.
+                        </p>
+                    </div>
+                    <div class="lp-step-connector"></div>
+                    <div class="lp-step">
+                        <div class="lp-step-number">2</div>
+                        <h3>Discover</h3>
+                        <p>
+                            The controller scans your cluster and generates <code
+                                >SiderealProbeRecommendations</code
+                            >. Review and promote what fits. No probe authoring
+                            required to get started.
+                        </p>
+                    </div>
+                    <div class="lp-step-connector"></div>
+                    <div class="lp-step">
+                        <div class="lp-step-number">3</div>
+                        <h3>Validate</h3>
+                        <p>
+                            Probes run on schedule. Results are written to an
+                            HMAC-verified audit log, mapped to compliance
+                            frameworks, and exported to your SIEM or report
+                            pipeline.
+                        </p>
+                    </div>
+                </div>
+                <div class="lp-adoption">
+                    <h3 class="lp-adoption-title">Graduated adoption</h3>
+                    <div class="lp-adoption-steps">
+                        <div class="lp-adoption-step">
+                            <code>dryRun</code>
+                            <span
+                                >Validates configuration without executing
+                                probes. Safe to run immediately after install.</span
+                            >
+                        </div>
+                        <div class="lp-adoption-arrow">&#8594;</div>
+                        <div class="lp-adoption-step">
+                            <code>observe</code>
+                            <span
+                                >Probes execute live. Results are recorded. No
+                                incidents or alerts generated.</span
+                            >
+                        </div>
+                        <div class="lp-adoption-arrow">&#8594;</div>
+                        <div class="lp-adoption-step">
+                            <code>enforce</code>
+                            <span
+                                >Full operation. Incidents created on control
+                                failure, IR webhook notified.</span
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROBE SURFACES -->
+        <section class="lp-section lp-section-alt">
+            <div class="lp-container">
+                <h2 class="lp-section-title">Probe surfaces</h2>
+                <p class="lp-section-lead">
+                    Six built-in probe surfaces cover the control categories
+                    federal assessors most commonly examine. A custom probe
+                    interface lets agencies extend coverage to their own
+                    surfaces.
+                </p>
+                <div class="lp-surface-grid">
+                    <div class="lp-surface">
+                        <h3>RBAC</h3>
+                        <p>
+                            ServiceAccount permission boundaries are enforced
+                            and denying unauthorized operations.
+                        </p>
+                    </div>
+                    <div class="lp-surface">
+                        <h3>NetworkPolicy</h3>
+                        <p>
+                            East-west traffic restrictions are actively blocking
+                            unauthorized paths at the CNI layer.
+                        </p>
+                    </div>
+                    <div class="lp-surface">
+                        <h3>Admission Control</h3>
+                        <p>
+                            Admission policies reject non-compliant workload
+                            specs at the API server.
+                        </p>
+                    </div>
+                    <div class="lp-surface">
+                        <h3>Secret Access</h3>
+                        <p>
+                            Workloads cannot access secrets outside their
+                            authorized namespace.
+                        </p>
+                    </div>
+                    <div class="lp-surface">
+                        <h3>Detection Coverage</h3>
+                        <p>
+                            Known-bad behaviors trigger expected alerts in your
+                            detection pipeline (Falco or Tetragon).
+                        </p>
+                    </div>
+                    <div class="lp-surface">
+                        <h3>Custom</h3>
+                        <p>
+                            Operator-extensible probe surface. Bring your own
+                            probe binary with a standardized contract.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="lp-section lp-cta">
+            <div class="lp-container lp-cta-inner">
+                <h2>Ready to validate your controls?</h2>
+                <p>
+                    Sidereal installs in minutes and starts discovering probe
+                    recommendations immediately.
+                </p>
+                <div class="lp-hero-actions">
+                    <a
+                        href="/getting-started/introduction/"
+                        class="lp-btn lp-btn-primary">Get Started</a
+                    >
+                    <a href="/reference/crds/" class="lp-btn lp-btn-secondary"
+                        >CRD Reference</a
+                    >
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="lp-footer">
+            <div class="lp-container lp-footer-inner">
+                <p>
+                    Sidereal - <a
+                        href="https://github.com/primaris-tech/sidereal"
+                        target="_blank"
+                        rel="noopener noreferrer">primaris-tech/sidereal</a
+                    >
+                </p>
+                <nav class="lp-footer-links">
+                    <a href="/license/">License</a>
+                    <a href="/privacy/">Privacy</a>
+                </nav>
+            </div>
+        </footer>
+
+        <script>
+            // Theme toggle
+            const btn = document.getElementById("theme-toggle");
+            btn?.addEventListener("click", () => {
+                const current =
+                    document.documentElement.getAttribute("data-theme");
+                const next = current === "dark" ? "light" : "dark";
+                document.documentElement.setAttribute("data-theme", next);
+                try {
+                    localStorage.setItem("starlight-theme", next);
+                } catch {}
+            });
+        </script>
+    </body>
+</html>
+
+<style>
+    /* ---- Base reset & fonts ---- */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+    * {
+        margin: 0;
+    }
+
+    :root {
+        --sl-nav-height: 3.5rem;
+        --sl-nav-pad-x: 1.5rem;
+        --sl-line-height: 1.625;
+        --sl-font-system:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, sans-serif;
+        --sl-font-system-mono:
+            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+            "Liberation Mono", "Courier New", monospace;
+        --__sl-font:
+            var(--sl-font, var(--sl-font-system)), var(--sl-font-system);
+        --__sl-font-mono:
+            var(--sl-font-mono, var(--sl-font-system-mono)),
+            var(--sl-font-system-mono);
+
+        /* Starlight semantic tokens — dark defaults (overridden by custom.css per theme) */
+        --sl-color-text: var(--sl-color-gray-1);
+        --sl-color-text-accent: var(--sl-color-accent-high);
+        --sl-color-bg: var(--sl-color-black);
+        --sl-color-bg-nav: var(--sl-color-gray-6);
+        --sl-color-bg-sidebar: var(--sl-color-gray-6);
+        --sl-color-hairline-light: var(--sl-color-gray-5);
+        --sl-color-hairline: var(--sl-color-gray-6);
+        --sl-color-hairline-shade: var(--sl-color-black);
+    }
+
+    html[data-theme="light"] {
+        --sl-color-bg: var(--sl-color-black);
+        --sl-color-bg-nav: var(--sl-color-gray-7, hsl(224, 19%, 97%));
+        --sl-color-hairline: var(--sl-color-gray-6);
+        --sl-color-text: var(--sl-color-gray-1);
+    }
+
+    html {
+        accent-color: var(--sl-color-accent);
+        -webkit-text-size-adjust: 100%;
+    }
+
+    html[data-theme="light"] {
+        color-scheme: light;
+    }
+    html[data-theme="dark"] {
+        color-scheme: dark;
+    }
+
+    body {
+        font-family: var(--__sl-font);
+        line-height: var(--sl-line-height);
+        -webkit-font-smoothing: antialiased;
+        color: var(--sl-color-text);
+        background-color: var(--sl-color-bg);
+    }
+
+    /* ---- Layout ---- */
+    .lp-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        height: var(--sl-nav-height, 3.5rem);
+        background: var(--sl-color-bg-nav);
+        border-bottom: 1px solid var(--sl-color-hairline);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--sl-nav-pad-x, 1rem);
+    }
+
+    .lp-header-inner {
+        width: 100%;
+        max-width: 72rem;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .lp-site-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: var(--sl-color-white);
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 0.1em;
+    }
+
+    .lp-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        flex-shrink: 0;
+    }
+
+    .lp-icon svg {
+        width: 2rem !important;
+        height: 2rem !important;
+        display: block;
+        overflow: hidden;
+    }
+
+    .lp-site-name {
+        font-family: var(--__sl-font);
+        letter-spacing: 0.15em;
+        color: var(--sl-color-accent-high);
+    }
+
+    .lp-nav {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .lp-nav-link {
+        color: var(--sl-color-gray-2);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: color 0.15s;
+    }
+
+    .lp-nav-link:hover {
+        color: var(--sl-color-white);
+    }
+
+    .lp-theme-toggle {
+        background: none;
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.375rem;
+        padding: 0.25rem;
+        cursor: pointer;
+        color: var(--sl-color-gray-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+            color 0.15s,
+            border-color 0.15s;
+    }
+
+    .lp-theme-toggle:hover {
+        color: var(--sl-color-white);
+        border-color: var(--sl-color-accent);
+    }
+
+    [data-theme="dark"] .icon-sun {
+        display: none;
+    }
+    [data-theme="light"] .icon-moon {
+        display: none;
+    }
+
+    /* ---- Hero ---- */
+    .lp-hero {
+        margin-top: var(--sl-nav-height, 3.5rem);
+        padding: 2.5rem var(--sl-nav-pad-x, 1rem) 2rem;
+        background:
+            radial-gradient(
+                1px 1px at 10% 20%,
+                rgba(201, 168, 76, 0.4) 0%,
+                transparent 100%
+            ),
+            radial-gradient(
+                1px 1px at 80% 40%,
+                rgba(201, 168, 76, 0.3) 0%,
+                transparent 100%
+            ),
+            radial-gradient(
+                1px 1px at 30% 70%,
+                rgba(74, 122, 181, 0.3) 0%,
+                transparent 100%
+            ),
+            radial-gradient(
+                1px 1px at 65% 15%,
+                rgba(74, 122, 181, 0.25) 0%,
+                transparent 100%
+            ),
+            radial-gradient(
+                0.5px 0.5px at 15% 55%,
+                rgba(226, 228, 233, 0.12) 0%,
+                transparent 100%
+            ),
+            radial-gradient(
+                0.5px 0.5px at 75% 65%,
+                rgba(226, 228, 233, 0.1) 0%,
+                transparent 100%
+            );
+        border-bottom: 1px solid var(--sl-color-hairline);
+    }
+
+    .lp-hero-inner {
+        max-width: 72rem;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .lp-hero-logo {
+        display: flex;
+        justify-content: center;
+    }
+
+    .lp-hero-logo img {
+        width: 100%;
+        max-width: 260px;
+    }
+
+    [data-theme="dark"] .logo-light {
+        display: none;
+    }
+    [data-theme="light"] .logo-dark {
+        display: none;
+    }
+
+    .lp-eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--sl-color-accent);
+        margin-bottom: 0.75rem;
+    }
+
+    .lp-hero-title {
+        font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--sl-color-accent-high);
+        margin-bottom: 1rem;
+    }
+
+    .lp-hero-tagline {
+        font-size: 1.05rem;
+        line-height: 1.65;
+        color: var(--sl-color-gray-2);
+        margin-bottom: 2rem;
+        max-width: 48ch;
+    }
+
+    .lp-hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .lp-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition:
+            background 0.15s,
+            border-color 0.15s;
+    }
+
+    .lp-btn-primary {
+        background: linear-gradient(135deg, #c9a84c, #a8892e);
+        border: 1px solid #c9a84c;
+        color: #0a0e1a;
+    }
+
+    .lp-btn-primary:hover {
+        background: linear-gradient(135deg, #d4b65e, #c9a84c);
+    }
+
+    .lp-btn-secondary {
+        background: transparent;
+        border: 1px solid var(--sl-color-hairline);
+        color: var(--sl-color-gray-2);
+    }
+
+    .lp-btn-secondary:hover {
+        border-color: var(--sl-color-accent);
+        color: var(--sl-color-white);
+    }
+
+    /* ---- Sections ---- */
+    .lp-section {
+        padding: 4rem var(--sl-nav-pad-x, 1rem);
+    }
+
+    .lp-section-alt {
+        background: var(--sl-color-bg-nav);
+    }
+
+    .lp-container {
+        max-width: 72rem;
+        margin: 0 auto;
+    }
+
+    .lp-section-title {
+        font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+        font-weight: 700;
+        color: var(--sl-color-accent-high);
+        margin-bottom: 1rem;
+    }
+
+    .lp-section-lead {
+        font-size: 1rem;
+        line-height: 1.65;
+        color: var(--sl-color-gray-2);
+        max-width: 72ch;
+        margin-bottom: 2.5rem;
+    }
+
+    /* ---- Cards (What) ---- */
+    .lp-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .lp-card {
+        background: var(--sl-color-bg-nav);
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        transition: border-color 0.15s;
+    }
+
+    .lp-section-alt .lp-card {
+        background: var(--sl-color-bg);
+    }
+
+    .lp-card:hover {
+        border-color: rgba(201, 168, 76, 0.35);
+    }
+
+    .lp-card-icon {
+        color: var(--sl-color-accent);
+        margin-bottom: 0.75rem;
+    }
+
+    .lp-card h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sl-color-white);
+        margin-bottom: 0.5rem;
+    }
+
+    .lp-card p {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--sl-color-gray-2);
+    }
+
+    /* ---- Steps (How) ---- */
+    .lp-steps {
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        margin-bottom: 3rem;
+    }
+
+    .lp-step {
+        flex: 1;
+        padding: 1.5rem;
+        background: var(--sl-color-bg);
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.5rem;
+    }
+
+    .lp-step-connector {
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2px;
+        background: var(--sl-color-hairline);
+        margin-top: 2.25rem;
+    }
+
+    .lp-step-number {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: var(--sl-color-accent);
+        color: #0a0e1a;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .lp-step h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sl-color-white);
+        margin-bottom: 0.5rem;
+    }
+
+    .lp-step p {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--sl-color-gray-2);
+    }
+
+    .lp-step code {
+        font-family: var(--__sl-font-mono);
+        font-size: 0.8em;
+        background: var(--sl-color-bg-nav);
+        padding: 0.1em 0.3em;
+        border-radius: 0.2em;
+        color: var(--sl-color-accent-high);
+    }
+
+    /* ---- Adoption modes ---- */
+    .lp-adoption {
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.5rem;
+        padding: 1.5rem 2rem;
+        background: var(--sl-color-bg);
+    }
+
+    .lp-adoption-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--sl-color-gray-3);
+        margin-bottom: 1.25rem;
+    }
+
+    .lp-adoption-steps {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .lp-adoption-step {
+        flex: 1;
+        min-width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .lp-adoption-step code {
+        font-family: var(--__sl-font-mono);
+        font-size: 0.85rem;
+        color: var(--sl-color-accent);
+        font-weight: 600;
+    }
+
+    .lp-adoption-step span {
+        font-size: 0.8rem;
+        color: var(--sl-color-gray-2);
+        line-height: 1.5;
+    }
+
+    .lp-adoption-arrow {
+        color: var(--sl-color-gray-4);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    /* ---- Probe surfaces ---- */
+    .lp-surface-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .lp-surface {
+        padding: 1.25rem 1.5rem;
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.5rem;
+        background: var(--sl-color-bg-nav);
+        transition: border-color 0.15s;
+    }
+
+    .lp-surface:hover {
+        border-color: rgba(201, 168, 76, 0.35);
+    }
+
+    .lp-surface h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--sl-color-accent);
+        margin-bottom: 0.4rem;
+    }
+
+    .lp-surface p {
+        font-size: 0.825rem;
+        line-height: 1.55;
+        color: var(--sl-color-gray-2);
+    }
+
+    /* ---- Swivel chair callout ---- */
+    .lp-swivel-chair {
+        border: 1px solid var(--sl-color-hairline);
+        border-left: 3px solid var(--sl-color-accent);
+        border-radius: 0.5rem;
+        padding: 1.5rem 2rem;
+        background: var(--sl-color-bg);
+        margin-bottom: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .lp-swivel-chair h3 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--sl-color-accent);
+    }
+
+    .lp-swivel-chair p {
+        font-size: 0.9rem;
+        line-height: 1.65;
+        color: var(--sl-color-gray-2);
+    }
+
+    /* ---- Comparison (Why) ---- */
+    .lp-comparison {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .lp-comparison-card {
+        padding: 1.5rem;
+        border: 1px solid var(--sl-color-hairline);
+        border-radius: 0.5rem;
+        background: var(--sl-color-bg);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .lp-comparison-card h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sl-color-white);
+    }
+
+    .lp-comparison-examples {
+        font-size: 0.775rem;
+        color: var(--sl-color-gray-3);
+        font-style: italic;
+        margin-bottom: 0.25rem;
+    }
+
+    .lp-comparison-card > p:not(.lp-comparison-examples) {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--sl-color-gray-2);
+        flex: 1;
+    }
+
+    .lp-comparison-gap {
+        font-size: 0.825rem;
+        color: var(--sl-color-accent);
+        border-top: 1px solid var(--sl-color-hairline);
+        padding-top: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* ---- CTA ---- */
+    .lp-cta {
+        text-align: center;
+        border-top: 1px solid var(--sl-color-hairline);
+    }
+
+    .lp-cta-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .lp-cta h2 {
+        font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+        font-weight: 700;
+        color: var(--sl-color-accent-high);
+    }
+
+    .lp-cta p {
+        color: var(--sl-color-gray-2);
+        font-size: 1rem;
+        max-width: 52ch;
+    }
+
+    /* ---- Footer ---- */
+    .lp-footer {
+        padding: 1.5rem var(--sl-nav-pad-x, 1rem);
+        border-top: 1px solid var(--sl-color-hairline);
+        background: var(--sl-color-bg-nav);
+    }
+
+    .lp-footer-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--sl-color-gray-3);
+    }
+
+    .lp-footer-links {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .lp-footer-inner a {
+        color: var(--sl-color-gray-3);
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+
+    .lp-footer-inner a:hover {
+        color: var(--sl-color-accent);
+    }
+
+    /* ---- Nav icon light theme fix (matches custom.css rules) ---- */
+    [data-theme="light"] .lp-icon svg path[fill="#E9E8D5"],
+    [data-theme="light"] .lp-icon svg path[fill="#e9e8d5"] {
+        fill: #1a1f30;
+    }
+    [data-theme="light"] .lp-icon svg path[fill="#161923"] {
+        fill: #f0f0f5;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 60rem) {
+        .lp-hero-inner {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .lp-hero-logo {
+            order: -1;
+        }
+
+        .lp-hero-logo img {
+            max-width: 220px;
+        }
+
+        .lp-hero-tagline {
+            max-width: unset;
+        }
+
+        .lp-hero-actions {
+            justify-content: center;
+        }
+
+        .lp-steps {
+            flex-direction: column;
+        }
+
+        .lp-step-connector {
+            width: 2px;
+            height: 1.5rem;
+            margin: 0 0 0 2.25rem;
+        }
+
+        .lp-adoption-steps {
+            flex-direction: column;
+        }
+
+        .lp-adoption-arrow {
+            transform: rotate(90deg);
+        }
+    }
+
+    @media (max-width: 40rem) {
+        .lp-nav-link {
+            display: none;
+        }
+
+        .lp-nav-link:last-of-type {
+            display: block;
+        }
+    }
+</style>
