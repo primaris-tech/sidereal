@@ -157,6 +157,12 @@
 	--sl-content-width: 67rem;
 }
 
+/* Landing page — constrain content width */
+[data-has-hero] .content-panel .sl-container {
+	max-width: 80rem !important;
+	margin: 0 auto !important;
+}
+
 .content-panel {
 	padding-inline-start: 3rem !important;
 	margin-inline-start: 0 !important;
