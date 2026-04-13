@@ -1,0 +1,189 @@
+/* Sidereal — deep space observatory + imperial gold */
+
+:root {
+	/* Gold accent — imperial trim, stellar instruments */
+	--sl-color-accent-low: #1c1a10;
+	--sl-color-accent: #c9a84c;
+	--sl-color-accent-high: #f5edd0;
+
+	/* Text */
+	--sl-color-white: #e2e4e9;
+	--sl-color-gray-1: #c4c7cf;
+	--sl-color-gray-2: #9da1ac;
+	--sl-color-gray-3: #6b7080;
+	--sl-color-gray-4: #3a3f50;
+	--sl-color-gray-5: #252938;
+	--sl-color-gray-6: #161a28;
+	--sl-color-black: #0f1320;
+
+	/* Hue overrides for Starlight's color system */
+	--sl-hue-accent: 43;
+	--sl-hue-blue: 217;
+}
+
+/* Page background — deep navy, slightly lifted */
+:root[data-theme='dark'] {
+	--sl-color-bg: #0f1320;
+	--sl-color-bg-nav: #131728;
+	--sl-color-bg-sidebar: #131728;
+	--sl-color-hairline-light: #1a1f30;
+	--sl-color-hairline: #252938;
+}
+
+/* Hero layout — logo stacked above tagline, centered */
+.hero {
+	display: flex !important;
+	flex-direction: column-reverse !important;
+	align-items: center !important;
+	text-align: center;
+	grid-template-columns: unset !important;
+}
+
+.hero .sl-flex.stack {
+	align-items: center;
+}
+
+.hero img {
+	max-width: 400px;
+	width: 100%;
+	margin: 0 auto -5.5rem;
+}
+
+.hero [data-page-title] {
+	display: none;
+}
+
+.hero .sl-flex.actions {
+	justify-content: center;
+}
+
+/* Hero section — constellation feel */
+.hero {
+	padding-top: 0 !important;
+	padding-bottom: 1rem !important;
+	margin-top: -5.5rem !important;
+	background:
+		radial-gradient(1px 1px at 10% 20%, rgba(201, 168, 76, 0.4) 0%, transparent 100%),
+		radial-gradient(1px 1px at 80% 40%, rgba(201, 168, 76, 0.3) 0%, transparent 100%),
+		radial-gradient(1px 1px at 30% 70%, rgba(74, 122, 181, 0.3) 0%, transparent 100%),
+		radial-gradient(1px 1px at 65% 15%, rgba(74, 122, 181, 0.25) 0%, transparent 100%),
+		radial-gradient(1px 1px at 50% 90%, rgba(201, 168, 76, 0.2) 0%, transparent 100%),
+		radial-gradient(1px 1px at 90% 80%, rgba(74, 122, 181, 0.2) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 15% 55%, rgba(226, 228, 233, 0.15) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 45% 35%, rgba(226, 228, 233, 0.12) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 75% 65%, rgba(226, 228, 233, 0.1) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 25% 85%, rgba(226, 228, 233, 0.08) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 55% 10%, rgba(226, 228, 233, 0.1) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 85% 50%, rgba(226, 228, 233, 0.08) 0%, transparent 100%);
+	border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* Gold-tinted primary action button */
+.hero .action.primary {
+	background: linear-gradient(135deg, #c9a84c, #a8892e);
+	border-color: #c9a84c;
+	color: #0a0e1a;
+	font-weight: 600;
+}
+
+.hero .action.primary:hover {
+	background: linear-gradient(135deg, #d4b65e, #c9a84c);
+}
+
+/* Tagline styling */
+.hero .tagline {
+	color: var(--sl-color-gray-2);
+}
+
+/* Sidebar active item — off-white text, gold left border, subtle background */
+[data-theme='dark'] nav[aria-label='Main'] a[aria-current='page'] {
+	color: var(--sl-color-white);
+	border-color: var(--sl-color-accent);
+	background: rgba(201, 168, 76, 0.08);
+}
+
+/* Code blocks — slightly blue-tinted background */
+:root[data-theme='dark'] .expressive-code pre {
+	background: #0d1225 !important;
+	border: 1px solid #1a2035;
+}
+
+/* Card styling — subtle border glow */
+.card {
+	border-color: var(--sl-color-hairline);
+	background: var(--sl-color-bg-nav);
+}
+
+.card:hover {
+	border-color: rgba(201, 168, 76, 0.3);
+}
+
+/* Table header — subtle gold accent */
+:root[data-theme='dark'] table thead {
+	background: #111628;
+	border-bottom: 2px solid rgba(201, 168, 76, 0.2);
+}
+
+/* Scrollbar — matches dark theme */
+:root[data-theme='dark'] ::-webkit-scrollbar {
+	width: 8px;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-track {
+	background: var(--sl-color-bg);
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+	background: var(--sl-color-gray-4);
+	border-radius: 4px;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+	background: var(--sl-color-gray-3);
+}
+
+/* Headings — soft gold */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+[data-page-title],
+.content-panel h1 {
+	color: var(--sl-color-accent-high);
+}
+
+/* Table of contents sidebar — narrower */
+:root {
+	--sl-content-width: 80%;
+	--sl-content-pad-x: 0.5rem;
+	--sl-nav-gap: 0;
+	--sl-content-inline-start: 0;
+}
+
+.main-pane {
+	padding-inline-start: 0.5rem !important;
+}
+
+.content-panel {
+	padding-inline-start: 3rem !important;
+	margin-inline-start: 0 !important;
+}
+
+.content-panel .sl-container {
+	padding-inline-start: 0 !important;
+	margin-inline-start: 0 !important;
+}
+
+.right-sidebar-container {
+	max-width: 10rem !important;
+	min-width: 0 !important;
+	flex-basis: 10rem !important;
+}
+
+/* Links in content — gold on hover */
+.sl-markdown-content a:not([class]) {
+	text-decoration-color: rgba(201, 168, 76, 0.4);
+}
+
+.sl-markdown-content a:not([class]):hover {
+	text-decoration-color: var(--sl-color-accent);
+}
