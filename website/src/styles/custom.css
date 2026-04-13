@@ -78,6 +78,18 @@
 	border-bottom: 1px solid var(--sl-color-hairline);
 }
 
+/* Hero layout — mobile fix */
+@media (max-width: 50rem) {
+	.hero {
+		margin-top: 0 !important;
+		padding-top: 2rem !important;
+	}
+
+	.hero img {
+		margin-bottom: 0;
+	}
+}
+
 /* Gold-tinted primary action button */
 .hero .action.primary {
 	background: linear-gradient(135deg, #c9a84c, #a8892e);
