@@ -12,7 +12,7 @@ IMG_PROBE_SECRET ?= $(REGISTRY)/sidereal-probe-secret:$(VERSION)
 IMG_PROBE_ADMISSION ?= $(REGISTRY)/sidereal-probe-admission:$(VERSION)
 IMG_PROBE_NETPOL ?= $(REGISTRY)/sidereal-probe-netpol:$(VERSION)
 IMG_PROBE_DETECTION ?= $(REGISTRY)/sidereal-probe-detection:$(VERSION)
-IMG_BOOTSTRAP ?= $(REGISTRY)/sidereal-bootstrap:$(VERSION)
+IMG_BOOTSTRAP ?= $(REGISTRY)/sidereal-probe-bootstrap:$(VERSION)
 
 # controller-gen and other tool binaries
 CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.20.1

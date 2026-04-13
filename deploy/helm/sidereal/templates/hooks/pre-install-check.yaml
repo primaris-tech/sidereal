@@ -19,6 +19,22 @@ spec:
         app.kubernetes.io/component: bootstrap
     spec:
       serviceAccountName: sidereal-controller
+      # automountServiceAccountToken is explicitly set to true here to override the
+      # sidereal-controller ServiceAccount's cluster-wide default of false. That default
+      # is a deliberate hardening choice: long-running controller and probe pods should
+      # not carry an ambient API token they don't need. This Job is different — its sole
+      # purpose is to query the API server (CRD existence, server version), so a token
+      # is required for it to function at all.
+      #
+      # This is not a security regression because:
+      #   1. The token is scoped to the sidereal-controller ServiceAccount, which already
+      #      holds the permissions needed for cluster operations.
+      #   2. The Job runs for seconds, is non-restartable (backoffLimit: 0), and is
+      #      deleted on success (hook-delete-policy: hook-succeeded). The token exposure
+      #      window is the lifetime of a single short-lived pod.
+      #   3. The pod itself is fully hardened: non-root, read-only root filesystem,
+      #      no privilege escalation, all capabilities dropped, RuntimeDefault seccomp.
+      automountServiceAccountToken: true
       restartPolicy: Never
       securityContext:
         runAsNonRoot: true
@@ -31,6 +47,15 @@ spec:
           env:
             - name: ADMISSION_CONTROLLER
               value: {{ .Values.profile.admissionController }}
+            - name: REQUIRE_ADMISSION_CONTROLLER
+              value: {{ .Values.global.requireAdmissionController | quote }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

@@ -65,26 +65,30 @@ func main() {
 		fmt.Println("PASS: Kubernetes version meets minimum requirements")
 	}
 
-	// Check for admission controller CRDs.
-	foundAdmission := false
-	for provider, crds := range admissionCRDs {
-		allFound := true
-		for _, crd := range crds {
-			if err := checkCRDExists(ctx, extClient, crd); err != nil {
-				allFound = false
+	// Check for admission controller CRDs — skipped if REQUIRE_ADMISSION_CONTROLLER=false.
+	requireAdmission := os.Getenv("REQUIRE_ADMISSION_CONTROLLER") != "false"
+	if requireAdmission {
+		foundAdmission := false
+		for provider, crds := range admissionCRDs {
+			allFound := true
+			for _, crd := range crds {
+				if err := checkCRDExists(ctx, extClient, crd); err != nil {
+					allFound = false
+					break
+				}
+			}
+			if allFound {
+				fmt.Printf("PASS: %s admission controller CRDs found\n", provider)
+				foundAdmission = true
 				break
 			}
 		}
-		if allFound {
-			fmt.Printf("PASS: %s admission controller CRDs found\n", provider)
-			foundAdmission = true
-			break
+		if !foundAdmission {
+			fmt.Fprintf(os.Stderr, "FAIL: no supported admission controller found (need Kyverno or Gatekeeper)\n")
+			passed = false
 		}
-	}
-
-	if !foundAdmission {
-		fmt.Fprintf(os.Stderr, "FAIL: no supported admission controller found (need Kyverno or Gatekeeper)\n")
-		passed = false
+	} else {
+		fmt.Println("SKIP: admission controller check disabled (requireAdmissionController=false)")
 	}
 
 	if !passed {
