@@ -151,16 +151,10 @@
 	color: var(--sl-color-accent-high);
 }
 
-/* Table of contents sidebar — narrower */
+/* Content layout — narrower sidebars, wider content */
 :root {
-	--sl-content-width: 80%;
-	--sl-content-pad-x: 0.5rem;
-	--sl-nav-gap: 0;
-	--sl-content-inline-start: 0;
-}
-
-.main-pane {
-	padding-inline-start: 0.5rem !important;
+	--sl-sidebar-width: 13rem;
+	--sl-content-width: 67rem;
 }
 
 .content-panel {
@@ -169,15 +163,9 @@
 }
 
 .content-panel .sl-container {
-	padding-inline-start: 0 !important;
-	margin-inline-start: 0 !important;
+	max-width: none !important;
 }
 
-.right-sidebar-container {
-	max-width: 10rem !important;
-	min-width: 0 !important;
-	flex-basis: 10rem !important;
-}
 
 /* Links in content — gold on hover */
 .sl-markdown-content a:not([class]) {
