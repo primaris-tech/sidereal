@@ -1,9 +1,9 @@
 ---
 import "../styles/custom.css";
 
-import siderealIconRaw from "../assets/sidereal-icon.svg?raw";
-import siderealLogoUrl from "../assets/sidereal-logo.svg?url";
-import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
+import siderealIconRaw from "../assets/sidereal-logo-only-orange.svg?raw";
+import siderealLogoUrl from "../assets/sidereal-orange.svg?url";
+import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
 ---
 
 <!doctype html>
@@ -606,6 +606,9 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
         font-family: var(--__sl-font);
         letter-spacing: 0.15em;
         color: var(--sl-color-accent-high);
+        text-shadow:
+            0 0 5px rgba(249, 115, 22, 0.6),
+            0 0 12px rgba(249, 115, 22, 0.25);
     }
 
     .lp-nav {
@@ -657,36 +660,12 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
         margin-top: var(--sl-nav-height, 3.5rem);
         padding: 2.5rem var(--sl-nav-pad-x, 1rem) 2rem;
         background:
-            radial-gradient(
-                1px 1px at 10% 20%,
-                rgba(201, 168, 76, 0.4) 0%,
-                transparent 100%
-            ),
-            radial-gradient(
-                1px 1px at 80% 40%,
-                rgba(201, 168, 76, 0.3) 0%,
-                transparent 100%
-            ),
-            radial-gradient(
-                1px 1px at 30% 70%,
-                rgba(74, 122, 181, 0.3) 0%,
-                transparent 100%
-            ),
-            radial-gradient(
-                1px 1px at 65% 15%,
-                rgba(74, 122, 181, 0.25) 0%,
-                transparent 100%
-            ),
-            radial-gradient(
-                0.5px 0.5px at 15% 55%,
-                rgba(226, 228, 233, 0.12) 0%,
-                transparent 100%
-            ),
-            radial-gradient(
-                0.5px 0.5px at 75% 65%,
-                rgba(226, 228, 233, 0.1) 0%,
-                transparent 100%
-            );
+            radial-gradient(1px 1px at 10% 20%, rgba(249, 115, 22, 0.5) 0%, transparent 100%),
+            radial-gradient(1px 1px at 80% 40%, rgba(249, 115, 22, 0.35) 0%, transparent 100%),
+            radial-gradient(1px 1px at 30% 70%, rgba(249, 115, 22, 0.25) 0%, transparent 100%),
+            radial-gradient(1px 1px at 65% 15%, rgba(249, 115, 22, 0.2) 0%, transparent 100%),
+            radial-gradient(0.5px 0.5px at 15% 55%, rgba(240, 232, 220, 0.18) 0%, transparent 100%),
+            radial-gradient(0.5px 0.5px at 75% 65%, rgba(240, 232, 220, 0.14) 0%, transparent 100%);
         border-bottom: 1px solid var(--sl-color-hairline);
     }
 
@@ -723,6 +702,9 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
         text-transform: uppercase;
         color: var(--sl-color-accent);
         margin-bottom: 0.75rem;
+        text-shadow:
+            0 0 5px rgba(249, 115, 22, 0.5),
+            0 0 12px rgba(249, 115, 22, 0.2);
     }
 
     .lp-hero-title {
@@ -731,6 +713,9 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
         line-height: 1.2;
         color: var(--sl-color-accent-high);
         margin-bottom: 1rem;
+        text-shadow:
+            0 0 7px rgba(249, 115, 22, 0.6),
+            0 0 18px rgba(249, 115, 22, 0.25);
     }
 
     .lp-hero-tagline {
@@ -761,13 +746,16 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
     }
 
     .lp-btn-primary {
-        background: linear-gradient(135deg, #c9a84c, #a8892e);
-        border: 1px solid #c9a84c;
-        color: #0a0e1a;
+        background: linear-gradient(135deg, #f97316, #c45108);
+        border: 1px solid #f97316;
+        color: #090909;
+        box-shadow: 0 0 8px rgba(249, 115, 22, 0.35), 0 0 18px rgba(249, 115, 22, 0.15);
+        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
 
     .lp-btn-primary:hover {
-        background: linear-gradient(135deg, #d4b65e, #c9a84c);
+        background: linear-gradient(135deg, #fb923c, #f97316);
+        box-shadow: 0 0 10px rgba(249, 115, 22, 0.5), 0 0 22px rgba(249, 115, 22, 0.25);
     }
 
     .lp-btn-secondary {
@@ -830,7 +818,7 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
     }
 
     .lp-card:hover {
-        border-color: rgba(201, 168, 76, 0.35);
+        border-color: rgba(249, 115, 22, 0.35);
     }
 
     .lp-card-icon {
@@ -880,7 +868,7 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
         height: 2rem;
         border-radius: 50%;
         background: var(--sl-color-accent);
-        color: #0a0e1a;
+        color: #090909;
         font-weight: 700;
         font-size: 0.85rem;
         display: flex;
@@ -979,7 +967,7 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
     }
 
     .lp-surface:hover {
-        border-color: rgba(201, 168, 76, 0.35);
+        border-color: rgba(249, 115, 22, 0.35);
     }
 
     .lp-surface h3 {
@@ -1125,12 +1113,9 @@ import siderealLogoLightUrl from "../assets/sidereal-logo-light.svg?url";
     }
 
     /* ---- Nav icon light theme fix (matches custom.css rules) ---- */
-    [data-theme="light"] .lp-icon svg path[fill="#E9E8D5"],
-    [data-theme="light"] .lp-icon svg path[fill="#e9e8d5"] {
-        fill: #1a1f30;
-    }
-    [data-theme="light"] .lp-icon svg path[fill="#161923"] {
-        fill: #f0f0f5;
+    [data-theme="light"] .lp-icon svg path[fill="#0A0A0A"],
+    [data-theme="light"] .lp-icon svg path[fill="#0a0a0a"] {
+        fill: #ffffff;
     }
 
     /* ---- Responsive ---- */

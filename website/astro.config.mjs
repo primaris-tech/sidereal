@@ -10,7 +10,7 @@ export default defineConfig({
 			title: 'Sidereal',
 			description: 'Continuous security control validation for Kubernetes',
 			logo: {
-				src: './src/assets/sidereal-icon.svg',
+				src: './src/assets/sidereal-logo-only-orange.svg',
 				alt: 'Sidereal',
 			},
 			favicon: '/favicon.svg',

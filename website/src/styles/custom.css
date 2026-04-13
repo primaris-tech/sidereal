@@ -1,51 +1,49 @@
-/* Sidereal — deep space observatory + imperial gold */
+/* Sidereal — deep space + ember orange glow palette */
 
 :root {
-	/* Gold accent — shared across themes */
-	--sl-color-accent: #c9a84c;
+	/* Ember orange accent — shared across themes */
+	--sl-color-accent: #f97316;
 
 	/* Hue overrides for Starlight's color system */
-	--sl-hue-accent: 43;
+	--sl-hue-accent: 24;
 	--sl-hue-blue: 217;
 }
 
-/* Dark theme — deep navy palette */
+/* Dark theme — near-black warm */
 :root[data-theme='dark'] {
 	/* Accent scale */
-	--sl-color-accent-low: #1c1a10;
-	--sl-color-accent-high: #f5edd0;
+	--sl-color-accent-low: #1a0e06;
+	--sl-color-accent-high: #fb923c;
 
-	/* Text scale */
-	--sl-color-white: #e2e4e9;
-	--sl-color-gray-1: #c4c7cf;
-	--sl-color-gray-2: #9da1ac;
-	--sl-color-gray-3: #6b7080;
-	--sl-color-gray-4: #3a3f50;
-	--sl-color-gray-5: #252938;
-	--sl-color-gray-6: #161a28;
-	--sl-color-black: #0f1320;
+	/* Text scale — warm starlight */
+	--sl-color-white: #f0e8dc;
+	--sl-color-gray-1: #d4c8b8;
+	--sl-color-gray-2: #9e8e7e;
+	--sl-color-gray-3: #5a4a3a;
+	--sl-color-gray-4: #2e1e10;
+	--sl-color-gray-5: #1a1008;
+	--sl-color-gray-6: #120c06;
+	--sl-color-black: #0a0804;
 
 	/* Backgrounds */
-	--sl-color-bg: #0f1320;
-	--sl-color-bg-nav: #131728;
-	--sl-color-bg-sidebar: #131728;
-	--sl-color-hairline-light: #1a1f30;
-	--sl-color-hairline: #252938;
+	--sl-color-bg: #090909;
+	--sl-color-bg-nav: #111111;
+	--sl-color-bg-sidebar: #070707;
+	--sl-color-hairline-light: #1e1208;
+	--sl-color-hairline: #2a1a0a;
 }
 
-/* Light theme — warm off-white with gold accents */
+/* Light theme */
 :root[data-theme='light'] {
-	--sl-color-accent-low: #fdf5e0;
-	--sl-color-accent-high: #6b4c12;
+	--sl-color-accent-low: #fff4ec;
+	--sl-color-accent-high: #9a3d08;
 }
 
 /* Nav icon — invert fill colors for light theme */
-[data-theme='light'] header .site-title svg path[fill="#E9E8D5"],
-[data-theme='light'] header .site-title svg path[fill="#e9e8d5"] {
-	fill: #1a1f30;
-}
-
-[data-theme='light'] header .site-title svg path[fill="#161923"] {
+[data-theme='light'] header .site-title svg path[fill="#0A0A0A"],
+[data-theme='light'] header .site-title svg path[fill="#0a0a0a"],
+[data-theme='light'] header .site-title svg rect[fill="#0A0A0A"],
+[data-theme='light'] header .site-title svg rect[fill="#0a0a0a"] {
 	fill: #ffffff;
 }
 
@@ -76,24 +74,24 @@
 	justify-content: center;
 }
 
-/* Hero section — constellation feel */
+/* Hero section — ember glow */
 .hero {
 	padding-top: 0 !important;
 	padding-bottom: 1rem !important;
 	margin-top: -5.5rem !important;
 	background:
-		radial-gradient(1px 1px at 10% 20%, rgba(201, 168, 76, 0.4) 0%, transparent 100%),
-		radial-gradient(1px 1px at 80% 40%, rgba(201, 168, 76, 0.3) 0%, transparent 100%),
-		radial-gradient(1px 1px at 30% 70%, rgba(74, 122, 181, 0.3) 0%, transparent 100%),
-		radial-gradient(1px 1px at 65% 15%, rgba(74, 122, 181, 0.25) 0%, transparent 100%),
-		radial-gradient(1px 1px at 50% 90%, rgba(201, 168, 76, 0.2) 0%, transparent 100%),
-		radial-gradient(1px 1px at 90% 80%, rgba(74, 122, 181, 0.2) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 15% 55%, rgba(226, 228, 233, 0.15) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 45% 35%, rgba(226, 228, 233, 0.12) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 75% 65%, rgba(226, 228, 233, 0.1) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 25% 85%, rgba(226, 228, 233, 0.08) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 55% 10%, rgba(226, 228, 233, 0.1) 0%, transparent 100%),
-		radial-gradient(0.5px 0.5px at 85% 50%, rgba(226, 228, 233, 0.08) 0%, transparent 100%);
+		radial-gradient(1px 1px at 10% 20%, rgba(249, 115, 22, 0.5) 0%, transparent 100%),
+		radial-gradient(1px 1px at 80% 40%, rgba(249, 115, 22, 0.35) 0%, transparent 100%),
+		radial-gradient(1px 1px at 30% 70%, rgba(249, 115, 22, 0.25) 0%, transparent 100%),
+		radial-gradient(1px 1px at 65% 15%, rgba(249, 115, 22, 0.2) 0%, transparent 100%),
+		radial-gradient(1px 1px at 50% 90%, rgba(249, 115, 22, 0.15) 0%, transparent 100%),
+		radial-gradient(1px 1px at 90% 80%, rgba(249, 115, 22, 0.12) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 15% 55%, rgba(240, 232, 220, 0.18) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 45% 35%, rgba(240, 232, 220, 0.14) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 75% 65%, rgba(240, 232, 220, 0.12) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 25% 85%, rgba(240, 232, 220, 0.10) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 55% 10%, rgba(240, 232, 220, 0.14) 0%, transparent 100%),
+		radial-gradient(0.5px 0.5px at 85% 50%, rgba(240, 232, 220, 0.10) 0%, transparent 100%);
 	border-bottom: 1px solid var(--sl-color-hairline);
 }
 
@@ -109,16 +107,18 @@
 	}
 }
 
-/* Gold-tinted primary action button */
+/* Primary action button */
 .hero .action.primary {
-	background: linear-gradient(135deg, #c9a84c, #a8892e);
-	border-color: #c9a84c;
-	color: #0a0e1a;
+	background: linear-gradient(135deg, #f97316, #c45108);
+	border-color: #f97316;
+	color: #0a0804;
 	font-weight: 600;
+	box-shadow: 0 0 12px rgba(249, 115, 22, 0.5), 0 0 28px rgba(249, 115, 22, 0.2);
 }
 
 .hero .action.primary:hover {
-	background: linear-gradient(135deg, #d4b65e, #c9a84c);
+	background: linear-gradient(135deg, #fb923c, #f97316);
+	box-shadow: 0 0 16px rgba(249, 115, 22, 0.7), 0 0 36px rgba(249, 115, 22, 0.35);
 }
 
 /* Tagline styling */
@@ -126,36 +126,37 @@
 	color: var(--sl-color-gray-2);
 }
 
-/* Sidebar active item — off-white text, gold left border, subtle background */
+/* Sidebar active item */
 [data-theme='dark'] nav[aria-label='Main'] a[aria-current='page'] {
 	color: var(--sl-color-white);
 	border-color: var(--sl-color-accent);
-	background: rgba(201, 168, 76, 0.08);
+	background: rgba(249, 115, 22, 0.08);
 }
 
-/* Code blocks — slightly blue-tinted background */
+/* Code blocks */
 :root[data-theme='dark'] .expressive-code pre {
-	background: #0d1225 !important;
-	border: 1px solid #1a2035;
+	background: #060606 !important;
+	border: 1px solid #2a1a0a;
 }
 
-/* Card styling — subtle border glow */
+/* Card styling */
 .card {
 	border-color: var(--sl-color-hairline);
 	background: var(--sl-color-bg-nav);
 }
 
 .card:hover {
-	border-color: rgba(201, 168, 76, 0.3);
+	border-color: rgba(249, 115, 22, 0.3);
+	box-shadow: 0 0 8px rgba(249, 115, 22, 0.06);
 }
 
-/* Table header — subtle gold accent */
+/* Table header */
 :root[data-theme='dark'] table thead {
-	background: #111628;
-	border-bottom: 2px solid rgba(201, 168, 76, 0.2);
+	background: #120c06;
+	border-bottom: 2px solid rgba(249, 115, 22, 0.2);
 }
 
-/* Scrollbar — matches dark theme */
+/* Scrollbar */
 :root[data-theme='dark'] ::-webkit-scrollbar {
 	width: 8px;
 }
@@ -173,19 +174,21 @@
 	background: var(--sl-color-gray-3);
 }
 
-/* Headings — soft gold */
+/* Headings — ember glow */
 .sl-markdown-content h1,
 .sl-markdown-content h2,
 .sl-markdown-content h3,
 [data-page-title],
 .content-panel h1 {
 	color: var(--sl-color-accent-high);
+	text-shadow:
+		0 0 6px rgba(249, 115, 22, 0.5),
+		0 0 14px rgba(249, 115, 22, 0.2);
 }
 
-
-/* Links in content — gold on hover */
+/* Links in content */
 .sl-markdown-content a:not([class]) {
-	text-decoration-color: rgba(201, 168, 76, 0.4);
+	text-decoration-color: rgba(249, 115, 22, 0.4);
 }
 
 .sl-markdown-content a:not([class]):hover {
