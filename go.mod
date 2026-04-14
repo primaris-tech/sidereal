@@ -1,6 +1,6 @@
 module github.com/primaris-tech/sidereal
 
-go 1.25.0
+go 1.25.9
 
 require (
 	github.com/prometheus/client_golang v1.23.2

@@ -33,6 +33,12 @@ detection-probe/target/
 .DS_Store
 Thumbs.db
 
+# Agent / AI tooling
+.omegon/
+.delegate-prompt.md
+.claude/
+ai/
+
 # Helm
 deploy/static/
 

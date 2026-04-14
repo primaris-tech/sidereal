@@ -69,7 +69,9 @@ jobs:
           context: .
           file: build/Dockerfile.controller
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-controller:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-controller:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-controller:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,7 +82,9 @@ jobs:
           file: build/Dockerfile.probe-go
           build-args: PROBE_CMD=probe-rbac
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-rbac:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -91,7 +95,9 @@ jobs:
           file: build/Dockerfile.probe-go
           build-args: PROBE_CMD=probe-secret
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-secret:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,7 +108,9 @@ jobs:
           file: build/Dockerfile.probe-go
           build-args: PROBE_CMD=probe-admission
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-admission:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -113,7 +121,9 @@ jobs:
           file: build/Dockerfile.probe-go
           build-args: PROBE_CMD=probe-netpol
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-netpol:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -123,7 +133,9 @@ jobs:
           context: detection-probe
           file: build/Dockerfile.probe-detection
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-probe-detection:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-probe-detection:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-detection:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -133,7 +145,9 @@ jobs:
           context: .
           file: build/Dockerfile.bootstrap
           push: true
-          tags: ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-bootstrap:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

@@ -136,20 +136,23 @@ sidereal/
 
 ## Git Workflow
 
-**Branching strategy**: Feature branches per implementation phase, merged to `main` via PR.
-- Branch naming: `phase-N/short-name` (e.g., `phase-3/hmac`, `phase-4/scheduler`)
-- `main` must always be compilable and testable
-- Each PR represents a coherent, working increment
-- Short-lived branches only — one phase per branch, merged promptly
-- No long-lived develop/release branches during the build phase
+**Branching strategy**: Feature branches merged to `main` via PR. `main` is always releasable.
+- Branch naming by type: `feat/description`, `fix/description`, `chore/description`, `docs/description`
+- Each PR is a coherent, deployable unit — not a week's worth of work, not a one-liner bundled with a feature
+- Short-lived branches only — merge promptly
+- No long-lived develop/release branches
 
-**Tagging**: `v0.1.0-alpha` after Phases 0-6 (critical path foundation). `v0.1.0` after all probe runners are working.
+**Release cadence**: Semantic versioning driven by what changed, not by time.
+- Patch (`0.1.x`): bug fixes, security patches, dependency updates — no API surface change
+- Minor (`0.x.0`): new features, new probe types, new framework crosswalks — backward-compatible
+- Major (`x.0.0`): breaking CRD changes, controller API changes, anything requiring migration
+- Security fixes (govulncheck, cargo audit, Trivy) should be patched and released promptly per CVE SLAs
 
 **Deferred until multi-contributor or public release**:
 - Branch protection (requires GitHub Pro/Team or public repo)
-- CODEOWNERS enforcement
-- Required reviewers
-- Gitflow / release branches
+- CODEOWNERS enforcement — paths already identified: `internal/hmac/`, `detection-probe/`, `build/`, `.github/workflows/`, admission policies
+- Required reviewers (1 general, 2 for CODEOWNERS-gated paths)
+- Populate `release` environment approvers in GitHub
 
 ## Development Security
 
