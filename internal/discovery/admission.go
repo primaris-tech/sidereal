@@ -14,7 +14,9 @@ import (
 
 // AdmissionDiscoverer generates admission probe recommendations from
 // ValidatingWebhookConfiguration and MutatingWebhookConfiguration resources.
-type AdmissionDiscoverer struct{}
+type AdmissionDiscoverer struct {
+	excluded map[string]bool
+}
 
 func (d *AdmissionDiscoverer) Name() string { return "admission" }
 
@@ -173,9 +175,8 @@ func (d *AdmissionDiscoverer) resolveTargetNamespace(ctx context.Context, c clie
 		return "default"
 	}
 
-	excluded := ExcludedNamespaces()
 	for _, ns := range nsList.Items {
-		if !excluded[ns.Name] {
+		if !d.excluded[ns.Name] {
 			return ns.Name
 		}
 	}

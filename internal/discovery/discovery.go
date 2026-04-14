@@ -51,25 +51,35 @@ type Discoverer interface {
 
 // Engine orchestrates all discoverers and deduplicates recommendations.
 type Engine struct {
-	discoverers []Discoverer
+	discoverers         []Discoverer
+	excludedNamespaces  map[string]bool
 }
 
 // NewEngine creates a discovery engine with the standard set of discoverers.
-func NewEngine() *Engine {
+// Additional namespaces to exclude can be passed as extra arguments.
+func NewEngine(additionalExclusions ...string) *Engine {
+	excluded := defaultExcludedNamespaces()
+	for _, ns := range additionalExclusions {
+		excluded[ns] = true
+	}
 	return &Engine{
 		discoverers: []Discoverer{
-			&NetworkPolicyDiscoverer{},
-			&RBACDiscoverer{},
-			&AdmissionDiscoverer{},
-			&SecretDiscoverer{},
+			&NetworkPolicyDiscoverer{excluded: excluded},
+			&RBACDiscoverer{excluded: excluded},
+			&AdmissionDiscoverer{excluded: excluded},
+			&SecretDiscoverer{excluded: excluded},
 			&DetectionDiscoverer{},
 		},
+		excludedNamespaces: excluded,
 	}
 }
 
 // NewEngineWithDiscoverers creates a discovery engine with a custom set of discoverers.
 func NewEngineWithDiscoverers(discoverers ...Discoverer) *Engine {
-	return &Engine{discoverers: discoverers}
+	return &Engine{
+		discoverers:        discoverers,
+		excludedNamespaces: defaultExcludedNamespaces(),
+	}
 }
 
 // RunAll executes all discoverers and returns deduplicated recommendations.
@@ -129,7 +139,9 @@ func HashResource(obj interface{}) string {
 }
 
 // RecommendationName generates a deterministic name for a recommendation
-// based on its source resource.
+// based on its source resource. The result is a valid RFC 1123 subdomain:
+// lowercase, with any character outside [a-z0-9-] replaced by a hyphen,
+// and consecutive hyphens collapsed.
 func RecommendationName(source corev1.ObjectReference, suffix string) string {
 	name := fmt.Sprintf("sidereal-rec-%s-%s", source.Kind, source.Name)
 	if source.Namespace != "" {
@@ -138,14 +150,34 @@ func RecommendationName(source corev1.ObjectReference, suffix string) string {
 	if suffix != "" {
 		name = fmt.Sprintf("%s-%s", name, suffix)
 	}
-	// Kubernetes resource names must be lowercase RFC 1123 subdomains.
-	name = strings.ToLower(name)
+	name = sanitizeK8sName(name)
 	// Kubernetes name limit.
 	if len(name) > 253 {
 		hash := sha256.Sum256([]byte(name))
 		name = fmt.Sprintf("sidereal-rec-%x", hash[:12])
 	}
 	return name
+}
+
+// sanitizeK8sName converts a string into a valid RFC 1123 subdomain label:
+// lowercase, non-alphanumeric characters replaced with hyphens, consecutive
+// hyphens collapsed, leading and trailing hyphens trimmed.
+func sanitizeK8sName(s string) string {
+	s = strings.ToLower(s)
+	var b strings.Builder
+	prevHyphen := false
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' {
+			b.WriteRune(r)
+			prevHyphen = false
+		} else {
+			if !prevHyphen {
+				b.WriteRune('-')
+				prevHyphen = true
+			}
+		}
+	}
+	return strings.Trim(b.String(), "-")
 }
 
 // deduplicate removes recommendations with identical source resources.
@@ -163,24 +195,29 @@ func deduplicate(recs []Recommendation) []Recommendation {
 	return result
 }
 
-// ExcludedNamespaces returns namespaces that should be excluded from discovery.
-func ExcludedNamespaces() map[string]bool {
+// defaultExcludedNamespaces returns the base set of namespaces always excluded
+// from discovery. Operators can extend this via NewEngine.
+func defaultExcludedNamespaces() map[string]bool {
 	return map[string]bool{
-		"kube-system":      true,
-		"kube-public":      true,
-		"kube-node-lease":  true,
-		"sidereal-system":  true,
+		"kube-system":     true,
+		"kube-public":     true,
+		"kube-node-lease": true,
+		"sidereal-system": true,
 	}
 }
 
-// ListNamespaces returns all non-excluded namespaces in the cluster.
-func ListNamespaces(ctx context.Context, c client.Client) ([]string, error) {
+// ExcludedNamespaces returns the engine's active exclusion set.
+func (e *Engine) ExcludedNamespaces() map[string]bool {
+	return e.excludedNamespaces
+}
+
+// ListNamespaces returns all namespaces not in the excluded set.
+func ListNamespaces(ctx context.Context, c client.Client, excluded map[string]bool) ([]string, error) {
 	var nsList corev1.NamespaceList
 	if err := c.List(ctx, &nsList); err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
 	}
 
-	excluded := ExcludedNamespaces()
 	var names []string
 	for _, ns := range nsList.Items {
 		if !excluded[ns.Name] {

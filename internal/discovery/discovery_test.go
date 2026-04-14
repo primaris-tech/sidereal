@@ -299,7 +299,7 @@ func TestRecommendationName(t *testing.T) {
 }
 
 func TestExcludedNamespaces(t *testing.T) {
-	excluded := ExcludedNamespaces()
+	excluded := defaultExcludedNamespaces()
 
 	if !excluded["kube-system"] {
 		t.Error("kube-system should be excluded")
@@ -309,6 +309,18 @@ func TestExcludedNamespaces(t *testing.T) {
 	}
 	if excluded["production"] {
 		t.Error("production should not be excluded")
+	}
+
+	// Verify operator-supplied exclusions are honoured.
+	e := NewEngine("security-tooling", "monitoring")
+	if !e.ExcludedNamespaces()["security-tooling"] {
+		t.Error("security-tooling should be excluded")
+	}
+	if !e.ExcludedNamespaces()["monitoring"] {
+		t.Error("monitoring should be excluded")
+	}
+	if !e.ExcludedNamespaces()["kube-system"] {
+		t.Error("kube-system should still be excluded when additional exclusions are provided")
 	}
 }
 

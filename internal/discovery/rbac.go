@@ -16,7 +16,9 @@ import (
 // probe validates namespace-scoped enforcement and cannot meaningfully test
 // cluster-scoped bindings. ISSOs should audit ClusterRoleBinding subject
 // membership via RBAC tooling outside of Sidereal.
-type RBACDiscoverer struct{}
+type RBACDiscoverer struct {
+	excluded map[string]bool
+}
 
 func (d *RBACDiscoverer) Name() string { return "rbac" }
 
@@ -24,7 +26,7 @@ func (d *RBACDiscoverer) Discover(ctx context.Context, c client.Client) ([]Recom
 	var recs []Recommendation
 
 	// Discover from namespaced RoleBindings.
-	namespaces, err := ListNamespaces(ctx, c)
+	namespaces, err := ListNamespaces(ctx, c, d.excluded)
 	if err != nil {
 		return nil, err
 	}
