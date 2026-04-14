@@ -164,8 +164,81 @@ import siderealLogoUrl from "../assets/sidereal-orange.svg?url";
             </div>
         </section>
 
-        <!-- WHAT -->
+        <!-- IN THE WILD -->
         <section class="lp-section lp-section-alt">
+            <div class="lp-container">
+                <h2 class="lp-section-title">This has happened in production</h2>
+                <p class="lp-section-lead">
+                    The gap between a configured control and a working control
+                    is documented, recurring, and exploitable. These are real
+                    incidents, not hypothetical failure modes.
+                </p>
+                <div class="lp-comparison">
+                    <div class="lp-comparison-card">
+                        <h3>Kyverno admission bypass via finalizers</h3>
+                        <p>
+                            Kyverno enforcing image policy with
+                            <code>validationFailureAction: Enforce</code>. Any
+                            resource with a Kubernetes finalizer attached has its
+                            <code>deletionTimestamp</code> set, which caused
+                            Kyverno to skip policy evaluation entirely. A
+                            developer-level account was sufficient to place any
+                            resource in a permanently policy-exempt state.
+                            (CVE-2023-34091, patched in Kyverno 1.10.0.)
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal's admission probe fires against the live
+                            enforcement layer. A bypassed resource causes the
+                            probe to return Ineffective regardless of what the
+                            policy configuration says.
+                        </div>
+                    </div>
+                    <div class="lp-comparison-card">
+                        <h3>EKS NetworkPolicies silently unenforced</h3>
+                        <p>
+                            NetworkPolicy objects applied to Amazon EKS clusters
+                            using the default VPC CNI plugin. The API accepted
+                            every policy and returned success. Until Amazon added
+                            native enforcement in October 2023, none of those
+                            policies filtered any traffic. Configuration scanners
+                            reported them as present. Inter-pod traffic was never
+                            blocked.
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal's network policy probe attempts the
+                            connection and checks the actual packet verdict, not
+                            whether a policy object exists.
+                        </div>
+                    </div>
+                    <div class="lp-comparison-card">
+                        <h3>io_uring rootkit bypasses Falco and Tetragon</h3>
+                        <p>
+                            Falco and Tetragon deployed for runtime detection.
+                            ARMO's "Curing" rootkit conducts all operations
+                            through Linux's <code>io_uring</code> interface,
+                            bypassing the syscall layer both tools instrument.
+                            Full data exfiltration with zero alerts from Falco,
+                            Tetragon, or Microsoft Defender for Endpoint.
+                            (ARMO, April 2025.)
+                        </p>
+                        <div class="lp-comparison-gap">
+                            Sidereal's detection probe independently verifies
+                            the alert was raised. If the detection pipeline has
+                            a gap, the probe finds it.
+                        </div>
+                    </div>
+                </div>
+                <p class="lp-section-footnote">
+                    <a href="/concepts/real-world-gaps/">
+                        See all documented incidents, organized by probe surface
+                        &rarr;
+                    </a>
+                </p>
+            </div>
+        </section>
+
+        <!-- WHAT -->
+        <section class="lp-section">
             <div class="lp-container">
                 <h2 class="lp-section-title">What Sidereal does</h2>
                 <p class="lp-section-lead">
@@ -689,6 +762,21 @@ import siderealLogoUrl from "../assets/sidereal-orange.svg?url";
         color: var(--sl-color-gray-2);
         max-width: 72ch;
         margin-bottom: 2.5rem;
+    }
+
+    .lp-section-footnote {
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: var(--sl-color-gray-3);
+    }
+
+    .lp-section-footnote a {
+        color: var(--sl-color-accent);
+        text-decoration: none;
+    }
+
+    .lp-section-footnote a:hover {
+        text-decoration: underline;
     }
 
     /* ---- Cards (What) ---- */

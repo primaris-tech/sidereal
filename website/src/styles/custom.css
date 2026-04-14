@@ -15,11 +15,11 @@
 	--sl-color-accent-low: #1a0e06;
 	--sl-color-accent-high: #fb923c;
 
-	/* Text scale — warm starlight */
-	--sl-color-white: #f0e8dc;
-	--sl-color-gray-1: #d4c8b8;
-	--sl-color-gray-2: #9e8e7e;
-	--sl-color-gray-3: #5a4a3a;
+	/* Text scale — neutral, readable against dark backgrounds */
+	--sl-color-white: #fafafa;
+	--sl-color-gray-1: #e8e8e8;
+	--sl-color-gray-2: #c0c0c0;
+	--sl-color-gray-3: #828282;
 	--sl-color-gray-4: #2e1e10;
 	--sl-color-gray-5: #1a1008;
 	--sl-color-gray-6: #120c06;

@@ -41,6 +41,7 @@ export default defineConfig({
 						{ label: 'Control Effectiveness', slug: 'concepts/control-effectiveness' },
 						{ label: 'HMAC Integrity', slug: 'concepts/hmac-integrity' },
 						{ label: 'Compliance Mapping', slug: 'concepts/compliance-mapping' },
+						{ label: 'The Configuration-Effectiveness Gap', slug: 'concepts/real-world-gaps' },
 					],
 				},
 				{

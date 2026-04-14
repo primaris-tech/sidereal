@@ -11,9 +11,11 @@ Federal systems running on Kubernetes face a gap that no existing open-source to
 
 **Configuration is not enforcement.** A NetworkPolicy can be defined and not enforcing. An admission webhook can be configured and silently disabled. A Falco rule can be deployed and suppressed by a config change. That drift is where real-world compromises happen and where ATO evidence goes stale.
 
+This is not theoretical. See [The Configuration-Effectiveness Gap](/concepts/real-world-gaps/) for documented incidents where correctly configured controls failed operationally.
+
 **The swivel chair.** Today, an ISSO validating Kubernetes security controls pivots between disconnected tools: Kubescape for posture, Falco dashboards for detection, the SIEM for audit records, manual crosswalks to NIST 800-53, hand-built reports, spreadsheet POA&Ms. Each tool covers one piece. None of them connect the pieces. The ISSO becomes the integration layer.
 
-**Point-in-time is not continuous monitoring.** A scan that ran at 2 AM does not tell you whether your controls are working at 2 PM. The gap between scans is the gap in your evidence.
+**Manual scans produce stale evidence.** A penetration test or quarterly assessment tells you what was true on one day. Sidereal runs on a configurable recurring schedule — the probe interval is operator-defined, the results are timestamped and HMAC-verified, and the audit log always reflects the most recent validation. The gap between probes is explicit and bounded, not unknown.
 
 ## What Sidereal does
 
