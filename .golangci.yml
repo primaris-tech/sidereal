@@ -27,9 +27,6 @@ linters:
     gosec:
       excludes:
         - G101
-    misspell:
-      ignore-words:
-        - primaris
     revive:
       rules:
         - name: blank-imports
@@ -56,3 +53,6 @@ linters:
         linters:
           - staticcheck
         text: "QF1008"
+      - linters:
+          - misspell
+        text: "primaris"
