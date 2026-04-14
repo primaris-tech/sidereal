@@ -27,6 +27,9 @@ linters:
     gosec:
       excludes:
         - G101
+    misspell:
+      ignore-words:
+        - primaris
     revive:
       rules:
         - name: blank-imports

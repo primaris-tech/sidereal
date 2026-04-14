@@ -22,7 +22,7 @@
         "requireAdmissionController": {
           "type": "boolean",
           "default": true
-        },
+        }
       }
     },
     "profile": {

@@ -132,7 +132,7 @@ func (r *FrameworkReconciler) setLoaded(
 
 	if status == metav1.ConditionTrue {
 		fw.Status.LoadedAt = &now
-		fw.Status.MappingCount = int32(len(fw.Spec.Mappings))
+		fw.Status.MappingCount = int32(len(fw.Spec.Mappings)) //nolint:gosec // G115: mapping count never approaches int32 max
 	}
 
 	if err := r.Status().Update(ctx, fw); err != nil {
