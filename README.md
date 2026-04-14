@@ -10,7 +10,7 @@ Most security tools tell you your controls are **configured**. Sidereal tells yo
 
 ## The Problem
 
-Federal systems running on Kubernetes face a gap that no existing open-source tool closes.
+Federal systems running on Kubernetes face a gap that no existing open-source tool closes in a single, continuous operator.
 
 **Configuration is not enforcement.** A NetworkPolicy can be defined and not enforcing. An admission webhook can be configured and silently disabled. A Falco rule can be deployed and suppressed by a config change. Between the last scan and this moment, any of these controls could have drifted. That drift is exactly where real-world compromises happen and where ATO evidence goes stale.
 
@@ -173,7 +173,7 @@ Sidereal **v0.1.0** is feature-complete. The operator is fully implemented and r
 |---|---|---|---|---|---|
 | Continuous | No | No | Yes (reactive) | Yes | **Yes (active)** |
 | Active probing | No | Yes (manual) | No | Yes | **Yes (automated)** |
-| Detection validation | No | No | No | Yes | **Yes** |
+| Detection validation | No | Yes (manual) | No | Yes | **Yes (automated)** |
 | Multi-framework mapping | Partial | No | No | Partial | **Yes (7 frameworks)** |
 | Report generation | No | No | No | Yes | **Yes (5 report types)** |
 | Custom probes | No | Yes | Yes (rules) | Yes | **Yes** |

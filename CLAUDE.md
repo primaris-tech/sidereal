@@ -16,7 +16,7 @@ Sidereal **v0.1.0** is feature-complete. All 22 implementation phases are done. 
 
 ## What Sidereal Is
 
-A Kubernetes-native security operator for **continuous security control validation** on federal systems (FISMA, FedRAMP, NIST 800-53, CMMC, CJIS, and other frameworks). It runs targeted, low-impact probes against a live cluster to verify that security controls are *operationally effective* — not merely configured. Differentiated from existing tools (Kubescape, Stratus Red Team, Falco) by being the only OSS/CNCF-fit tool that is simultaneously continuous, actively probing, validates the detection layer, supports multi-framework compliance mapping, and generates ISSO-ready reports.
+A Kubernetes-native security operator for **continuous security control validation** on federal systems (FISMA, FedRAMP, NIST 800-53, CMMC, CJIS, and other frameworks). It runs targeted, low-impact probes against a live cluster to verify that security controls are *operationally effective* — not merely configured. Differentiated from existing tools by being the only operator purpose-built to combine all of: continuous scheduled execution, active probing (not config analysis), detection layer validation, multi-framework federal compliance mapping, and ISSO-ready report generation. Tools like Stratus Red Team validate detections; tools like Kubescape check compliance configuration; Sidereal is the first to make those concerns a single, operator-native, scheduled workflow with ATO-ready output.
 
 Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection Coverage (Falco/Tetragon), and Custom (operator-extensible).
 

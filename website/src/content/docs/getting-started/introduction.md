@@ -7,7 +7,7 @@ Sidereal is a Kubernetes-native operator for continuous security control validat
 
 ## The problem
 
-Federal systems running on Kubernetes face a gap that no existing open-source tool closes.
+Federal systems running on Kubernetes face a gap that no existing open-source tool closes in a single, continuous operator.
 
 **Configuration is not enforcement.** A NetworkPolicy can be defined and not enforcing. An admission webhook can be configured and silently disabled. A Falco rule can be deployed and suppressed by a config change. That drift is where real-world compromises happen and where ATO evidence goes stale.
 
