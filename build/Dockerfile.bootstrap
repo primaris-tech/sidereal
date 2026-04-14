@@ -1,7 +1,7 @@
 # Sidereal Bootstrap Verifier (Helm pre-install hook)
 # FIPS 140-2 validated build: BoringCrypto (CMVP #3678)
 #
-# Build: docker build -t ghcr.io/primaris-tech/sidereal-bootstrap:latest -f build/Dockerfile.bootstrap .
+# Build: docker build -t ghcr.io/primaris-tech/sidereal-probe-bootstrap:latest -f build/Dockerfile.bootstrap .
 
 FROM golang:1.25 AS builder
 
@@ -25,7 +25,7 @@ RUN go tool nm bootstrap | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/bor
 # Runtime stage: distroless nonroot
 FROM gcr.io/distroless/base-debian12:nonroot
 
-LABEL org.opencontainers.image.title="sidereal-bootstrap" \
+LABEL org.opencontainers.image.title="sidereal-probe-bootstrap" \
       org.opencontainers.image.description="Sidereal bootstrap verifier - Helm pre-install prerequisite checks" \
       org.opencontainers.image.vendor="Primaris Technologies" \
       org.opencontainers.image.source="https://github.com/primaris-tech/sidereal" \

@@ -75,55 +75,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build probe-rbac image
+      - name: Build probe-go image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: build/Dockerfile.probe-go
-          build-args: PROBE_CMD=probe-rbac
           push: true
           tags: |
-            ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/sidereal-probe-rbac:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build probe-secret image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: build/Dockerfile.probe-go
-          build-args: PROBE_CMD=probe-secret
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/sidereal-probe-secret:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build probe-admission image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: build/Dockerfile.probe-go
-          build-args: PROBE_CMD=probe-admission
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/sidereal-probe-admission:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build probe-netpol image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: build/Dockerfile.probe-go
-          build-args: PROBE_CMD=probe-netpol
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/sidereal-probe-netpol:latest
+            ${{ env.REGISTRY }}/sidereal-probe-go:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-go:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -146,8 +106,8 @@ jobs:
           file: build/Dockerfile.bootstrap
           push: true
           tags: |
-            ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/sidereal-bootstrap:latest
+            ${{ env.REGISTRY }}/sidereal-probe-bootstrap:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/sidereal-probe-bootstrap:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -161,34 +121,10 @@ jobs:
           severity: CRITICAL
           format: table
 
-      - name: Trivy scan - probe-rbac
+      - name: Trivy scan - probe-go
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ${{ env.REGISTRY }}/sidereal-probe-rbac:${{ steps.version.outputs.version }}
-          exit-code: '1'
-          severity: CRITICAL
-          format: table
-
-      - name: Trivy scan - probe-secret
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/sidereal-probe-secret:${{ steps.version.outputs.version }}
-          exit-code: '1'
-          severity: CRITICAL
-          format: table
-
-      - name: Trivy scan - probe-admission
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/sidereal-probe-admission:${{ steps.version.outputs.version }}
-          exit-code: '1'
-          severity: CRITICAL
-          format: table
-
-      - name: Trivy scan - probe-netpol
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/sidereal-probe-netpol:${{ steps.version.outputs.version }}
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-go:${{ steps.version.outputs.version }}
           exit-code: '1'
           severity: CRITICAL
           format: table
@@ -201,10 +137,10 @@ jobs:
           severity: CRITICAL
           format: table
 
-      - name: Trivy scan - bootstrap
+      - name: Trivy scan - probe-bootstrap
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
-          image-ref: ${{ env.REGISTRY }}/sidereal-bootstrap:${{ steps.version.outputs.version }}
+          image-ref: ${{ env.REGISTRY }}/sidereal-probe-bootstrap:${{ steps.version.outputs.version }}
           exit-code: '1'
           severity: CRITICAL
           format: table
@@ -225,12 +161,9 @@ jobs:
         run: |
           IMAGES=(
             "sidereal-controller"
-            "sidereal-probe-rbac"
-            "sidereal-probe-secret"
-            "sidereal-probe-admission"
-            "sidereal-probe-netpol"
+            "sidereal-probe-go"
             "sidereal-probe-detection"
-            "sidereal-bootstrap"
+            "sidereal-probe-bootstrap"
           )
 
           for img in "${IMAGES[@]}"; do

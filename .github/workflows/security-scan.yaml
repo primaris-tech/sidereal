@@ -62,12 +62,9 @@ jobs:
       matrix:
         image:
           - sidereal-controller
-          - sidereal-probe-rbac
-          - sidereal-probe-secret
-          - sidereal-probe-admission
-          - sidereal-probe-netpol
+          - sidereal-probe-go
           - sidereal-probe-detection
-          - sidereal-bootstrap
+          - sidereal-probe-bootstrap
     steps:
       - name: Log in to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
