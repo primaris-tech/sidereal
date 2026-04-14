@@ -11,8 +11,11 @@ import (
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
 )
 
-// RBACDiscoverer generates rbac probe recommendations from
-// RoleBinding and ClusterRoleBinding resources.
+// RBACDiscoverer generates rbac probe recommendations from namespaced
+// RoleBindings. ClusterRoleBindings are intentionally excluded: the RBAC
+// probe validates namespace-scoped enforcement and cannot meaningfully test
+// cluster-scoped bindings. ISSOs should audit ClusterRoleBinding subject
+// membership via RBAC tooling outside of Sidereal.
 type RBACDiscoverer struct{}
 
 func (d *RBACDiscoverer) Name() string { return "rbac" }
@@ -35,17 +38,6 @@ func (d *RBACDiscoverer) Discover(ctx context.Context, c client.Client) ([]Recom
 		for i := range bindings.Items {
 			rb := &bindings.Items[i]
 			if rec, ok := d.roleBindingRecommendation(rb); ok {
-				recs = append(recs, rec)
-			}
-		}
-	}
-
-	// Discover from ClusterRoleBindings.
-	var clusterBindings rbacv1.ClusterRoleBindingList
-	if err := c.List(ctx, &clusterBindings); err == nil {
-		for i := range clusterBindings.Items {
-			crb := &clusterBindings.Items[i]
-			if rec, ok := d.clusterRoleBindingRecommendation(crb); ok {
 				recs = append(recs, rec)
 			}
 		}
@@ -97,44 +89,6 @@ func (d *RBACDiscoverer) roleBindingRecommendation(rb *rbacv1.RoleBinding) (Reco
 	}, true
 }
 
-func (d *RBACDiscoverer) clusterRoleBindingRecommendation(crb *rbacv1.ClusterRoleBinding) (Recommendation, bool) {
-	if isSystemBinding(crb.Name) {
-		return Recommendation{}, false
-	}
-
-	source := corev1.ObjectReference{
-		Kind:       "ClusterRoleBinding",
-		Name:       crb.Name,
-		APIVersion: "rbac.authorization.k8s.io/v1",
-		UID:        crb.UID,
-	}
-
-	confidence := siderealv1alpha1.ConfidenceMedium
-	if isHighPrivilegeRole(crb.RoleRef.Name) {
-		confidence = siderealv1alpha1.ConfidenceHigh
-	}
-
-	rationale := fmt.Sprintf("ClusterRoleBinding %s binds cluster role %s. "+
-		"An RBAC probe can verify that cluster-wide permissions are properly scoped.",
-		crb.Name, crb.RoleRef.Name)
-
-	// ClusterRoleBindings target all namespaces, so we use default.
-	return Recommendation{
-		SourceResource: source,
-		Confidence:     confidence,
-		Rationale:      rationale,
-		ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
-			TargetNamespace: "default",
-			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
-			IntervalSeconds: 21600,
-		},
-		ControlMappings: map[string][]string{
-			"nist-800-53": {"AC-6(5)", "AC-2"},
-		},
-	}, true
-}
-
 func isSystemBinding(name string) bool {
 	systemPrefixes := []string{
 		"system:",
@@ -142,6 +96,7 @@ func isSystemBinding(name string) bool {
 		"calico-",
 		"cilium",
 		"kube-proxy",
+		"sidereal-",
 	}
 	for _, prefix := range systemPrefixes {
 		if len(name) >= len(prefix) && name[:len(prefix)] == prefix {
