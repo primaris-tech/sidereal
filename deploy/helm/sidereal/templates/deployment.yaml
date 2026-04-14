@@ -35,6 +35,10 @@ spec:
               value: {{ .Values.global.impactLevel }}
             - name: EXECUTION_MODE
               value: {{ .Values.global.executionMode }}
+            - name: PROBE_GO_IMAGE
+              value: {{ include "sidereal.goProbeImage" . }}
+            - name: PROBE_DETECTION_IMAGE
+              value: {{ include "sidereal.detectionProbeImage" . }}
           ports:
             - name: metrics
               containerPort: 8080

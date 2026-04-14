@@ -69,8 +69,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	probeGoImage := os.Getenv("PROBE_GO_IMAGE")
+	if probeGoImage == "" {
+		probeGoImage = "ghcr.io/primaris-tech/sidereal-probe-go:latest"
+	}
+	probeDetectionImage := os.Getenv("PROBE_DETECTION_IMAGE")
+	if probeDetectionImage == "" {
+		probeDetectionImage = "ghcr.io/primaris-tech/sidereal-probe-detection:latest"
+	}
+
 	if err := (&controller.ProbeSchedulerReconciler{
-		Client: mgr.GetClient(),
+		Client:              mgr.GetClient(),
+		ProbeGoImage:        probeGoImage,
+		ProbeDetectionImage: probeDetectionImage,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ProbeScheduler")
 		os.Exit(1)

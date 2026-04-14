@@ -200,7 +200,16 @@ for img in "${IMAGES[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# Step 4: Install Sidereal
+# Step 4: Install CRDs
+# ---------------------------------------------------------------------------
+
+step "Installing Sidereal CRDs"
+
+kubectl apply -f "${REPO_ROOT}/config/crd/bases/"
+success "CRDs installed."
+
+# ---------------------------------------------------------------------------
+# Step 6: Install Sidereal
 # ---------------------------------------------------------------------------
 
 step "Installing Sidereal"
@@ -222,8 +231,6 @@ HELM_ARGS=(
   "--set" "profile.signatureVerifier=kyverno"
   "--set" "profile.detectionBackend=none"
   "--set" "profile.cniObservability=tcp-inference"
-  # Disable TLS requirement for local dev.
-  "--set" "tls.required=false"
   # Image tags and pull policy for locally-loaded images.
   "--set" "controller.image.tag=${IMAGE_TAG}"
   "--set" "controller.image.pullPolicy=Never"
@@ -245,7 +252,7 @@ fi
 success "Sidereal installed."
 
 # ---------------------------------------------------------------------------
-# Step 5: Verify installation
+# Step 7: Verify installation
 # ---------------------------------------------------------------------------
 
 step "Verifying installation"
@@ -265,7 +272,7 @@ if [[ "${ALERT_COUNT}" -gt 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 6: Create demo namespace and run first probe
+# Step 8: Create demo namespace and run first probe
 # ---------------------------------------------------------------------------
 
 step "Running first RBAC probe"
@@ -293,7 +300,7 @@ EOF
 success "Probe applied."
 
 # ---------------------------------------------------------------------------
-# Step 7: Wait for first result
+# Step 9: Wait for first result
 # ---------------------------------------------------------------------------
 
 step "Waiting for first probe result (up to 90s)"

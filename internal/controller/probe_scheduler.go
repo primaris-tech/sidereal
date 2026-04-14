@@ -59,28 +59,28 @@ var probeServiceAccounts = map[siderealv1alpha1.ProbeType]string{
 	siderealv1alpha1.ProbeTypeDetection: "sidereal-probe-detection",
 }
 
-// probeImages maps probe types to their container images.
-// These are overridden by Helm values in production.
-var probeImages = map[siderealv1alpha1.ProbeType]string{
-	siderealv1alpha1.ProbeTypeRBAC:      "ghcr.io/primaris-tech/sidereal-probe-rbac:latest",
-	siderealv1alpha1.ProbeTypeNetPol:    "ghcr.io/primaris-tech/sidereal-probe-netpol:latest",
-	siderealv1alpha1.ProbeTypeAdmission: "ghcr.io/primaris-tech/sidereal-probe-admission:latest",
-	siderealv1alpha1.ProbeTypeSecret:    "ghcr.io/primaris-tech/sidereal-probe-secret:latest",
-	siderealv1alpha1.ProbeTypeDetection: "ghcr.io/primaris-tech/sidereal-probe-detection:latest",
-}
-
-// probeCommands maps probe types to their container commands.
+// probeCommands maps probe types to the binary path within their container image.
+// Go probes all live in sidereal-probe-go; each has its own binary.
+// The detection probe has its own image (Rust, scratch base).
 var probeCommands = map[siderealv1alpha1.ProbeType][]string{
-	siderealv1alpha1.ProbeTypeRBAC:      {"/probe"},
-	siderealv1alpha1.ProbeTypeNetPol:    {"/probe"},
-	siderealv1alpha1.ProbeTypeAdmission: {"/probe"},
-	siderealv1alpha1.ProbeTypeSecret:    {"/probe"},
+	siderealv1alpha1.ProbeTypeRBAC:      {"/probe-rbac"},
+	siderealv1alpha1.ProbeTypeNetPol:    {"/probe-netpol"},
+	siderealv1alpha1.ProbeTypeAdmission: {"/probe-admission"},
+	siderealv1alpha1.ProbeTypeSecret:    {"/probe-secret"},
 	siderealv1alpha1.ProbeTypeDetection: {"/detection-probe"},
 }
 
 // ProbeSchedulerReconciler reconciles SiderealProbe resources by scheduling probe Jobs.
 type ProbeSchedulerReconciler struct {
 	client.Client
+
+	// ProbeGoImage is the unified Go probe image (rbac, secret, admission, netpol).
+	// Injected from the PROBE_GO_IMAGE environment variable set by the Helm chart.
+	ProbeGoImage string
+
+	// ProbeDetectionImage is the Rust detection probe image.
+	// Injected from the PROBE_DETECTION_IMAGE environment variable set by the Helm chart.
+	ProbeDetectionImage string
 
 	// RegisteredCustomSAs is the set of ServiceAccount names pre-registered
 	// via Helm values for custom probe use. Custom probes referencing an
@@ -455,10 +455,10 @@ func (r *ProbeSchedulerReconciler) imageForProbe(probe *siderealv1alpha1.Siderea
 	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom && probe.Spec.CustomProbe != nil {
 		return probe.Spec.CustomProbe.Image
 	}
-	if img, ok := probeImages[probe.Spec.ProbeType]; ok {
-		return img
+	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeDetection {
+		return r.ProbeDetectionImage
 	}
-	return probeImages[siderealv1alpha1.ProbeTypeRBAC]
+	return r.ProbeGoImage
 }
 
 // commandForProbe returns the container command for a probe type.

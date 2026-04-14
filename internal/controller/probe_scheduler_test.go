@@ -48,7 +48,7 @@ func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
 		WithStatusSubresource(probe).
 		Build()
 
-	reconciler := &ProbeSchedulerReconciler{Client: c}
+	reconciler := &ProbeSchedulerReconciler{Client: c, ProbeGoImage: "test-probe-go:latest", ProbeDetectionImage: "test-probe-detection:latest"}
 
 	_, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -103,7 +103,7 @@ func TestProbeScheduler_ObserveModeCreatesJob(t *testing.T) {
 		WithStatusSubresource(probe).
 		Build()
 
-	reconciler := &ProbeSchedulerReconciler{Client: c}
+	reconciler := &ProbeSchedulerReconciler{Client: c, ProbeGoImage: "test-probe-go:latest", ProbeDetectionImage: "test-probe-detection:latest"}
 
 	_, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -222,7 +222,7 @@ func TestProbeScheduler_NotDueYet(t *testing.T) {
 		WithStatusSubresource(probe).
 		Build()
 
-	reconciler := &ProbeSchedulerReconciler{Client: c}
+	reconciler := &ProbeSchedulerReconciler{Client: c, ProbeGoImage: "test-probe-go:latest", ProbeDetectionImage: "test-probe-detection:latest"}
 
 	result, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -272,7 +272,7 @@ func TestProbeScheduler_DetectionRequiresAuthorization(t *testing.T) {
 		WithStatusSubresource(probe).
 		Build()
 
-	reconciler := &ProbeSchedulerReconciler{Client: c}
+	reconciler := &ProbeSchedulerReconciler{Client: c, ProbeGoImage: "test-probe-go:latest", ProbeDetectionImage: "test-probe-detection:latest"}
 
 	// Should not error, but should not create a Job either (auth missing).
 	_, err := reconciler.Reconcile(context.Background(), reconcile.Request{
@@ -348,7 +348,7 @@ func TestProbeScheduler_NamespaceSelectorExpansion(t *testing.T) {
 		WithStatusSubresource(probe).
 		Build()
 
-	reconciler := &ProbeSchedulerReconciler{Client: c}
+	reconciler := &ProbeSchedulerReconciler{Client: c, ProbeGoImage: "test-probe-go:latest", ProbeDetectionImage: "test-probe-detection:latest"}
 
 	_, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 		NamespacedName: types.NamespacedName{
