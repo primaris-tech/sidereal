@@ -9,6 +9,12 @@ export default defineConfig({
 		starlight({
 			title: 'Sidereal',
 			description: 'Continuous security control validation for Kubernetes',
+			head: [
+				{
+					tag: 'script',
+					content: `document.documentElement.dataset.theme = 'dark';`,
+				},
+			],
 			logo: {
 				src: './src/assets/sidereal-logo-only-orange.svg',
 				alt: 'Sidereal',

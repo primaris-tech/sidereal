@@ -33,18 +33,9 @@
 	--sl-color-hairline: #2a1a0a;
 }
 
-/* Light theme */
-:root[data-theme='light'] {
-	--sl-color-accent-low: #fff4ec;
-	--sl-color-accent-high: #9a3d08;
-}
-
-/* Nav icon — invert fill colors for light theme */
-[data-theme='light'] header .site-title svg path[fill="#0A0A0A"],
-[data-theme='light'] header .site-title svg path[fill="#0a0a0a"],
-[data-theme='light'] header .site-title svg rect[fill="#0A0A0A"],
-[data-theme='light'] header .site-title svg rect[fill="#0a0a0a"] {
-	fill: #ffffff;
+/* Hide theme toggle — dark mode only */
+starlight-theme-select {
+	display: none;
 }
 
 /* Hero layout — logo stacked above tagline, centered */

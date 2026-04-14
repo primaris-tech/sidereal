@@ -3,7 +3,6 @@ import "../styles/custom.css";
 
 import siderealIconRaw from "../assets/sidereal-logo-only-orange.svg?raw";
 import siderealLogoUrl from "../assets/sidereal-orange.svg?url";
-import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
 ---
 
 <!doctype html>
@@ -20,18 +19,7 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
         </title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script is:inline>
-            try {
-                const stored = localStorage.getItem("starlight-theme");
-                const preferred = window.matchMedia(
-                    "(prefers-color-scheme: light)",
-                ).matches
-                    ? "light"
-                    : "dark";
-                document.documentElement.setAttribute(
-                    "data-theme",
-                    stored || preferred,
-                );
-            } catch {}
+            document.documentElement.setAttribute("data-theme", "dark");
         </script>
     </head>
     <body>
@@ -52,75 +40,6 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
                         target="_blank"
                         rel="noopener noreferrer">GitHub</a
                     >
-                    <button
-                        class="lp-theme-toggle"
-                        id="theme-toggle"
-                        aria-label="Toggle theme"
-                        title="Toggle theme"
-                    >
-                        <svg
-                            class="icon-sun"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <circle cx="12" cy="12" r="5"></circle><line
-                                x1="12"
-                                y1="1"
-                                x2="12"
-                                y2="3"></line><line
-                                x1="12"
-                                y1="21"
-                                x2="12"
-                                y2="23"></line><line
-                                x1="4.22"
-                                y1="4.22"
-                                x2="5.64"
-                                y2="5.64"></line><line
-                                x1="18.36"
-                                y1="18.36"
-                                x2="19.78"
-                                y2="19.78"></line><line
-                                x1="1"
-                                y1="12"
-                                x2="3"
-                                y2="12"></line><line
-                                x1="21"
-                                y1="12"
-                                x2="23"
-                                y2="12"></line><line
-                                x1="4.22"
-                                y1="19.78"
-                                x2="5.64"
-                                y2="18.36"></line><line
-                                x1="18.36"
-                                y1="5.64"
-                                x2="19.78"
-                                y2="4.22"></line>
-                        </svg>
-                        <svg
-                            class="icon-moon"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                            ></path>
-                        </svg>
-                    </button>
                 </nav>
             </div>
         </header>
@@ -132,12 +51,6 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
                     <img
                         src={siderealLogoUrl}
                         alt="Sidereal"
-                        class="logo-dark"
-                    />
-                    <img
-                        src={siderealLogoLightUrl}
-                        alt="Sidereal"
-                        class="logo-light"
                     />
                 </div>
                 <div class="lp-hero-content">
@@ -469,19 +382,6 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
             </div>
         </footer>
 
-        <script>
-            // Theme toggle
-            const btn = document.getElementById("theme-toggle");
-            btn?.addEventListener("click", () => {
-                const current =
-                    document.documentElement.getAttribute("data-theme");
-                const next = current === "dark" ? "light" : "dark";
-                document.documentElement.setAttribute("data-theme", next);
-                try {
-                    localStorage.setItem("starlight-theme", next);
-                } catch {}
-            });
-        </script>
     </body>
 </html>
 
@@ -628,33 +528,6 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
         color: var(--sl-color-white);
     }
 
-    .lp-theme-toggle {
-        background: none;
-        border: 1px solid var(--sl-color-hairline);
-        border-radius: 0.375rem;
-        padding: 0.25rem;
-        cursor: pointer;
-        color: var(--sl-color-gray-2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition:
-            color 0.15s,
-            border-color 0.15s;
-    }
-
-    .lp-theme-toggle:hover {
-        color: var(--sl-color-white);
-        border-color: var(--sl-color-accent);
-    }
-
-    [data-theme="dark"] .icon-sun {
-        display: none;
-    }
-    [data-theme="light"] .icon-moon {
-        display: none;
-    }
-
     /* ---- Hero ---- */
     .lp-hero {
         margin-top: var(--sl-nav-height, 3.5rem);
@@ -686,13 +559,6 @@ import siderealLogoLightUrl from "../assets/sidereal-orange-light.svg?url";
     .lp-hero-logo img {
         width: 100%;
         max-width: 260px;
-    }
-
-    [data-theme="dark"] .logo-light {
-        display: none;
-    }
-    [data-theme="light"] .logo-dark {
-        display: none;
     }
 
     .lp-eyebrow {
