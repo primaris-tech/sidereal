@@ -18,9 +18,9 @@ import (
 
 // testPhasedProbe is a PhasedProbe implementation for testing.
 type testPhasedProbe struct {
-	setupErr      error
-	executeResult Result
-	teardownErr   error
+	setupErr       error
+	executeResult  Result
+	teardownErr    error
 	setupCalled    bool
 	executeCalled  bool
 	teardownCalled bool
