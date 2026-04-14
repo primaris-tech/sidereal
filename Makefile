@@ -7,10 +7,7 @@ VERSION ?= latest
 
 # Image URLs
 IMG ?= $(REGISTRY)/sidereal-controller:$(VERSION)
-IMG_PROBE_RBAC ?= $(REGISTRY)/sidereal-probe-rbac:$(VERSION)
-IMG_PROBE_SECRET ?= $(REGISTRY)/sidereal-probe-secret:$(VERSION)
-IMG_PROBE_ADMISSION ?= $(REGISTRY)/sidereal-probe-admission:$(VERSION)
-IMG_PROBE_NETPOL ?= $(REGISTRY)/sidereal-probe-netpol:$(VERSION)
+IMG_PROBE_GO ?= $(REGISTRY)/sidereal-probe-go:$(VERSION)
 IMG_PROBE_DETECTION ?= $(REGISTRY)/sidereal-probe-detection:$(VERSION)
 IMG_BOOTSTRAP ?= $(REGISTRY)/sidereal-probe-bootstrap:$(VERSION)
 
@@ -116,11 +113,8 @@ docker-build: ## Build controller Docker image
 	docker build -t $(IMG) -f build/Dockerfile.controller .
 
 .PHONY: docker-build-probes
-docker-build-probes: ## Build all probe Docker images
-	docker build --build-arg PROBE_CMD=probe-rbac -t $(IMG_PROBE_RBAC) -f build/Dockerfile.probe-go .
-	docker build --build-arg PROBE_CMD=probe-secret -t $(IMG_PROBE_SECRET) -f build/Dockerfile.probe-go .
-	docker build --build-arg PROBE_CMD=probe-admission -t $(IMG_PROBE_ADMISSION) -f build/Dockerfile.probe-go .
-	docker build --build-arg PROBE_CMD=probe-netpol -t $(IMG_PROBE_NETPOL) -f build/Dockerfile.probe-go .
+docker-build-probes: ## Build probe Docker images (unified Go image + Rust detection image)
+	docker build -t $(IMG_PROBE_GO) -f build/Dockerfile.probe-go .
 	docker build -t $(IMG_PROBE_DETECTION) -f build/Dockerfile.probe-detection detection-probe/
 
 .PHONY: docker-build-bootstrap
@@ -133,10 +127,7 @@ docker-build-all: docker-build docker-build-probes docker-build-bootstrap ## Bui
 .PHONY: docker-push
 docker-push: ## Push all Docker images
 	docker push $(IMG)
-	docker push $(IMG_PROBE_RBAC)
-	docker push $(IMG_PROBE_SECRET)
-	docker push $(IMG_PROBE_ADMISSION)
-	docker push $(IMG_PROBE_NETPOL)
+	docker push $(IMG_PROBE_GO)
 	docker push $(IMG_PROBE_DETECTION)
 	docker push $(IMG_BOOTSTRAP)
 

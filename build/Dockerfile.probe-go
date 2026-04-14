@@ -1,15 +1,13 @@
-# Sidereal Go Probe Runner (multi-probe)
+# Sidereal Go Probe Runner (unified image)
 # FIPS 140-2 validated build: BoringCrypto (CMVP #3678)
 #
-# Build with PROBE_CMD arg to select probe:
-#   docker build --build-arg PROBE_CMD=probe-rbac -t ghcr.io/primaris-tech/sidereal-probe-rbac:latest -f build/Dockerfile.probe-go .
-#   docker build --build-arg PROBE_CMD=probe-secret -t ghcr.io/primaris-tech/sidereal-probe-secret:latest -f build/Dockerfile.probe-go .
-#   docker build --build-arg PROBE_CMD=probe-admission -t ghcr.io/primaris-tech/sidereal-probe-admission:latest -f build/Dockerfile.probe-go .
-#   docker build --build-arg PROBE_CMD=probe-netpol -t ghcr.io/primaris-tech/sidereal-probe-netpol:latest -f build/Dockerfile.probe-go .
+# Contains all four Go probe binaries. The controller selects the binary via
+# the Job's command field — no ENTRYPOINT is set.
+#
+# Build:
+#   docker build -t ghcr.io/primaris-tech/sidereal-probe-go:latest -f build/Dockerfile.probe-go .
 
 FROM golang:1.25 AS builder
-
-ARG PROBE_CMD=probe-rbac
 
 WORKDIR /app
 
@@ -19,29 +17,34 @@ RUN go mod download
 
 COPY . .
 
-# BoringCrypto FIPS build
+# BoringCrypto FIPS build — all four probe binaries in one layer
 ENV GOEXPERIMENT=boringcrypto
-RUN GOOS=linux GOARCH=amd64 \
-    go build -trimpath -o probe ./cmd/${PROBE_CMD}/
+RUN GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-rbac      ./cmd/probe-rbac/      && \
+    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-secret    ./cmd/probe-secret/    && \
+    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-admission ./cmd/probe-admission/ && \
+    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-netpol    ./cmd/probe-netpol/
 
-# Verify BoringCrypto symbols are linked
-RUN go tool nm probe | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
-    || (echo "FATAL: BoringCrypto symbols not found in probe binary" && exit 1)
+# Verify BoringCrypto symbols in all four binaries
+RUN for b in bin/probe-rbac bin/probe-secret bin/probe-admission bin/probe-netpol; do \
+      go tool nm "$b" | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
+        || (echo "FATAL: BoringCrypto symbols not found in $b" && exit 1); \
+    done
 
 # Runtime stage: distroless nonroot
 FROM gcr.io/distroless/base-debian12:nonroot
 
-ARG PROBE_CMD=probe-rbac
-
-LABEL org.opencontainers.image.title="sidereal-${PROBE_CMD}" \
-      org.opencontainers.image.description="Sidereal ${PROBE_CMD} - Kubernetes security probe runner" \
+LABEL org.opencontainers.image.title="sidereal-probe-go" \
+      org.opencontainers.image.description="Sidereal Go probe runners (rbac, secret, admission, netpol)" \
       org.opencontainers.image.vendor="Primaris Technologies" \
       org.opencontainers.image.source="https://github.com/primaris-tech/sidereal" \
       org.opencontainers.image.licenses="Apache-2.0" \
       io.sidereal.fips="boringcrypto" \
-      io.sidereal.component="${PROBE_CMD}"
+      io.sidereal.component="probe-go"
 
 WORKDIR /
-COPY --from=builder /app/probe /probe
+COPY --from=builder /app/bin/probe-rbac      /probe-rbac
+COPY --from=builder /app/bin/probe-secret    /probe-secret
+COPY --from=builder /app/bin/probe-admission /probe-admission
+COPY --from=builder /app/bin/probe-netpol    /probe-netpol
 USER 65532:65532
-ENTRYPOINT ["/probe"]
+# No ENTRYPOINT — the controller sets command: ["/probe-rbac"] (etc.) per Job.

@@ -66,12 +66,9 @@ if [[ "${1:-}" == "--docker" ]]; then
 
     IMAGES=(
         "ghcr.io/primaris-tech/sidereal-controller:latest"
-        "ghcr.io/primaris-tech/sidereal-probe-rbac:latest"
-        "ghcr.io/primaris-tech/sidereal-probe-secret:latest"
-        "ghcr.io/primaris-tech/sidereal-probe-admission:latest"
-        "ghcr.io/primaris-tech/sidereal-probe-netpol:latest"
+        "ghcr.io/primaris-tech/sidereal-probe-go:latest"
         "ghcr.io/primaris-tech/sidereal-probe-detection:latest"
-        "ghcr.io/primaris-tech/sidereal-bootstrap:latest"
+        "ghcr.io/primaris-tech/sidereal-probe-bootstrap:latest"
     )
 
     for img in "${IMAGES[@]}"; do

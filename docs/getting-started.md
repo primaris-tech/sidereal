@@ -52,11 +52,9 @@ make docker-build-all
 
 # Load images into kind
 kind load docker-image ghcr.io/primaris-tech/sidereal-controller:latest --name sidereal-test
-kind load docker-image ghcr.io/primaris-tech/sidereal-probe-rbac:latest --name sidereal-test
-kind load docker-image ghcr.io/primaris-tech/sidereal-probe-secret:latest --name sidereal-test
-kind load docker-image ghcr.io/primaris-tech/sidereal-probe-admission:latest --name sidereal-test
-kind load docker-image ghcr.io/primaris-tech/sidereal-probe-netpol:latest --name sidereal-test
-kind load docker-image ghcr.io/primaris-tech/sidereal-bootstrap:latest --name sidereal-test
+kind load docker-image ghcr.io/primaris-tech/sidereal-probe-go:latest --name sidereal-test
+kind load docker-image ghcr.io/primaris-tech/sidereal-probe-detection:latest --name sidereal-test
+kind load docker-image ghcr.io/primaris-tech/sidereal-probe-bootstrap:latest --name sidereal-test
 
 # Install the Helm chart (override image tags to match local builds)
 helm install sidereal deploy/helm/sidereal/ \
