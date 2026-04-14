@@ -168,9 +168,31 @@ func TestDefaultDenyTests(t *testing.T) {
 		if tc.ExpectAllowed {
 			t.Errorf("deny test %q should have ExpectAllowed=false", tc.Description)
 		}
-		if tc.Namespace != "production" {
-			t.Errorf("deny test %q has namespace %q, expected production", tc.Description, tc.Namespace)
+		// Namespace-scoped tests use the target namespace; cluster-scoped tests
+		// use an empty namespace string. Both are valid.
+		if tc.Namespace != "production" && tc.Namespace != "" && tc.Namespace != "kube-system" {
+			t.Errorf("deny test %q has unexpected namespace %q", tc.Description, tc.Namespace)
 		}
+	}
+}
+
+func TestDefaultDenyTests_IncludesClusterScoped(t *testing.T) {
+	tests := DefaultDenyTests("production")
+	hasNodesProxy := false
+	hasClusterRoleBindings := false
+	for _, tc := range tests {
+		if tc.Resource == "nodes" && tc.SubResource == "proxy" {
+			hasNodesProxy = true
+		}
+		if tc.Resource == "clusterrolebindings" {
+			hasClusterRoleBindings = true
+		}
+	}
+	if !hasNodesProxy {
+		t.Error("missing nodes/proxy cluster-scoped deny test")
+	}
+	if !hasClusterRoleBindings {
+		t.Error("missing clusterrolebindings cluster-scoped deny test")
 	}
 }
 

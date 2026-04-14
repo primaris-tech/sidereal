@@ -65,6 +65,14 @@ func DefaultTests(targetNamespace string) []TestCase {
 			SecretName:  "default-token",
 			Namespace:   "kube-system",
 		},
+		// Cluster-wide enumeration: LIST /api/v1/secrets with no namespace
+		// returns secrets across all namespaces. A principal able to perform
+		// this call can exfiltrate the entire cluster's secret material.
+		{
+			Description: "LIST secrets cluster-wide",
+			Verb:        "list",
+			Namespace:   "",
+		},
 	}
 }
 

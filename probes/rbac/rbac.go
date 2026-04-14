@@ -54,8 +54,12 @@ type TestResult struct {
 // DefaultDenyTests returns the standard deny-path test cases for the given
 // target namespace. These operations should be forbidden for the RBAC probe
 // ServiceAccount.
+//
+// Namespace-scoped tests use targetNamespace. Cluster-scoped tests use an
+// empty namespace string, which is correct for cluster-level resources.
 func DefaultDenyTests(targetNamespace string) []TestCase {
 	return []TestCase{
+		// --- Namespace-scoped deny-path ---
 		{
 			Description:   "GET secrets in target namespace",
 			Resource:      "secrets",
@@ -83,6 +87,47 @@ func DefaultDenyTests(targetNamespace string) []TestCase {
 			Resource:      "pods",
 			Verb:          "create",
 			Namespace:     targetNamespace,
+			ExpectAllowed: false,
+		},
+
+		// --- Cluster-scoped deny-path ---
+
+		// nodes/proxy allows proxying requests directly to the Kubelet,
+		// bypassing admission controls and API server audit logging.
+		{
+			Description:   "GET nodes/proxy (cluster-scoped)",
+			Resource:      "nodes",
+			Verb:          "get",
+			SubResource:   "proxy",
+			Namespace:     "",
+			ExpectAllowed: false,
+		},
+		// nodes/log provides direct access to Kubelet log endpoints.
+		{
+			Description:   "GET nodes/log (cluster-scoped)",
+			Resource:      "nodes",
+			Verb:          "get",
+			SubResource:   "log",
+			Namespace:     "",
+			ExpectAllowed: false,
+		},
+		// Creating a ClusterRoleBinding is a persistence technique that can
+		// grant cluster-admin access to a controlled principal.
+		{
+			Description:   "CREATE clusterrolebindings (cluster-scoped)",
+			Group:         "rbac.authorization.k8s.io",
+			Resource:      "clusterrolebindings",
+			Verb:          "create",
+			Namespace:     "",
+			ExpectAllowed: false,
+		},
+		// Creating secrets in kube-system is a long-lived token persistence
+		// technique (kubernetes.io/service-account-token type).
+		{
+			Description:   "CREATE secrets in kube-system",
+			Resource:      "secrets",
+			Verb:          "create",
+			Namespace:     "kube-system",
 			ExpectAllowed: false,
 		},
 	}

@@ -3,16 +3,132 @@ package probe
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 
 	siderealhmac "github.com/primaris-tech/sidereal/internal/hmac"
 )
+
+// testPhasedProbe is a PhasedProbe implementation for testing.
+type testPhasedProbe struct {
+	setupErr      error
+	executeResult Result
+	teardownErr   error
+	setupCalled    bool
+	executeCalled  bool
+	teardownCalled bool
+}
+
+func (p *testPhasedProbe) Setup(_ context.Context, _ kubernetes.Interface, _ Config) error {
+	p.setupCalled = true
+	return p.setupErr
+}
+
+func (p *testPhasedProbe) Execute(_ context.Context, _ kubernetes.Interface, _ Config) Result {
+	p.executeCalled = true
+	return p.executeResult
+}
+
+func (p *testPhasedProbe) Teardown(_ context.Context, _ kubernetes.Interface, _ Config) error {
+	p.teardownCalled = true
+	return p.teardownErr
+}
+
+func TestExecutePhasedProbe_HappyPath(t *testing.T) {
+	probeID := "dddddddd-eeee-ffff-aaaa-bbbbbbbbbbbb"
+	rootKey := []byte("test-root-key-32-bytes-long!!!!")
+	execKey, _ := siderealhmac.DeriveExecutionKey(rootKey, probeID)
+
+	p := &testPhasedProbe{
+		executeResult: Result{Outcome: "Pass", Detail: "all checks passed", DurationMs: 10},
+	}
+	cfg := Config{ProbeID: probeID, TargetNamespace: "default"}
+	cs := fake.NewSimpleClientset()
+
+	executePhasedProbe(p, cs, cfg, execKey)
+
+	if !p.setupCalled {
+		t.Error("expected Setup to be called")
+	}
+	if !p.executeCalled {
+		t.Error("expected Execute to be called")
+	}
+	if !p.teardownCalled {
+		t.Error("expected Teardown to be called")
+	}
+
+	cmName := ResultConfigMapPrefix + probeID[:8]
+	cm, err := cs.CoreV1().ConfigMaps("sidereal-system").Get(context.Background(), cmName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("result ConfigMap not written: %v", err)
+	}
+	if cm.Data["result"] == "" {
+		t.Error("result ConfigMap has empty result")
+	}
+}
+
+func TestExecutePhasedProbe_TeardownCalledOnSetupFailure(t *testing.T) {
+	probeID := "eeeeeeee-ffff-aaaa-bbbb-cccccccccccc"
+	rootKey := []byte("test-root-key-32-bytes-long!!!!")
+	execKey, _ := siderealhmac.DeriveExecutionKey(rootKey, probeID)
+
+	p := &testPhasedProbe{
+		setupErr: errors.New("prerequisite resource creation failed"),
+	}
+	cfg := Config{ProbeID: probeID, TargetNamespace: "default"}
+	cs := fake.NewSimpleClientset()
+
+	executePhasedProbe(p, cs, cfg, execKey)
+
+	if !p.setupCalled {
+		t.Error("expected Setup to be called")
+	}
+	if p.executeCalled {
+		t.Error("Execute should not be called after Setup failure")
+	}
+	if !p.teardownCalled {
+		t.Error("Teardown must be called even when Setup fails")
+	}
+
+	// An Indeterminate result should be written.
+	cmName := ResultConfigMapPrefix + probeID[:8]
+	cm, err := cs.CoreV1().ConfigMaps("sidereal-system").Get(context.Background(), cmName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("result ConfigMap not written after Setup failure: %v", err)
+	}
+	var result Result
+	if err := json.Unmarshal([]byte(cm.Data["result"]), &result); err != nil {
+		t.Fatalf("failed to parse result: %v", err)
+	}
+	if result.Outcome != "Indeterminate" {
+		t.Errorf("expected Indeterminate outcome after Setup failure, got %q", result.Outcome)
+	}
+}
+
+func TestExecutePhasedProbe_TeardownCalledOnExecuteFailure(t *testing.T) {
+	probeID := "ffffffff-aaaa-bbbb-cccc-dddddddddddd"
+	rootKey := []byte("test-root-key-32-bytes-long!!!!")
+	execKey, _ := siderealhmac.DeriveExecutionKey(rootKey, probeID)
+
+	p := &testPhasedProbe{
+		executeResult: Result{Outcome: "Fail", Detail: "control not enforcing", DurationMs: 5},
+	}
+	cfg := Config{ProbeID: probeID, TargetNamespace: "default"}
+	cs := fake.NewSimpleClientset()
+
+	executePhasedProbe(p, cs, cfg, execKey)
+
+	if !p.teardownCalled {
+		t.Error("Teardown must be called even when Execute returns Fail")
+	}
+}
 
 func TestLoadHMACKey(t *testing.T) {
 	t.Run("reads key from file", func(t *testing.T) {

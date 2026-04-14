@@ -148,3 +148,62 @@ func RunWithClient(executeFn func(ctx context.Context, clientset kubernetes.Inte
 
 	MustSignAndWriteResult(ctx, clientset, "sidereal-system", cfg.ProbeID, key, result)
 }
+
+// PhasedProbe is implemented by probes that require resource provisioning before
+// execution and guaranteed teardown after, regardless of execution outcome.
+//
+// Setup provisions any prerequisites the probe needs (e.g., test resources).
+// Execute runs the probe logic and returns a Result.
+// Teardown releases resources created during Setup. It always runs, even when
+// Setup or Execute fail, using a separate context so it is not affected by
+// execution timeout cancellation.
+//
+// Probes should store any state shared between phases as struct fields.
+type PhasedProbe interface {
+	Setup(ctx context.Context, clientset kubernetes.Interface, cfg Config) error
+	Execute(ctx context.Context, clientset kubernetes.Interface, cfg Config) Result
+	Teardown(ctx context.Context, clientset kubernetes.Interface, cfg Config) error
+}
+
+// RunPhased is the entrypoint for probes implementing the PhasedProbe interface.
+func RunPhased(p PhasedProbe) {
+	cfg := LoadConfigFromEnv()
+	key := MustLoadHMACKey(cfg.HMACKeyPath)
+
+	clientset, err := NewInClusterClientset()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
+	}
+
+	executePhasedProbe(p, clientset, cfg, key)
+}
+
+// executePhasedProbe is the testable core of RunPhased.
+func executePhasedProbe(p PhasedProbe, clientset kubernetes.Interface, cfg Config, key []byte) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	// Teardown always runs, even on Setup failure, via a fresh context so it
+	// is not affected by the execution timeout being cancelled.
+	defer func() {
+		teardownCtx, teardownCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer teardownCancel()
+		if err := p.Teardown(teardownCtx, clientset, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: probe teardown error: %v\n", err)
+		}
+	}()
+
+	if err := p.Setup(ctx, clientset, cfg); err != nil {
+		result := Result{
+			Outcome:    "Indeterminate",
+			Detail:     fmt.Sprintf("probe setup failed: %v", err),
+			DurationMs: 0,
+		}
+		MustSignAndWriteResult(ctx, clientset, "sidereal-system", cfg.ProbeID, key, result)
+		return
+	}
+
+	result := p.Execute(ctx, clientset, cfg)
+	MustSignAndWriteResult(ctx, clientset, "sidereal-system", cfg.ProbeID, key, result)
+}

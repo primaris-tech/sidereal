@@ -148,3 +148,19 @@ jobs:
 
       - name: Template chart (validate rendering)
         run: helm template sidereal deploy/helm/sidereal/ > /dev/null
+
+  helm-scan:
+    name: Helm Chart Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Trivy config scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: config
+          scan-ref: deploy/helm/sidereal/
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          format: table

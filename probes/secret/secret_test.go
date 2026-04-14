@@ -198,6 +198,7 @@ func TestDefaultTests(t *testing.T) {
 	hasListTarget := false
 	hasGetTarget := false
 	hasKubeSystem := false
+	hasClusterWide := false
 	for _, tc := range tests {
 		if tc.Verb == "list" && tc.Namespace == "staging" {
 			hasListTarget = true
@@ -208,6 +209,9 @@ func TestDefaultTests(t *testing.T) {
 		if tc.Namespace == "kube-system" {
 			hasKubeSystem = true
 		}
+		if tc.Verb == "list" && tc.Namespace == "" {
+			hasClusterWide = true
+		}
 	}
 	if !hasListTarget {
 		t.Error("missing LIST test for target namespace")
@@ -217,6 +221,9 @@ func TestDefaultTests(t *testing.T) {
 	}
 	if !hasKubeSystem {
 		t.Error("missing kube-system cross-namespace test")
+	}
+	if !hasClusterWide {
+		t.Error("missing cluster-wide LIST test")
 	}
 }
 
