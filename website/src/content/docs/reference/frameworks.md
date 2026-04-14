@@ -1,9 +1,9 @@
 ---
 title: Compliance Frameworks
-description: The seven supported compliance frameworks and crosswalk mapping details
+description: The seven built-in compliance frameworks and how to add custom ones
 ---
 
-Sidereal maps probe results to compliance controls across seven frameworks through a crosswalk data system. Each probe execution produces a `SiderealProbeResult` tagged with the relevant controls from every enabled framework, so a single probe run generates evidence for multiple compliance programs simultaneously.
+Sidereal maps probe results to compliance controls across compliance frameworks through the `SiderealFramework` CRD. Each probe execution produces a `SiderealProbeResult` tagged with the relevant controls from every loaded framework, so a single probe run generates evidence for multiple compliance programs simultaneously.
 
 ## Supported frameworks
 
@@ -17,23 +17,20 @@ Sidereal maps probe results to compliance controls across seven frameworks throu
 | NIST 800-171 | `nist-800-171` | Protecting Controlled Unclassified Information (CUI) in nonfederal systems. Maps the 110 security requirements to NIST 800-53 controls. |
 | Kubernetes STIG | `kubernetes-stig` | DISA Security Technical Implementation Guide for Kubernetes. Maps STIG rules to the controls that Sidereal probes validate. |
 
-## Enabling frameworks
+## Built-in frameworks
 
-Select which frameworks to load in your Helm values:
+The seven built-in frameworks are installed as `SiderealFramework` resources by the Helm chart (`crosswalk.installDefaults: true` by default). They are active as soon as the controller reconciles them — no restart required.
+
+To opt out and manage frameworks entirely through your own GitOps workflow:
 
 ```yaml
-global:
-  controlFrameworks:
-    - nist-800-53
-    - cmmc
-    - cjis
+crosswalk:
+  installDefaults: false
 ```
-
-The controller loads crosswalk JSON files for each enabled framework from `/etc/sidereal/crosswalks/` at startup. Only enabled frameworks are loaded, keeping memory usage proportional to what you need.
 
 ## How crosswalks work
 
-Crosswalk data is stored as JSON files shipped in the Helm chart. Each file maps a `(probe_type, nist_800_53_control)` pair to a list of control IDs in the target framework. NIST 800-53 serves as the canonical pivot: every probe maps to NIST 800-53 controls first, then the crosswalk resolver expands those to the enabled target frameworks.
+Each `SiderealFramework` resource defines a list of mappings. Each mapping associates a `(probeType, nistControl)` pair with one or more framework-specific control IDs. NIST 800-53 serves as the canonical pivot: every probe maps to NIST 800-53 controls first, then the crosswalk resolver expands those to all loaded frameworks.
 
 For example, an RBAC probe that maps to NIST 800-53 AC-6 (Least Privilege) will also map to CMMC AC.L2-3.1.5, CJIS 5.5.2, and other framework-specific controls through the crosswalk data.
 
@@ -50,26 +47,32 @@ result:
       - "5.5.2"
 ```
 
-## Extending with custom frameworks
+## Adding custom frameworks
 
-Agencies can add custom frameworks without rebuilding the operator. Place a new crosswalk JSON file in the crosswalks directory following the standard schema:
+Agencies can add custom frameworks without rebuilding the operator or restarting the controller. Apply a `SiderealFramework` resource:
 
-```json
-{
-  "framework_id": "agency-specific",
-  "crosswalk_version": "1.0.0",
-  "mappings": [
-    {
-      "probe_type": "rbac",
-      "nist_control": "AC-6",
-      "control_ids": ["AGENCY-AC-001", "AGENCY-AC-002"]
-    }
-  ]
-}
+```yaml
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: agency-specific
+spec:
+  frameworkID: agency-specific
+  frameworkName: "Agency-Specific Control Overlay"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["AGENCY-AC-001", "AGENCY-AC-002"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["AGENCY-SC-001"]
 ```
 
-Add the framework ID to `global.controlFrameworks` in your Helm values, and the resolver picks it up on the next controller restart. No code changes required.
+The controller reconciles the resource and loads it into the crosswalk resolver immediately. No Helm values change, no controller restart. Removing the resource evicts the framework from the resolver via a finalizer.
+
+Note that `metadata.name` must match `spec.frameworkID`. The controller sets `Loaded=False` and surfaces an error if they differ.
 
 ## Crosswalk versioning
 
-Each crosswalk file includes a `crosswalk_version` field. The version used for a given probe result is recorded in `result.crosswalkVersion` on the `SiderealProbeResult`, providing traceability for audit purposes. When crosswalk data is updated, new results reference the new version while historical results retain their original version.
+Each `SiderealFramework` includes a `spec.version` field. The version active at execution time is recorded in `result.crosswalkVersion` on the `SiderealProbeResult`, providing traceability for audit purposes. When crosswalk data is updated, new results reference the new version while historical results retain their original version.

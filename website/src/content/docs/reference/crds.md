@@ -1,9 +1,9 @@
 ---
 title: CRD Reference
-description: All eight Sidereal custom resource definitions in the sidereal.cloud/v1alpha1 API group
+description: All nine Sidereal custom resource definitions in the sidereal.cloud/v1alpha1 API group
 ---
 
-Sidereal defines eight custom resource definitions in the `sidereal.cloud/v1alpha1` API group. Together they model the full lifecycle of security control validation: configuration, execution, results, incidents, alerts, authorization, discovery, and reporting.
+Sidereal defines nine custom resource definitions in the `sidereal.cloud/v1alpha1` API group. Together they model the full lifecycle of security control validation: configuration, execution, results, incidents, alerts, authorization, discovery, reporting, and compliance framework management.
 
 ## SiderealProbe
 
@@ -76,3 +76,15 @@ An optional scheduled report generation configuration. Supports five report type
 Output formats: `oscal-json`, `pdf`, `markdown`, `csv`, `zip`. Reports are stored in a Kubernetes Secret specified by `outputSecret`. The `retention` field controls how many historical reports to keep (default 5). Scheduling uses cron expressions.
 
 Status tracks `lastGeneratedAt` and `lastGenerationStatus` (Success or Failed).
+
+## SiderealFramework
+
+**Short name**: `sf`
+
+A compliance framework crosswalk definition. Maps `(probeType, NIST 800-53 control)` pairs to framework-specific control IDs. The `FrameworkReconciler` loads each resource into the in-memory crosswalk resolver, which the result reconciler uses to populate `controlMappings` on every `SiderealProbeResult`.
+
+Key spec fields: `frameworkID` (must match `metadata.name`), `frameworkName`, `version`, `mappings` (list of `probeType` + `nistControl` + `controlIDs` entries).
+
+`SiderealFramework` resources are cluster-scoped. The seven built-in frameworks (nist-800-53, cmmc, cjis, hipaa, irs-1075, nist-800-171, kubernetes-stig) are installed by default via the Helm chart and can be opted out with `crosswalk.installDefaults: false`. Custom frameworks are added with a standard `kubectl apply`.
+
+Status tracks `loadedAt`, `mappingCount`, and a `Loaded` condition reflecting whether the framework is active in the resolver.

@@ -880,7 +880,7 @@ Every probe result is tagged with specific NIST 800-53 controls. This makes the 
 
 Federal agencies operate under diverse compliance regimes beyond NIST 800-53. A DoD contractor processing CUI needs CMMC mapping. A law enforcement system needs CJIS. A system handling tax data needs IRS 1075. An ISSO adopting Sidereal should not have to maintain manual crosswalk spreadsheets to satisfy their specific compliance requirements.
 
-Every `SiderealProbeResult` carries a `controlMappings` field — a map from framework identifier to a list of control IDs within that framework. The active frameworks are configured via Helm values (`global.controlFrameworks`), and the controller populates mappings for all active frameworks on every result.
+Every `SiderealProbeResult` carries a `controlMappings` field — a map from framework identifier to a list of control IDs within that framework. Active frameworks are defined as `SiderealFramework` cluster-scoped CRDs. The `FrameworkReconciler` loads each resource into the in-memory crosswalk resolver; the result reconciler populates mappings for all loaded frameworks on every result.
 
 **Supported frameworks:**
 
@@ -894,12 +894,12 @@ Every `SiderealProbeResult` carries a `controlMappings` field — a map from fra
 | `nist-800-171` | NIST SP 800-171 Rev 3 (CUI Protection) | `3.1.1`, `3.13.1` |
 | `kubernetes-stig` | DISA Kubernetes STIG | `V-242435`, `V-242437` |
 
-**Crosswalk data model**: Crosswalk tables are shipped as versioned, JSON-formatted data files within the Helm chart (not compiled into the controller binary). Each crosswalk file maps `(probe_type, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
-- **Auditable** — an assessor can inspect exactly which mappings are active
-- **Updateable** — agencies can override or extend crosswalks without rebuilding the controller image
-- **Versionable** — the active crosswalk version is recorded on every `SiderealProbeResult` in `spec.result.crosswalkVersion`
+**Crosswalk data model**: Crosswalk tables are defined as `SiderealFramework` CRDs (cluster-scoped). Each resource maps `(probeType, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
+- **Auditable** — an assessor can `kubectl get siderealframeworks` to inspect exactly which mappings are active
+- **Updateable** — agencies add, update, or remove frameworks with `kubectl apply`/`kubectl delete`; no controller restart required
+- **Versionable** — each `SiderealFramework` carries a `spec.version` field recorded on every `SiderealProbeResult` in `spec.result.crosswalkVersion`
 
-Custom framework mappings are supported by providing a crosswalk file in the format above. Sidereal does not validate custom framework control IDs — the ISSO is responsible for correctness of custom mappings.
+Custom framework mappings are supported by applying a `SiderealFramework` resource. Sidereal does not validate custom framework control IDs — the ISSO is responsible for correctness of custom mappings. The seven built-in frameworks ship as default `SiderealFramework` resources in the Helm chart (`crosswalk.installDefaults: true`); agencies managing frameworks externally set this to `false`.
 
 **Example `controlMappings` on a probe result:**
 ```json
@@ -1287,7 +1287,7 @@ The `global.impactLevel` setting is the primary configuration axis. It cascades 
 | `tls.required` | Must be `true` | `true` | Disabling TLS is not a valid configuration |
 | `global.fips` | bool | `true` on FIPS variant | FIPS cannot be disabled on FIPS images |
 | `global.requireAdmissionController` | bool | `true` | Escape hatch requires `sidereal-security-override` role |
-| `global.controlFrameworks` | []string | `["nist-800-53"]` | Active compliance frameworks for control mapping |
+| `crosswalk.installDefaults` | bool | `true` | Install the seven built-in `SiderealFramework` resources |
 | `audit.exportFormat` | `json`, `cef`, `leef`, `syslog`, `ocsf` | `json` | SIEM export record format |
 
 Schema constraints are enforced at Helm install and upgrade time by the schema validation webhook, preventing drift from the approved security configuration.
@@ -1313,7 +1313,7 @@ Schema constraints are enforced at Helm install and upgrade time by the schema v
 - Minimum audit record retention is impact-level-dependent (365 days at High/Moderate, 180 days at Low); SIEM retention is 3 years at High/Moderate, 1 year at Low
 - Production-safe blast radius controls are enforced at the infrastructure layer, not just by convention
 - Custom probes are subject to identical security controls as built-in probes — no escape hatch from image signing, HMAC, or pod security
-- Control mappings are data-driven (versioned crosswalk files), not compiled into the controller — agencies can extend without rebuilding
+- Control mappings are defined as `SiderealFramework` CRDs — agencies add or update frameworks with `kubectl apply`, no rebuild required
 - Discovery is a core controller capability; the primary onboarding path is review-and-promote, not author-from-scratch
 
 ---

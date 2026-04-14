@@ -2004,5 +2004,5 @@ a minimum of 3 consecutive executions after the remediation action. Review any
 *This document was prepared using the Sidereal ATO Documentation Package.
 The OSCAL Component Definition (`compliance/trestle-workspace/component-definitions/sidereal/component-definition.json`)
 is the machine-readable source of record for all control implementations referenced in this plan.
-Sidereal defines 8 CRDs: SiderealProbe, SiderealProbeResult, SiderealIncident, SiderealSystemAlert,
-SiderealAOAuthorization, SiderealProbeRecommendation, SiderealReport, and 7 built-in ServiceAccounts.*
+Sidereal defines 9 CRDs: SiderealProbe, SiderealProbeResult, SiderealIncident, SiderealSystemAlert,
+SiderealAOAuthorization, SiderealProbeRecommendation, SiderealReport, SiderealFramework, and 7 built-in ServiceAccounts.*

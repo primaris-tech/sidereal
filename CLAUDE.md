@@ -8,7 +8,7 @@ Sidereal **v0.1.0** is feature-complete. All 22 implementation phases are done. 
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
 - Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md` (completed)
-- Full operator implementation: 8 CRDs, 6 controller reconcilers, 5 built-in probe runners + custom extensibility, Rust detection probe (9 MITRE ATT&CK techniques), HMAC integrity, multi-framework crosswalk (7 frameworks), SIEM export (5 formats, 3 backends), incident/alert/authorization lifecycle, discovery engine with CLI, report generation (5 types), Helm chart (6 profiles), FIPS 140-2 builds, CI/CD pipeline. 260 Go tests + 15 Rust tests + 46 E2E tests.
+- Full operator implementation: 9 CRDs, 7 controller reconcilers, 5 built-in probe runners + custom extensibility, Rust detection probe (9 MITRE ATT&CK techniques), HMAC integrity, multi-framework crosswalk (7 built-in frameworks via SiderealFramework CRD, agency-extensible), SIEM export (5 formats, 3 backends), incident/alert/authorization lifecycle, discovery engine with CLI, report generation (5 types), Helm chart (6 profiles), FIPS 140-2 builds, CI/CD pipeline. 260 Go tests + 15 Rust tests + 46 E2E tests.
 
 **Repo**: `primaris-tech/sidereal` on GitHub (private).
 
@@ -74,7 +74,7 @@ Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection
 ```
 sidereal/
 ├── sidereal-engineering-summary.md     # Canonical engineering specification
-├── api/v1alpha1/                       # CRD type definitions (8 CRDs)
+├── api/v1alpha1/                       # CRD type definitions (9 CRDs)
 ├── cmd/
 │   ├── controller/                     # Controller Manager entrypoint
 │   ├── probe-rbac/                     # RBAC probe runner

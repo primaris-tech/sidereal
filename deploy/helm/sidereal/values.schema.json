@@ -23,14 +23,6 @@
           "type": "boolean",
           "default": true
         },
-        "controlFrameworks": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["nist-800-53", "cmmc", "cjis", "irs-1075", "hipaa", "nist-800-171", "kubernetes-stig"]
-          },
-          "default": ["nist-800-53"]
-        }
       }
     },
     "profile": {
@@ -82,6 +74,15 @@
         "required": {
           "type": "boolean",
           "const": true
+        }
+      }
+    },
+    "crosswalk": {
+      "type": "object",
+      "properties": {
+        "installDefaults": {
+          "type": "boolean",
+          "default": true
         }
       }
     }

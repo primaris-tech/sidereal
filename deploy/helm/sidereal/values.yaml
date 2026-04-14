@@ -14,9 +14,6 @@ global:
   # Require a supported admission controller (Kyverno or OPA/Gatekeeper).
   requireAdmissionController: true
 
-  # Compliance frameworks to enable. Controls which crosswalk files are loaded.
-  controlFrameworks:
-    - nist-800-53
 
 # Deployment profile — selects which backend integrations are deployed.
 profile:
@@ -113,3 +110,10 @@ resourceQuota:
   maxJobs: 10
   maxCPU: "4"
   maxMemory: 8Gi
+
+# Compliance framework crosswalk configuration.
+crosswalk:
+  # Install the 7 built-in SiderealFramework resources (nist-800-53, cmmc, cjis,
+  # hipaa, irs-1075, nist-800-171, kubernetes-stig). Set to false to manage
+  # framework definitions externally via your own GitOps workflow.
+  installDefaults: true

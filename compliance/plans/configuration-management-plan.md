@@ -31,7 +31,7 @@ chart at the versioned release tag. The baseline captures:
 
 - Global execution mode (`global.executionMode`: `observe` or `enforce`)
 - Global impact level declaration (`global.impactLevel`: `low`, `moderate`, or `high`)
-- Control frameworks (`global.controlFrameworks`) and audit export format (`audit.exportFormat`)
+- Compliance framework definitions (`SiderealFramework` resources) and audit export format (`audit.exportFormat`)
 - Probe schedules (cadence defaults cascade from `global.impactLevel`)
 - SIEM endpoint URLs and transport configuration
 - Container image references (SHA-256 digest-pinned)
@@ -82,7 +82,7 @@ Configuration drift produces a `SiderealSystemAlert` with
 | Modify FIPS mode setting | `sidereal-security-override` role | Helm upgrade (requires new images) |
 | Enable detection probes | `sidereal-approver` + `SiderealAOAuthorization` | AO-signed authorization CR |
 | Change impact level | `sidereal-security-override` role | Helm upgrade (`global.impactLevel`); cascades cadence, retention, fail-closed defaults |
-| Modify control frameworks | `sidereal-security-override` role | Helm upgrade (`global.controlFrameworks`) |
+| Add/modify compliance frameworks | `sidereal-security-override` role | `kubectl apply SiderealFramework` via GitOps |
 | Change audit export format | `sidereal-security-override` role | Helm upgrade (`audit.exportFormat`) |
 | Register custom probes | `sidereal-operator` + ISSO approval | Custom `SiderealProbe` with non-default probe type |
 | Modify framework crosswalk | `sidereal-security-override` role | Security-relevant change; requires ISSO review |
@@ -131,7 +131,7 @@ The `values.schema.json` in the Helm chart enforces the following constraints:
 |---|---|---|
 | `global.executionMode` | Default `observe` | Blast radius default; `enforce` requires `sidereal-live-executor` role |
 | `global.impactLevel` | `low`, `moderate`, or `high` | Cascades defaults for cadence, retention, and fail-closed behavior |
-| `global.controlFrameworks` | Array of framework identifiers | Determines active control crosswalks |
+| `crosswalk.installDefaults` | `true` or `false` | Whether Helm installs the seven built-in `SiderealFramework` resources |
 | `probe.intervalSeconds` (High impact) | Maximum 21,600 (6 hours) | NIST 800-137 High monitoring cadence |
 | `audit.retentionDays` | Minimum 365 | FedRAMP AU-11 retention floor |
 | `audit.exportFormat` | Supported format identifier | Determines SIEM export serialization |

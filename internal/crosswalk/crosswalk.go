@@ -71,6 +71,24 @@ func (r *Resolver) LoadFromDir(dir string) error {
 	return nil
 }
 
+// UpsertFramework loads or replaces a single framework in the resolver.
+// It is safe to call concurrently and is idempotent on the same FrameworkID.
+func (r *Resolver) UpsertFramework(fw *Framework) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.frameworks[fw.FrameworkID] = fw
+	r.version = r.buildVersionString()
+}
+
+// RemoveFramework removes a framework from the resolver by ID.
+// If the framework does not exist, this is a no-op.
+func (r *Resolver) RemoveFramework(frameworkID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.frameworks, frameworkID)
+	r.version = r.buildVersionString()
+}
+
 // LoadFramework loads a single framework from JSON data.
 func (r *Resolver) LoadFramework(data []byte) error {
 	r.mu.Lock()

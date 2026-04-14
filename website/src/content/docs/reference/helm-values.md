@@ -15,7 +15,6 @@ Top-level settings that cascade defaults across the deployment.
 | `global.executionMode` | `dryRun\|observe\|enforce` | `dryRun` | Default execution mode for all probes. |
 | `global.fips` | bool | `true` | Require FIPS 140-2 validated cryptography (BoringCrypto). |
 | `global.requireAdmissionController` | bool | `true` | Require a supported admission controller. |
-| `global.controlFrameworks` | list | `["nist-800-53"]` | Compliance frameworks to load crosswalk files for. |
 
 Impact level defaults:
 
@@ -127,3 +126,11 @@ Caps concurrent probe Jobs in the `sidereal-system` namespace.
 | `resourceQuota.maxJobs` | `10` | Maximum concurrent probe Jobs. |
 | `resourceQuota.maxCPU` | `"4"` | Total CPU limit for probe Jobs. |
 | `resourceQuota.maxMemory` | `8Gi` | Total memory limit for probe Jobs. |
+
+## crosswalk
+
+Controls whether the seven built-in compliance framework definitions are installed.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `crosswalk.installDefaults` | `true` | Install the seven built-in `SiderealFramework` resources. Set to `false` to manage framework definitions externally. |

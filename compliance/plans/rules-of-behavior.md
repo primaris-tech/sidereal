@@ -161,7 +161,7 @@ The AO authorization requirement is not procedural — it is a legal requirement
 - Modifying `global.requireAdmissionController: false` without AO approval
   and a documented compensating control
 - Disabling FIPS mode (`fips.enabled: false`) on any federal deployment
-- Modifying framework crosswalks (`global.controlFrameworks`) without
+- Adding, modifying, or deleting `SiderealFramework` resources without
   ISSO review and documented security impact analysis
 
 ### 4.6 `sidereal-audit-admin` Role

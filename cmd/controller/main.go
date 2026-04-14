@@ -88,14 +88,6 @@ func main() {
 	}
 
 	crosswalkResolver := crosswalk.NewResolver()
-	// Load crosswalk files: Helm ConfigMap mount in production, bundled data in development.
-	crosswalkDirs := []string{"/etc/sidereal/crosswalks/"}
-	for _, dir := range crosswalkDirs {
-		if err := crosswalkResolver.LoadFromDir(dir); err != nil {
-			setupLog.Info("crosswalk directory not available, skipping", "dir", dir, "error", err)
-		}
-	}
-	setupLog.Info("crosswalk resolver initialized", "frameworks", crosswalkResolver.FrameworkCount())
 
 	if err := (&controller.ResultReconciler{
 		Client:    mgr.GetClient(),
@@ -132,6 +124,14 @@ func main() {
 		Interval: controller.DefaultDiscoveryInterval,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DiscoveryReconciler")
+		os.Exit(1)
+	}
+
+	if err := (&controller.FrameworkReconciler{
+		Client:    mgr.GetClient(),
+		Crosswalk: crosswalkResolver,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "FrameworkReconciler")
 		os.Exit(1)
 	}
 

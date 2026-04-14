@@ -1,0 +1,335 @@
+{{- if .Values.crosswalk.installDefaults }}
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: nist-800-53
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: nist-800-53
+  frameworkName: "NIST SP 800-53 Rev 5"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["AC-2"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["AC-3"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["AC-6"]
+    - probeType: rbac
+      nistControl: "AC-6(5)"
+      controlIDs: ["AC-6(5)"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["AC-4"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["SC-7"]
+    - probeType: netpol
+      nistControl: "SC-7(5)"
+      controlIDs: ["SC-7(5)"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["CM-6"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["CM-7"]
+    - probeType: admission
+      nistControl: "CM-7(2)"
+      controlIDs: ["CM-7(2)"]
+    - probeType: admission
+      nistControl: "CM-7(5)"
+      controlIDs: ["CM-7(5)"]
+    - probeType: secret
+      nistControl: AC-3
+      controlIDs: ["AC-3"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["SC-28"]
+    - probeType: secret
+      nistControl: "SC-28(1)"
+      controlIDs: ["SC-28(1)"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["AU-6"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["SI-4"]
+    - probeType: detection
+      nistControl: "SI-4(5)"
+      controlIDs: ["SI-4(5)"]
+    - probeType: custom
+      nistControl: CA-7
+      controlIDs: ["CA-7"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: cmmc
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: cmmc
+  frameworkName: "Cybersecurity Maturity Model Certification (CMMC) Level 2"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["AC.L2-3.1.1"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["AC.L2-3.1.1", "AC.L2-3.1.2"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["AC.L2-3.1.5", "AC.L2-3.1.6"]
+    - probeType: rbac
+      nistControl: "AC-6(5)"
+      controlIDs: ["AC.L2-3.1.5"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["AC.L2-3.1.3"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["SC.L2-3.13.1", "SC.L2-3.13.6"]
+    - probeType: netpol
+      nistControl: "SC-7(5)"
+      controlIDs: ["SC.L2-3.13.6"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["CM.L2-3.4.2"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["CM.L2-3.4.7", "CM.L2-3.4.8"]
+    - probeType: admission
+      nistControl: "CM-7(5)"
+      controlIDs: ["CM.L2-3.4.8"]
+    - probeType: secret
+      nistControl: AC-3
+      controlIDs: ["AC.L2-3.1.1"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["SC.L2-3.13.16"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["AU.L2-3.3.5"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["SI.L2-3.14.6", "SI.L2-3.14.7"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: cjis
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: cjis
+  frameworkName: "FBI CJIS Security Policy v5.9.5"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["CJIS-5.5.2"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["CJIS-5.5.2.1"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["CJIS-5.5.2.2"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["CJIS-5.10.1.1"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["CJIS-5.10.1.2"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["CJIS-5.10.4.1"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["CJIS-5.10.4.1"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["CJIS-5.10.1.3"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["CJIS-5.4.1.1"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["CJIS-5.10.1.5"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: hipaa
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: hipaa
+  frameworkName: "HIPAA Security Rule (45 CFR Part 164)"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["164.312(a)(1)", "164.312(a)(2)(i)"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["164.312(a)(1)"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["164.312(a)(1)", "164.312(a)(2)(ii)"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["164.312(e)(1)"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["164.312(e)(1)"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["164.312(a)(2)(iv)"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["164.312(a)(2)(iv)"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["164.312(a)(2)(iv)", "164.312(e)(2)(ii)"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["164.312(b)"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["164.312(b)"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: irs-1075
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: irs-1075
+  frameworkName: "IRS Publication 1075 (Rev. 11-2021)"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["IRS-9.3.1.2"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["IRS-9.3.1.3"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["IRS-9.3.1.6"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["IRS-9.3.1.4"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["IRS-9.3.16.7"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["IRS-9.3.5.6"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["IRS-9.3.5.7"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["IRS-9.3.16.28"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["IRS-9.3.3.6"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["IRS-9.3.17.4"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: nist-800-171
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: nist-800-171
+  frameworkName: "NIST SP 800-171 Rev 2"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["3.1.1"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["3.1.1", "3.1.2"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["3.1.5", "3.1.6"]
+    - probeType: rbac
+      nistControl: "AC-6(5)"
+      controlIDs: ["3.1.5"]
+    - probeType: netpol
+      nistControl: AC-4
+      controlIDs: ["3.1.3"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["3.13.1", "3.13.6"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["3.4.2"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["3.4.7", "3.4.8"]
+    - probeType: secret
+      nistControl: SC-28
+      controlIDs: ["3.13.16"]
+    - probeType: detection
+      nistControl: AU-6
+      controlIDs: ["3.3.5"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["3.14.6", "3.14.7"]
+---
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: kubernetes-stig
+  labels:
+    {{- include "sidereal.labels" . | nindent 4 }}
+spec:
+  frameworkID: kubernetes-stig
+  frameworkName: "DISA Kubernetes STIG V2R4"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-2
+      controlIDs: ["V-242381", "V-242383"]
+    - probeType: rbac
+      nistControl: AC-3
+      controlIDs: ["V-242435"]
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["V-242417"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["V-242410", "V-242411", "V-242412", "V-242413", "V-242414"]
+    - probeType: netpol
+      nistControl: SC-8
+      controlIDs: ["V-242395"]
+    - probeType: admission
+      nistControl: CM-6
+      controlIDs: ["V-242436", "V-254800"]
+    - probeType: admission
+      nistControl: CM-7
+      controlIDs: ["V-242437"]
+    - probeType: secret
+      nistControl: AC-3
+      controlIDs: ["V-242415"]
+    - probeType: secret
+      nistControl: AC-4
+      controlIDs: ["V-242415"]
+    - probeType: detection
+      nistControl: SI-4
+      controlIDs: ["V-242403"]
+{{- end }}

@@ -96,9 +96,9 @@ Sidereal should not duplicate this work. The crosswalk file documents these rule
 
 ## Recommendations
 
-1. **Add `kubernetes-stig` to `global.controlFrameworks`** in Helm values and the engineering spec's supported frameworks table. Framework ID: `kubernetes-stig`. Control ID format: `V-XXXXXX`.
+1. ~~Add `kubernetes-stig` to `global.controlFrameworks` in Helm values~~ — **Done.** Frameworks are now managed as `SiderealFramework` CRDs. The `kubernetes-stig` framework ships as a default `SiderealFramework` resource in the Helm chart (`crosswalk.installDefaults: true`). Framework ID: `kubernetes-stig`. Control ID format: `V-XXXXXX`.
 
-2. **Ship the crosswalk file** (`kubernetes-stig.json`) alongside existing framework crosswalks in the Helm chart.
+2. ~~Ship the crosswalk file (`kubernetes-stig.json`) alongside existing framework crosswalks in the Helm chart~~ — **Done.** Mappings are inlined in `deploy/helm/sidereal/templates/frameworks.yaml` as a `SiderealFramework` resource.
 
 3. **Update the engineering spec** to list 7 supported frameworks (add Kubernetes STIG to the existing 6).
 

@@ -1,9 +1,9 @@
 ---
 title: Compliance Mapping
-description: Multi-framework control tagging with crosswalk data files
+description: Multi-framework control tagging via SiderealFramework CRDs
 ---
 
-Every SiderealProbeResult is tagged with controls from all active compliance frameworks. This happens automatically at result creation time using versioned crosswalk data files.
+Every SiderealProbeResult is tagged with controls from all loaded compliance frameworks. This happens automatically at result creation time using the crosswalk resolver, which is populated by `SiderealFramework` resources.
 
 ## Supported frameworks
 
@@ -19,7 +19,7 @@ Every SiderealProbeResult is tagged with controls from all active compliance fra
 
 ## How it works
 
-Crosswalk files are JSON data files that map `(probe_type, nist_800_53_control)` to each framework's control IDs. The result reconciler uses these mappings to populate the `controlMappings` field on every ProbeResult.
+`SiderealFramework` resources define mappings from `(probeType, nist_800_53_control)` to each framework's control IDs. The `FrameworkReconciler` loads these into the in-memory crosswalk resolver when resources are created or updated. The result reconciler reads the resolver after each probe execution to populate the `controlMappings` field on every ProbeResult.
 
 For example, when an RBAC probe validates control `AC-6(5)`, the crosswalk resolver maps it to:
 - CMMC: `AC.L2-3.1.5`
@@ -30,30 +30,33 @@ All mappings appear in the ProbeResult's `controlMappings` field, making the res
 
 ## Configuration
 
-Enable frameworks in your Helm values:
+The seven built-in frameworks are installed by the Helm chart by default. To disable them and manage frameworks through your own GitOps workflow:
 
 ```yaml
-global:
-  controlFrameworks:
-    - nist-800-53
-    - cmmc
-    - cjis
+crosswalk:
+  installDefaults: false
 ```
 
 ## Extending
 
-Agencies can add custom frameworks by creating a crosswalk JSON file:
+Add a custom framework by applying a `SiderealFramework` resource. The controller loads it immediately without a restart:
 
-```json
-{
-  "framework_id": "agency-custom",
-  "framework_name": "Agency-Specific Controls",
-  "crosswalk_version": "1.0.0",
-  "mappings": [
-    {"probe_type": "rbac", "nist_control": "AC-6", "control_ids": ["AGENCY-AC-001"]},
-    {"probe_type": "netpol", "nist_control": "SC-7", "control_ids": ["AGENCY-SC-001"]}
-  ]
-}
+```yaml
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealFramework
+metadata:
+  name: agency-custom
+spec:
+  frameworkID: agency-custom
+  frameworkName: "Agency-Specific Controls"
+  version: "1.0.0"
+  mappings:
+    - probeType: rbac
+      nistControl: AC-6
+      controlIDs: ["AGENCY-AC-001"]
+    - probeType: netpol
+      nistControl: SC-7
+      controlIDs: ["AGENCY-SC-001"]
 ```
 
-Place it in the crosswalk ConfigMap and it will be loaded at controller startup. No code changes or rebuilds required.
+No code changes or rebuilds required. Deleting the resource removes the framework from the resolver via a finalizer.

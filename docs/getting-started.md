@@ -93,7 +93,7 @@ kubectl get siderealsystemalerts -n sidereal-system
 kubectl get crd | grep sidereal
 ```
 
-You should see the controller pod running and 7 Sidereal CRDs registered.
+You should see the controller pod running and 9 Sidereal CRDs registered.
 
 ## Step 5: Create a test namespace
 

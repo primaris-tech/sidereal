@@ -7,7 +7,7 @@ to understand their residual security obligations before beginning their ATO pro
 
 Sidereal's FIPS 199 impact level is operator-configurable (`global.impactLevel: high | moderate | low`). This CRM documents responsibilities at the High baseline. Agencies operating at Moderate or Low may find that some controls listed here are not required by their selected baseline — consult NIST SP 800-53B for baseline applicability.
 
-Sidereal supports multi-framework compliance mapping (`global.controlFrameworks`). While this CRM is organized by NIST 800-53, probe results can simultaneously map to CMMC, CJIS, IRS 1075, HIPAA, and NIST 800-171 via configurable crosswalk tables.
+Sidereal supports multi-framework compliance mapping via `SiderealFramework` CRDs. While this CRM is organized by NIST 800-53, probe results can simultaneously map to CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171, and the Kubernetes STIG through the crosswalk resolver. Agencies can add custom frameworks by applying additional `SiderealFramework` resources.
 
 ### Responsibility Key
 

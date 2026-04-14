@@ -59,7 +59,7 @@ Probes run on configurable schedules (default: every 6 hours for High-impact sys
 Sidereal fires a known-bad syscall pattern from a sandboxed container, then the controller independently queries the detection backend (Falco or Tetragon) to verify an alert was raised. Two separate identities, two separate actions. If the detection pipeline missed it, Sidereal surfaces the gap.
 
 ### Multi-Framework Compliance Mapping
-Probe results are tagged with controls from every active compliance framework: NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171, and the Kubernetes STIG. Crosswalk tables are versioned data files that agencies can extend or customize without rebuilding.
+Probe results are tagged with controls from every active compliance framework: NIST 800-53, CMMC, CJIS, IRS 1075, HIPAA, NIST 800-171, and the Kubernetes STIG. Frameworks are managed as `SiderealFramework` CRDs — agencies add or customize frameworks with a `kubectl apply`, no rebuild required.
 
 ### Report Generation
 Sidereal generates continuous monitoring summaries, POA&M entries, control coverage matrices, executive summaries, and OSCAL-native assessment evidence packages directly from probe results, with zero manual assembly.
@@ -133,7 +133,7 @@ Custom profiles are supported for any combination of supported implementations.
 Sidereal **v0.1.0** is feature-complete. The operator is fully implemented and ready for initial deployment and testing.
 
 **What's included:**
-- All 8 CRDs and 6 controller reconcilers
+- All 9 CRDs and 7 controller reconcilers
 - 5 built-in probe runners (RBAC, NetworkPolicy, Admission, Secret, Detection) plus custom probe extensibility
 - Rust detection probe with MITRE ATT&CK technique catalog
 - HMAC result integrity with per-execution HKDF-SHA256 key derivation
