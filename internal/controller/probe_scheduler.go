@@ -135,7 +135,13 @@ func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// Update status.
+	// Re-fetch before status update to get the current resourceVersion.
+	// Job creation triggers the Owns watch which can re-queue the probe and
+	// advance the resourceVersion before we reach this point, causing a
+	// conflict error if we update the stale in-memory copy.
+	if err := r.Get(ctx, req.NamespacedName, &probe); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 	now := metav1.Now()
 	probe.Status.LastExecutedAt = &now
 	if err := r.Status().Update(ctx, &probe); err != nil {
