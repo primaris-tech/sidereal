@@ -53,6 +53,18 @@ Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection
 - `NetworkPolicyBackend` — Hubble gRPC (:4245), Calico REST (:5443)
 - `AuditExportBackend` — Splunk HEC, Elasticsearch, S3 (SSE-KMS + Object Lock COMPLIANCE); configurable export formats: JSON, CEF, LEEF, Syslog (RFC 5424), OCSF
 
+## Air-Gapped Baseline
+
+**All delivery mechanisms must function in an air-gapped environment.** This is a non-negotiable design constraint. Sidereal targets federal systems, many of which have no outbound internet access at runtime. Every artifact needed to install, upgrade, or operate Sidereal must be transferable as a self-contained bundle — no runtime pulls from GitHub, GHCR, or any external service.
+
+Internet-accessible clusters may have a better or more convenient experience (e.g., `helm install` directly from GHCR OCI), but that experience must be additive, not a requirement. If a design decision only works with internet access, it is not acceptable as the sole delivery path.
+
+Practical implications:
+- CRDs are bundled in `deploy/helm/sidereal/crds/` — Helm installs them before templating, no separate `kubectl apply` step. `make sync-crds` (wired into `make manifests`) keeps this directory in sync with `config/crd/bases/`. CI verifies they match. **Upgrade note**: Helm does not re-apply CRDs from `crds/` on `helm upgrade`; operators must run `kubectl apply -f deploy/helm/sidereal/crds/` manually before upgrading when CRD schemas change.
+- Container images must be transferable to an internal registry; the release should produce a bundle artifact for this
+- The CLI binary (and any future tooling) must be distributable as a pre-built binary or container image, not require build-from-source
+- No init containers, admission webhooks, or operator startup behavior should make outbound network calls
+
 ## Key Design Constraints
 
 - `executionMode: dryRun` is the **default** on fresh install; graduated adoption via `observe` → `enforce` requires `sidereal-live-executor` role

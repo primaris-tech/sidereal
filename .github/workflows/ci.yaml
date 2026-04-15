@@ -164,3 +164,26 @@ jobs:
           exit-code: '1'
           severity: CRITICAL,HIGH
           format: table
+
+  helm-crd-sync:
+    name: Helm CRD Sync Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify CRDs are in sync with Helm chart
+        run: |
+          make sync-crds
+          if ! git diff --quiet deploy/helm/sidereal/crds/; then
+            echo "deploy/helm/sidereal/crds/ is out of sync with config/crd/bases/."
+            echo "Run 'make sync-crds' and commit the result."
+            git diff deploy/helm/sidereal/crds/
+            exit 1
+          fi

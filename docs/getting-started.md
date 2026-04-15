@@ -44,9 +44,6 @@ helm install kyverno kyverno/kyverno \
 From a local checkout (development):
 
 ```bash
-# Install CRDs
-kubectl apply -f config/crd/bases/
-
 # Build images locally
 make docker-build-all
 

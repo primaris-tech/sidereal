@@ -42,8 +42,14 @@ generate: ## Generate deepcopy functions
 	$(CONTROLLER_GEN) object paths="./api/..."
 
 .PHONY: manifests
-manifests: ## Generate CRD manifests
+manifests: ## Generate CRD manifests and sync into Helm chart
 	$(CONTROLLER_GEN) crd paths="./api/..." output:crd:artifacts:config=config/crd/bases
+	$(MAKE) sync-crds
+
+.PHONY: sync-crds
+sync-crds: ## Copy generated CRDs into deploy/helm/sidereal/crds/ for air-gapped Helm installs
+	@mkdir -p deploy/helm/sidereal/crds
+	@cp config/crd/bases/*.yaml deploy/helm/sidereal/crds/
 
 .PHONY: fmt
 fmt: ## Run go fmt
