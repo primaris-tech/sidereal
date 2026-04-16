@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
@@ -135,7 +135,7 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 			Labels: map[string]string{
 				controller.FingerprintLabel:     probeID,
-				controller.ProbeProfileLabel:       string(siderealv1alpha1.ProbeProfileRBAC),
+				controller.ProbeProfileLabel:    string(siderealv1alpha1.ProbeProfileRBAC),
 				controller.ProbeNameLabel:       probe.Name,
 				controller.TargetNamespaceLabel: ns,
 			},

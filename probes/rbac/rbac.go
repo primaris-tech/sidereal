@@ -130,6 +130,48 @@ func DefaultDenyTests(targetNamespace string) []TestCase {
 			Namespace:     "kube-system",
 			ExpectAllowed: false,
 		},
+
+		// --- Privilege escalation deny-path ---
+
+		// Impersonating users allows acting as any identity without leaving a
+		// trace tied to the original principal.
+		{
+			Description:   "IMPERSONATE users (cluster-scoped)",
+			Resource:      "users",
+			Verb:          "impersonate",
+			Namespace:     "",
+			ExpectAllowed: false,
+		},
+		// Creating a token for an arbitrary ServiceAccount bypasses normal
+		// credential issuance and can be used to assume any SA identity.
+		{
+			Description:   "CREATE serviceaccounts/token in target namespace",
+			Resource:      "serviceaccounts",
+			SubResource:   "token",
+			Verb:          "create",
+			Namespace:     targetNamespace,
+			ExpectAllowed: false,
+		},
+		// The escalate verb allows creating or updating a Role with permissions
+		// the requestor does not already hold, bypassing least-privilege.
+		{
+			Description:   "ESCALATE roles in target namespace",
+			Group:         "rbac.authorization.k8s.io",
+			Resource:      "roles",
+			Verb:          "escalate",
+			Namespace:     targetNamespace,
+			ExpectAllowed: false,
+		},
+		// The bind verb allows creating RoleBindings to roles that grant
+		// permissions beyond what the requestor holds.
+		{
+			Description:   "BIND roles in target namespace",
+			Group:         "rbac.authorization.k8s.io",
+			Resource:      "roles",
+			Verb:          "bind",
+			Namespace:     targetNamespace,
+			ExpectAllowed: false,
+		},
 	}
 }
 

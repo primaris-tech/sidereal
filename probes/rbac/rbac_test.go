@@ -196,6 +196,36 @@ func TestDefaultDenyTests_IncludesClusterScoped(t *testing.T) {
 	}
 }
 
+func TestDefaultDenyTests_IncludesPrivilegeEscalation(t *testing.T) {
+	tests := DefaultDenyTests("production")
+
+	checks := map[string]bool{
+		"impersonate":          false,
+		"serviceaccounts/token": false,
+		"escalate":             false,
+		"bind":                 false,
+	}
+
+	for _, tc := range tests {
+		switch {
+		case tc.Resource == "users" && tc.Verb == "impersonate":
+			checks["impersonate"] = true
+		case tc.Resource == "serviceaccounts" && tc.SubResource == "token" && tc.Verb == "create":
+			checks["serviceaccounts/token"] = true
+		case tc.Resource == "roles" && tc.Verb == "escalate":
+			checks["escalate"] = true
+		case tc.Resource == "roles" && tc.Verb == "bind":
+			checks["bind"] = true
+		}
+	}
+
+	for name, found := range checks {
+		if !found {
+			t.Errorf("missing privilege escalation deny test: %s", name)
+		}
+	}
+}
+
 func TestDefaultAllowTests(t *testing.T) {
 	tests := DefaultAllowTests("staging")
 	if len(tests) == 0 {

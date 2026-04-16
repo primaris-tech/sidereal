@@ -53,7 +53,7 @@ func createCompletedJob(probeType, probeName, targetNS string) *batchv1.Job {
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel:     testProbeID,
-				ProbeProfileLabel:       probeType,
+				ProbeProfileLabel:    probeType,
 				ProbeNameLabel:       probeName,
 				TargetNamespaceLabel: targetNS,
 			},
@@ -322,8 +322,8 @@ func TestResultReconciler_SkipsIncompleteJobs(t *testing.T) {
 			Name:      "sidereal-probe-running",
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
-				FingerprintLabel: testProbeID,
-				ProbeProfileLabel:   "rbac",
+				FingerprintLabel:  testProbeID,
+				ProbeProfileLabel: "rbac",
 			},
 		},
 		Status: batchv1.JobStatus{}, // no completion condition
