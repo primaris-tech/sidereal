@@ -36,7 +36,7 @@ Five built-in probe classes plus a discovery capability each run under dedicated
 | `sidereal-probe-rbac` | `get`, `list` ClusterRoles, RoleBindings; attempt denied operations as test subject | Write any resource; access Secrets; cross-namespace reads |
 | `sidereal-probe-netpol` | `get`, `list` NetworkPolicy in target namespace; initiate probe TCP connections | Modify NetworkPolicy; access other namespaces |
 | `sidereal-probe-admission` | Create/delete specific test resource types in designated test namespaces | Read or modify production workloads; access Secrets |
-| `sidereal-probe-secret` | Attempt `get` on specific Secret names in test namespaces (expects 403) | Write Secrets; access other namespaces; hold valid credential |
+| `sidereal-probe-secret` | Attempt `get`/`list` Secrets and ConfigMaps in test namespaces (expects 403); attempt `create` Secret via dry-run (expects 403) | Hold valid credential; succeed on any of the above operations |
 | `sidereal-probe-detection` | None — no Kubernetes API access | Any Kubernetes API operation |
 
 Each ServiceAccount is bound to a named Role or ClusterRole. There are no
@@ -87,12 +87,18 @@ resources or namespace quotas that affect other workloads.
 
 ### Continuous Least Privilege Verification
 
-The RBAC probe continuously tests the least privilege posture. On each
-execution, the probe verifies:
-1. The probe ServiceAccounts cannot access resources outside their declared
-   scope
+Two probe surfaces continuously test the least privilege posture.
+
+The RBAC probe verifies on each execution:
+1. The probe ServiceAccounts cannot access resources outside their declared scope
 2. The should-be-403 operations return 403
 3. Cross-namespace access boundaries are enforced
+
+The Secret Access probe extends this verification to credential-adjacent
+resources and the write path:
+1. The probe ServiceAccount cannot read Secrets in the target namespace, kube-system, or cluster-wide
+2. The probe ServiceAccount cannot read ConfigMaps in the target namespace or kube-system (credential material frequently leaks into ConfigMaps)
+3. The probe ServiceAccount cannot create Secrets in the target namespace (write-path enforcement)
 
 A change that silently widens a probe ServiceAccount's RBAC scope (e.g.,
 an operator incorrectly adding a ClusterRoleBinding) is detected on the
@@ -130,8 +136,9 @@ independent of the Sidereal controller.
   (declared least-privilege posture, reviewable and diffable per release)
 - Admission policy records confirming controller Job creation is restricted
   to pre-approved probe ServiceAccounts
-- `SiderealProbeResult` CRs from the RBAC probe confirming that probe
-  ServiceAccounts cannot access out-of-scope resources
+- `SiderealProbeResult` CRs from the RBAC and Secret Access probes confirming
+  that probe ServiceAccounts cannot access out-of-scope resources, cannot read
+  ConfigMaps in sensitive namespaces, and cannot write Secrets
 - Kubernetes audit log for all API operations by Sidereal ServiceAccounts,
   exported to SIEM
 

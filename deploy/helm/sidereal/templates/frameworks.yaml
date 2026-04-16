@@ -45,11 +45,8 @@ spec:
       nistControl: AC-3
       controlIDs: ["AC-3"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["SC-28"]
-    - profile: secret
-      nistControl: "SC-28(1)"
-      controlIDs: ["SC-28(1)"]
+      nistControl: AC-6
+      controlIDs: ["AC-6"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["AU-6"]
@@ -105,8 +102,8 @@ spec:
       nistControl: AC-3
       controlIDs: ["AC.L2-3.1.1"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["SC.L2-3.13.16"]
+      nistControl: AC-6
+      controlIDs: ["AC.L2-3.1.5", "AC.L2-3.1.6"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["AU.L2-3.3.5"]
@@ -144,8 +141,8 @@ spec:
       nistControl: CM-7
       controlIDs: ["CJIS-5.10.4.1"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["CJIS-5.10.1.3"]
+      nistControl: AC-6
+      controlIDs: ["CJIS-5.5.2.2"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["CJIS-5.4.1.1"]
@@ -183,8 +180,8 @@ spec:
       nistControl: CM-7
       controlIDs: ["164.312(a)(2)(iv)"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["164.312(a)(2)(iv)", "164.312(e)(2)(ii)"]
+      nistControl: AC-6
+      controlIDs: ["164.312(a)(1)", "164.312(a)(2)(ii)"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["164.312(b)"]
@@ -222,8 +219,8 @@ spec:
       nistControl: CM-7
       controlIDs: ["IRS-9.3.5.7"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["IRS-9.3.16.28"]
+      nistControl: AC-6
+      controlIDs: ["IRS-9.3.1.6"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["IRS-9.3.3.6"]
@@ -264,8 +261,8 @@ spec:
       nistControl: CM-7
       controlIDs: ["3.4.7", "3.4.8"]
     - profile: secret
-      nistControl: SC-28
-      controlIDs: ["3.13.16"]
+      nistControl: AC-6
+      controlIDs: ["3.1.5", "3.1.6"]
     - profile: detection
       nistControl: AU-6
       controlIDs: ["3.3.5"]
@@ -305,6 +302,9 @@ spec:
     - profile: secret
       nistControl: AC-4
       controlIDs: ["V-242415"]
+    - profile: secret
+      nistControl: AC-6
+      controlIDs: ["V-242417"]
     - profile: detection
       nistControl: SI-4
       controlIDs: ["V-242403"]
