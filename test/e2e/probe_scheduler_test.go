@@ -58,9 +58,9 @@ func TestProbeScheduler_CreatesJob(t *testing.T) {
 		t.Error("Job missing fingerprint label")
 	}
 
-	// Verify probe type label.
-	if job.Labels[controller.ProbeTypeLabel] != string(siderealv1alpha1.ProbeProfileRBAC) {
-		t.Errorf("unexpected probe type label: %s", job.Labels[controller.ProbeTypeLabel])
+	// Verify probe profile label.
+	if job.Labels[controller.ProbeProfileLabel] != string(siderealv1alpha1.ProbeProfileRBAC) {
+		t.Errorf("unexpected probe profile label: %s", job.Labels[controller.ProbeProfileLabel])
 	}
 
 	// Verify target namespace label.

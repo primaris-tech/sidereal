@@ -135,7 +135,7 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 			Labels: map[string]string{
 				controller.FingerprintLabel:     probeID,
-				controller.ProbeTypeLabel:       string(siderealv1alpha1.ProbeProfileRBAC),
+				controller.ProbeProfileLabel:       string(siderealv1alpha1.ProbeProfileRBAC),
 				controller.ProbeNameLabel:       probe.Name,
 				controller.TargetNamespaceLabel: ns,
 			},

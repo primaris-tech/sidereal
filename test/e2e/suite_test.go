@@ -296,7 +296,7 @@ func simulateProbeResult(t *testing.T, probeID, probeType, probeName, targetName
 			Namespace: controller.SystemNamespace,
 			Labels: map[string]string{
 				controller.FingerprintLabel:   probeID,
-				controller.ProbeTypeLabel:     probeType,
+				controller.ProbeProfileLabel:     probeType,
 				controller.ProbeNameLabel:     probeName,
 				controller.TargetNamespaceLabel: targetNamespace,
 			},

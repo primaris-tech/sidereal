@@ -101,7 +101,7 @@ verify-fips-docker: ## Verify FIPS labels on Docker images
 
 .PHONY: test
 test: ## Run unit tests
-	go test ./... -coverprofile cover.out
+	go test $(shell go list -f '{{if .TestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v '/test/e2e') -coverprofile cover.out
 
 .PHONY: test-e2e
 test-e2e: envtest ## Run end-to-end tests (requires envtest binaries)

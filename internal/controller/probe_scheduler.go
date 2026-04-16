@@ -43,10 +43,6 @@ const (
 	// ProbeProfileLabel identifies the probe profile on Jobs and results.
 	ProbeProfileLabel = "sidereal.cloud/probe-profile"
 
-	// ProbeTypeLabel is retained as an internal alias while the codebase
-	// transitions to profile terminology.
-	ProbeTypeLabel = ProbeProfileLabel
-
 	// ProbeNameLabel references the SiderealProbe resource name.
 	ProbeNameLabel = "sidereal.cloud/probe-name"
 

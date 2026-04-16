@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Project Status
 
@@ -16,7 +16,7 @@ Sidereal **v0.1.0** is feature-complete. All 22 implementation phases are done. 
 
 ## What Sidereal Is
 
-A Kubernetes-native security operator for **continuous security control validation** on federal systems (FISMA, FedRAMP, NIST 800-53, CMMC, CJIS, and other frameworks). It runs targeted, low-impact probes against a live cluster to verify that security controls are *operationally effective* — not merely configured. Differentiated from existing tools by being the only operator purpose-built to combine all of: continuous scheduled execution, active probing (not config analysis), detection layer validation, multi-framework federal compliance mapping, and ISSO-ready report generation. Tools like Stratus Red Team validate detections; tools like Kubescape check compliance configuration; Sidereal is the first to make those concerns a single, operator-native, scheduled workflow with ATO-ready output.
+A Kubernetes-native security operator for **continuous security control validation** on federal systems (FISMA, FedRAMP, NIST 800-53, CMMC, CJIS, and other frameworks). It runs targeted, low-impact probes against a live cluster to verify that security controls are *operationally effective* — not merely configured. Differentiated from existing tools (Kubescape, Stratus Red Team, Falco) by being the only OSS/CNCF-fit tool that is simultaneously continuous, actively probing, validates the detection layer, supports multi-framework compliance mapping, and generates ISSO-ready reports.
 
 Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection Coverage (Falco/Tetragon), and Custom (operator-extensible).
 
@@ -30,7 +30,7 @@ Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection
 - Rust detection probe: aws-lc-rs FIPS (CMVP #4816), scratch base, no network/no mounts
 
 **Core CRDs** (8 total, API group `sidereal.cloud/v1alpha1`):
-- `SiderealProbe` — probe configuration; maps to MITRE ATT&CK technique + multi-framework controls; includes `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), `intervalSeconds`; supports built-in and `custom` probe types
+- `SiderealProbe` — probe configuration; selects a semantic `profile` and a `runner`, maps to MITRE ATT&CK technique + multi-framework controls, and includes `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), and `intervalSeconds`
 - `SiderealProbeResult` — append-only audit record; HMAC-verified; TTL per impact level (365d High/Moderate, 180d Low); unified outcome enum + derived `controlEffectiveness` (Effective/Ineffective/Degraded/Compromised); `controlMappings` for multi-framework tagging
 - `SiderealIncident` — control failure record; created only in `enforce` execution mode when `controlEffectiveness` is `Ineffective` or `Compromised`; delivers to IR webhook
 - `SiderealSystemAlert` — degraded state indicator; requires individual principal acknowledgment before probes resume
@@ -156,7 +156,7 @@ sidereal/
 
 **Release cadence**: Semantic versioning driven by what changed, not by time.
 - Patch (`0.1.x`): bug fixes, security patches, dependency updates — no API surface change
-- Minor (`0.x.0`): new features, new probe types, new framework crosswalks — backward-compatible
+- Minor (`0.x.0`): new features, new probe profiles, new framework crosswalks — backward-compatible
 - Major (`x.0.0`): breaking CRD changes, controller API changes, anything requiring migration
 - Security fixes (govulncheck, cargo audit, Trivy) should be patched and released promptly per CVE SLAs
 

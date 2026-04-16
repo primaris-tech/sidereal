@@ -8,10 +8,10 @@ const testCMMCCrosswalk = `{
 	"framework_id": "cmmc",
 	"crosswalk_version": "1.0.0",
 	"mappings": [
-		{"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["AC.L2-3.1.1"]},
-		{"probe_type": "rbac", "nist_control": "AC-6", "control_ids": ["AC.L2-3.1.5"]},
-		{"probe_type": "netpol", "nist_control": "SC-7", "control_ids": ["SC.L2-3.13.1", "SC.L2-3.13.6"]},
-		{"probe_type": "admission", "nist_control": "CM-7", "control_ids": ["CM.L2-3.4.7"]}
+		{"profile": "rbac", "nist_control": "AC-3", "control_ids": ["AC.L2-3.1.1"]},
+		{"profile": "rbac", "nist_control": "AC-6", "control_ids": ["AC.L2-3.1.5"]},
+		{"profile": "netpol", "nist_control": "SC-7", "control_ids": ["SC.L2-3.13.1", "SC.L2-3.13.6"]},
+		{"profile": "admission", "nist_control": "CM-7", "control_ids": ["CM.L2-3.4.7"]}
 	]
 }`
 
@@ -19,8 +19,8 @@ const testSTIGCrosswalk = `{
 	"framework_id": "kubernetes-stig",
 	"crosswalk_version": "1.0.0",
 	"mappings": [
-		{"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["V-242435"]},
-		{"probe_type": "admission", "nist_control": "CM-7", "control_ids": ["V-242437"]}
+		{"profile": "rbac", "nist_control": "AC-3", "control_ids": ["V-242435"]},
+		{"profile": "admission", "nist_control": "CM-7", "control_ids": ["V-242437"]}
 	]
 }`
 
@@ -135,8 +135,8 @@ func TestDeduplication(t *testing.T) {
 		"framework_id": "test-dupe",
 		"crosswalk_version": "1.0.0",
 		"mappings": [
-			{"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["CTRL-1"]},
-			{"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["CTRL-1", "CTRL-2"]}
+			{"profile": "rbac", "nist_control": "AC-3", "control_ids": ["CTRL-1"]},
+			{"profile": "rbac", "nist_control": "AC-3", "control_ids": ["CTRL-1", "CTRL-2"]}
 		]
 	}`
 

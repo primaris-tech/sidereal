@@ -17,7 +17,6 @@ const (
 	ProbeProfileAdmission ProbeProfile = "admission"
 	ProbeProfileSecret    ProbeProfile = "secret"
 	ProbeProfileDetection ProbeProfile = "detection"
-	ProbeProfileCustom    ProbeProfile = "custom"
 )
 
 // ProbeRunnerType defines how a probe is executed.

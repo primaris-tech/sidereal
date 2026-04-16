@@ -22,7 +22,7 @@ func createProbeResult(probeID, probeType, probeName, targetNS string, outcome s
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel:     probeID,
-				ProbeTypeLabel:       probeType,
+				ProbeProfileLabel:       probeType,
 				ProbeNameLabel:       probeName,
 				TargetNamespaceLabel: targetNS,
 			},

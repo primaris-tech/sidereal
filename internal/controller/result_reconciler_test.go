@@ -53,7 +53,7 @@ func createCompletedJob(probeType, probeName, targetNS string) *batchv1.Job {
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel:     testProbeID,
-				ProbeTypeLabel:       probeType,
+				ProbeProfileLabel:       probeType,
 				ProbeNameLabel:       probeName,
 				TargetNamespaceLabel: targetNS,
 			},
@@ -110,8 +110,8 @@ func TestResultReconciler_ValidResult(t *testing.T) {
 		"framework_id": "cmmc",
 		"crosswalk_version": "1.0.0",
 		"mappings": [
-			{"probe_type": "rbac", "nist_control": "AC-3", "control_ids": ["AC.L2-3.1.1"]},
-			{"probe_type": "rbac", "nist_control": "AC-6", "control_ids": ["AC.L2-3.1.5"]}
+			{"profile": "rbac", "nist_control": "AC-3", "control_ids": ["AC.L2-3.1.1"]},
+			{"profile": "rbac", "nist_control": "AC-6", "control_ids": ["AC.L2-3.1.5"]}
 		]
 	}`))
 
@@ -323,7 +323,7 @@ func TestResultReconciler_SkipsIncompleteJobs(t *testing.T) {
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel: testProbeID,
-				ProbeTypeLabel:   "rbac",
+				ProbeProfileLabel:   "rbac",
 			},
 		},
 		Status: batchv1.JobStatus{}, // no completion condition

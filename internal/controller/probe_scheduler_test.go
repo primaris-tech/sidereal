@@ -127,8 +127,8 @@ func TestProbeScheduler_ObserveModeCreatesJob(t *testing.T) {
 	job := jobs.Items[0]
 
 	// Verify labels.
-	if job.Labels[ProbeTypeLabel] != "rbac" {
-		t.Errorf("expected probe-type label 'rbac', got %q", job.Labels[ProbeTypeLabel])
+	if job.Labels[ProbeProfileLabel] != "rbac" {
+		t.Errorf("expected probe-profile label 'rbac', got %q", job.Labels[ProbeProfileLabel])
 	}
 	if job.Labels[ProbeNameLabel] != "test-rbac-observe" {
 		t.Errorf("expected probe-name label 'test-rbac-observe', got %q", job.Labels[ProbeNameLabel])
@@ -427,7 +427,7 @@ func TestCustomProbeUsesCustomSA(t *testing.T) {
 
 	probe := &siderealv1alpha1.SiderealProbe{
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -459,7 +459,7 @@ func TestValidateCustomProbe_Valid(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -485,7 +485,7 @@ func TestValidateCustomProbe_UnregisteredSA(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -508,7 +508,7 @@ func TestValidateCustomProbe_MissingSpec(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 		},
 	}
 
@@ -523,7 +523,7 @@ func TestValidateCustomProbe_MissingImage(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -544,7 +544,7 @@ func TestValidateCustomProbe_MissingSA(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -566,7 +566,7 @@ func TestValidateCustomProbe_NilRegistryAllowsAll(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Profile: "acme-corp/custom-check",
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,
 				Custom: &siderealv1alpha1.CustomProbeConfig{
@@ -587,7 +587,7 @@ func TestCustomProbeJobHasConfigEnv(t *testing.T) {
 
 	probe := &siderealv1alpha1.SiderealProbe{
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile:       siderealv1alpha1.ProbeProfileCustom,
+			Profile:       "acme-corp/custom-check",
 			ExecutionMode: siderealv1alpha1.ExecutionModeObserve,
 			Runner: &siderealv1alpha1.ProbeRunnerSpec{
 				Type: siderealv1alpha1.ProbeRunnerCustom,

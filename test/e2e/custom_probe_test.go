@@ -22,7 +22,7 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile:         siderealv1alpha1.ProbeProfileCustom,
+			Profile:         "acme-corp/compliance-check",
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -41,7 +41,7 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 	})
 
 	probeID := uid + "caca-caca-caca-cacacacacaca"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileCustom),
+	simulateProbeResult(t, probeID, "acme-corp/compliance-check",
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Custom compliance check passed", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -49,8 +49,8 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 	if result.Spec.Result.Outcome != siderealv1alpha1.OutcomePass {
 		t.Errorf("expected Pass, got %s", result.Spec.Result.Outcome)
 	}
-	if result.Spec.Probe.Profile != siderealv1alpha1.ProbeProfileCustom {
-		t.Errorf("expected custom probe type, got %s", result.Spec.Probe.Profile)
+	if result.Spec.Probe.Profile != "acme-corp/compliance-check" {
+		t.Errorf("expected acme-corp/compliance-check profile, got %s", result.Spec.Probe.Profile)
 	}
 }
 
@@ -65,7 +65,7 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			Profile:         siderealv1alpha1.ProbeProfileCustom,
+			Profile:         "acme-corp/compliance-check",
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
@@ -84,7 +84,7 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 
 	// Custom probes produce the same result types and go through the same HMAC pipeline.
 	probeID := uid + "cbcb-cbcb-cbcb-cbcbcbcbcbcb"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileCustom),
+	simulateProbeResult(t, probeID, "acme-corp/compliance-check",
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Custom check failed", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -96,7 +96,7 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 
 	// Verify incident creation works for custom probes in enforce mode.
 	incident := waitForIncident(t, probeID, 10*time.Second)
-	if incident.Spec.Profile != siderealv1alpha1.ProbeProfileCustom {
-		t.Errorf("expected custom probe type in incident, got %s", incident.Spec.Profile)
+	if incident.Spec.Profile != "acme-corp/compliance-check" {
+		t.Errorf("expected acme-corp/compliance-check profile in incident, got %s", incident.Spec.Profile)
 	}
 }
