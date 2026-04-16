@@ -161,13 +161,9 @@ func execute(ctx context.Context, clientset kubernetes.Interface, cfg probe.Conf
 	}
 
 	// Evaluate overall result.
-	var rejected []string
 	var accepted []string
 	for _, o := range outcomes {
-		switch o.outcome {
-		case "Rejected":
-			rejected = append(rejected, o.name)
-		case "Accepted":
+		if o.outcome == "Accepted" {
 			accepted = append(accepted, fmt.Sprintf("%s: %s", o.name, o.detail))
 		}
 	}
@@ -305,7 +301,7 @@ func seccompUnconfinedPod(namespace string) *corev1.Pod {
 					Image: "gcr.io/distroless/static:nonroot",
 					SecurityContext: &corev1.SecurityContext{
 						RunAsNonRoot:             &nonRoot,
-						RunAsUser:               &runAsUser,
+						RunAsUser:                &runAsUser,
 						AllowPrivilegeEscalation: &allowPrivEsc,
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
