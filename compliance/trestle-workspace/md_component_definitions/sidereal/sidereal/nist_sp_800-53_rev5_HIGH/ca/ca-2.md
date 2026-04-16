@@ -69,7 +69,7 @@ result is detected and flagged rather than accepted as valid evidence
 
 | Probe Surface | NIST Controls Assessed |
 |---|---|
-| RBAC | AC-2, AC-3, AC-6 |
+| RBAC | AC-3, AC-6, AC-6(5) |
 | NetworkPolicy | AC-4, SC-7, SC-8 |
 | Admission Control | CM-6, CM-7, SI-7 |
 | Secret Access | AC-3, AC-4 |

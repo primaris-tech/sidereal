@@ -23,5 +23,6 @@ spec:
   intervalSeconds: 21600
   controlMappings:
     nist-800-53:
+      - AC-3
+      - AC-6
       - AC-6(5)
-      - AC-2

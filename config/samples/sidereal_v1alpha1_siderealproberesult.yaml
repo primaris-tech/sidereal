@@ -4,29 +4,25 @@ metadata:
   name: rbac-privilege-escalation-prod-20260411-060012
   namespace: sidereal-system
   labels:
-    sidereal.cloud/probe-type: rbac
+    sidereal.cloud/probe-profile: rbac
     sidereal.cloud/probe-id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     sidereal.cloud/target-namespace: production
 spec:
   probe:
     id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-    type: rbac
+    profile: rbac
     targetNamespace: production
   result:
     outcome: Pass
     controlEffectiveness: Effective
     nistControls:
-      - "AC-2"
       - "AC-3"
       - "AC-6"
-      - "AC-6(1)"
       - "AC-6(5)"
     controlMappings:
       nist-800-53:
-        - "AC-2"
         - "AC-3"
         - "AC-6"
-        - "AC-6(1)"
         - "AC-6(5)"
       cmmc:
         - "AC.L2-3.1.5"
@@ -35,9 +31,10 @@ spec:
     mitreAttackId: "T1078"
     integrityStatus: Verified
     detail: >-
-      RBAC privilege escalation probe validated that ServiceAccount
-      default in namespace production cannot escalate to cluster-admin.
-      All 4 escalation paths blocked by RBAC policy.
+      RBAC probe passed all deny-path checks in namespace production.
+      Unauthorized operations (secret access, pod exec, node proxy/log,
+      clusterrolebinding creation, user impersonation, SA token creation,
+      role escalation, role bind) were denied. Allow-path checks passed.
     crosswalkVersion: "v1.0.0"
   execution:
     timestamp: "2026-04-11T06:00:12.483291000Z"

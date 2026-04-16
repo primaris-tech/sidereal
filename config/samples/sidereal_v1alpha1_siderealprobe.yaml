@@ -4,26 +4,18 @@ metadata:
   name: rbac-privilege-escalation-prod
   namespace: sidereal-system
   labels:
-    sidereal.cloud/probe-type: rbac
+    sidereal.cloud/probe-profile: rbac
     sidereal.cloud/target-namespace: production
 spec:
-  type: rbac
+  profile: rbac
   targetNamespace: production
   executionMode: observe
   intervalSeconds: 21600  # 6 hours
   mitreAttackId: "T1078"
-  nistControls:
-    - "AC-2"
-    - "AC-3"
-    - "AC-6"
-    - "AC-6(1)"
-    - "AC-6(5)"
   controlMappings:
     nist-800-53:
-      - "AC-2"
       - "AC-3"
       - "AC-6"
-      - "AC-6(1)"
       - "AC-6(5)"
     cmmc:
       - "AC.L2-3.1.5"

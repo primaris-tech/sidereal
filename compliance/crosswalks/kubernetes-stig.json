@@ -7,26 +7,6 @@
   "mappings": [
     {
       "probe_type": "rbac",
-      "nist_control": "AC-2",
-      "stig_rules": [
-        {
-          "id": "V-242381",
-          "stig_id": "CNTR-K8-000220",
-          "title": "Controller Manager must use individual service account credentials",
-          "severity": "CAT I",
-          "sidereal_validation": "Probes verify that workloads use distinct ServiceAccounts and that SA boundaries are enforced, not just that the flag is set."
-        },
-        {
-          "id": "V-242383",
-          "stig_id": "CNTR-K8-000290",
-          "title": "User-managed resources must be created in dedicated namespaces",
-          "severity": "CAT I",
-          "sidereal_validation": "Probes enumerate resources in default/kube-public/kube-node-lease namespaces to verify no user workloads exist there."
-        }
-      ]
-    },
-    {
-      "probe_type": "rbac",
       "nist_control": "AC-3",
       "stig_rules": [
         {

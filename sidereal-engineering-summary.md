@@ -572,7 +572,7 @@ Each probe class is assigned a dedicated ServiceAccount, pre-provisioned at inst
 
 | Probe Class | ServiceAccount | Capability |
 |---|---|---|
-| RBAC | `sidereal-probe-rbac` | Attempt actual operations (e.g., `GET` a secret outside authorized namespace) and verify 403 rejection — not `can-i`. Tests: RoleBinding creation, impersonation, pod exec access, cross-namespace resource reads |
+| RBAC | `sidereal-probe-rbac` | Attempt actual operations and verify 403 rejection — not `can-i`. Deny-path tests: GET/LIST secrets, pod exec, CREATE pods, nodes/proxy, nodes/log, CREATE clusterrolebindings, CREATE secrets in kube-system, IMPERSONATE users, CREATE serviceaccounts/token, ESCALATE roles, BIND roles. Allow-path tests: LIST/GET rolebindings. |
 | NetworkPolicy | `sidereal-probe-netpol` | None — relies on CNI observability layer for flow verdicts, not API access |
 | Admission | `sidereal-probe-admission` | Submit a known-bad resource spec, read the rejection |
 | Secret Access | `sidereal-probe-secret` | Attempt to `get` secrets outside the authorized namespace — tests the data exfiltration vector specifically |
@@ -804,7 +804,7 @@ Each record includes the following fields:
 | Field | Type | Description |
 |---|---|---|
 | `spec.probe.id` | string (UUID) | Unique per-execution identifier; correlation key across all audit systems |
-| `spec.probe.type` | enum | `rbac`, `netpol`, `admission`, `secret`, `detection` |
+| `spec.probe.profile` | string | `rbac`, `netpol`, `admission`, `secret`, `detection`, or an org-qualified custom profile |
 | `spec.probe.targetNamespace` | string | Namespace under test |
 | `spec.probe.aoAuthorizationRef` | string | Reference to SiderealAOAuthorization (detection probes only) |
 | `spec.result.outcome` | enum | `Pass`, `Fail`, `Detected`, `Undetected`, `Blocked`, `Rejected`, `Accepted`, `NotApplicable`, `BackendUnreachable`, `NotEnforced`, `Indeterminate`, `TamperedResult` |
@@ -873,7 +873,7 @@ Every probe result is tagged with specific NIST 800-53 controls. This makes the 
 
 | Probe | NIST 800-53 Controls |
 |---|---|
-| RBAC | AC-2, AC-3, AC-6 |
+| RBAC | AC-3, AC-6, AC-6(5) |
 | NetworkPolicy | SC-7, SC-8 |
 | Admission Control | CM-6, CM-7 |
 | Secret Access | AC-3, AC-4 |

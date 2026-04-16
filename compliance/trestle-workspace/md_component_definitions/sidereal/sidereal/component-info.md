@@ -27,7 +27,7 @@ continuous monitoring reports under FISMA, FedRAMP, and NIST 800-53.
 
 | Probe | NIST Controls |
 |---|---|
-| RBAC | AC-2, AC-3, AC-6 |
+| RBAC | AC-3, AC-6, AC-6(5) |
 | NetworkPolicy | SC-7, SC-8 |
 | Admission Control | CM-6, CM-7 |
 | Secret Access | AC-3, AC-4 |

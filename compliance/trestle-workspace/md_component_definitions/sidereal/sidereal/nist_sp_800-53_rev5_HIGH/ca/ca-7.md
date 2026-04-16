@@ -35,7 +35,7 @@ mapped to specific NIST 800-53 controls and MITRE ATT&CK for Containers techniqu
 
 | Control Surface | NIST Controls | Monitoring Mechanism |
 |---|---|---|
-| RBAC enforcement | AC-2, AC-3, AC-6 | Active API operation attempts; 403 verification |
+| RBAC enforcement | AC-3, AC-6, AC-6(5) | Active API operation attempts; 403 verification |
 | Network policy enforcement | SC-7, SC-8 | TCP SYN probes; CNI flow verdict via observability API (e.g., Hubble, Calico) |
 | Admission control | CM-6, CM-7 | Known-bad spec submission; webhook rejection verification |
 | Secret access boundaries | AC-3, AC-4 | Cross-namespace secret GET attempts; 403 verification |
