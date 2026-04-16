@@ -52,7 +52,7 @@ func TestControlEffectiveness_EndToEnd(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+			Profile:         siderealv1alpha1.ProbeProfileAdmission,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -64,7 +64,7 @@ func TestControlEffectiveness_EndToEnd(t *testing.T) {
 
 	// Test Rejected outcome -> Effective.
 	probeID := uid + "6666-6666-6666-666666666666"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeAdmission),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileAdmission),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeRejected), "admission policy rejected request", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -107,7 +107,7 @@ func TestControlEffectiveness_IncidentSeverityMapping(t *testing.T) {
 					Namespace: controller.SystemNamespace,
 				},
 				Spec: siderealv1alpha1.SiderealProbeSpec{
-					ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+					Profile:         siderealv1alpha1.ProbeProfileRBAC,
 					TargetNamespace: ns,
 					ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 					IntervalSeconds: 300,
@@ -118,7 +118,7 @@ func TestControlEffectiveness_IncidentSeverityMapping(t *testing.T) {
 			})
 
 			probeID := subUID + fmt.Sprintf("%04d-0000-0000-000000000000", i)
-			simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+			simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 				probe.Name, ns, tt.outcome, "severity test", rootKey)
 
 			incident := waitForIncident(t, probeID, 10*time.Second)

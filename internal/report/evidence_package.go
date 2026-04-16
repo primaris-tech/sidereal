@@ -28,8 +28,8 @@ func GenerateEvidencePackage(data *ReportData, opts EvidencePackageOptions) ([]b
 			"from": data.TimeRange.From.Format("2006-01-02"),
 			"to":   data.TimeRange.To.Format("2006-01-02"),
 		},
-		"frameworks":   data.Frameworks,
-		"resultCount":  len(data.Results),
+		"frameworks":    data.Frameworks,
+		"resultCount":   len(data.Results),
 		"incidentCount": len(data.Incidents),
 	}
 	if err := writeJSONToZip(w, "manifest.json", manifest); err != nil {
@@ -59,7 +59,7 @@ func GenerateEvidencePackage(data *ReportData, opts EvidencePackageOptions) ([]b
 	// Summary.
 	summary := map[string]interface{}{
 		"effectiveness": ComputeDistribution(data.Results),
-		"byProbeType":   ComputeProbeTypeSummaries(data.Results),
+		"byProfile":     ComputeProfileSummaries(data.Results),
 	}
 	if err := writeJSONToZip(w, "summary.json", summary); err != nil {
 		return nil, err

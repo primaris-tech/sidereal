@@ -13,7 +13,7 @@ type POAMEntry struct {
 	IncidentName         string `json:"incidentName"`
 	ControlID            string `json:"controlId,omitempty"`
 	MitreID              string `json:"mitreId,omitempty"`
-	ProbeType            string `json:"probeType"`
+	Profile              string `json:"profile"`
 	TargetNamespace      string `json:"targetNamespace"`
 	Severity             string `json:"severity"`
 	ControlEffectiveness string `json:"controlEffectiveness"`
@@ -47,7 +47,7 @@ func GeneratePOAM(data *ReportData, format string, openOnly bool) ([]byte, error
 			IncidentName:         incident.Name,
 			ControlID:            incident.Spec.ControlID,
 			MitreID:              incident.Spec.MitreID,
-			ProbeType:            string(incident.Spec.ProbeType),
+			Profile:              string(incident.Spec.Profile),
 			TargetNamespace:      incident.Spec.TargetNamespace,
 			Severity:             string(incident.Spec.Severity),
 			ControlEffectiveness: string(incident.Spec.ControlEffectiveness),
@@ -77,10 +77,10 @@ func GeneratePOAM(data *ReportData, format string, openOnly bool) ([]byte, error
 
 func renderPOAMCSV(entries []POAMEntry) []byte {
 	var b strings.Builder
-	b.WriteString("Incident,Control ID,MITRE ID,Probe Type,Namespace,Severity,Effectiveness,Status,Created\n")
+	b.WriteString("Incident,Control ID,MITRE ID,Profile,Namespace,Severity,Effectiveness,Status,Created\n")
 	for _, e := range entries {
 		b.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-			e.IncidentName, e.ControlID, e.MitreID, e.ProbeType,
+			e.IncidentName, e.ControlID, e.MitreID, e.Profile,
 			e.TargetNamespace, e.Severity, e.ControlEffectiveness,
 			e.RemediationStatus, e.CreatedAt))
 	}

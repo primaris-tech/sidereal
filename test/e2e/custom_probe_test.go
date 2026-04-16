@@ -22,14 +22,17 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeCustom,
+			Profile:         siderealv1alpha1.ProbeProfileCustom,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "ghcr.io/primaris-tech/custom-probe@sha256:abcdef1234567890",
-				ServiceAccountName: "sidereal-probe-custom-test",
-				Config:             &runtime.RawExtension{Raw: []byte(`{"checkType":"compliance"}`)},
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "ghcr.io/primaris-tech/custom-probe@sha256:abcdef1234567890",
+					ServiceAccountName: "sidereal-probe-custom-test",
+					Config:             &runtime.RawExtension{Raw: []byte(`{"checkType":"compliance"}`)},
+				},
 			},
 			ControlMappings: map[string][]string{
 				"nist-800-53": {"CA-7"},
@@ -38,7 +41,7 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 	})
 
 	probeID := uid + "caca-caca-caca-cacacacacaca"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeCustom),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileCustom),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Custom compliance check passed", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -46,8 +49,8 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 	if result.Spec.Result.Outcome != siderealv1alpha1.OutcomePass {
 		t.Errorf("expected Pass, got %s", result.Spec.Result.Outcome)
 	}
-	if result.Spec.Probe.Type != siderealv1alpha1.ProbeTypeCustom {
-		t.Errorf("expected custom probe type, got %s", result.Spec.Probe.Type)
+	if result.Spec.Probe.Profile != siderealv1alpha1.ProbeProfileCustom {
+		t.Errorf("expected custom probe type, got %s", result.Spec.Probe.Profile)
 	}
 }
 
@@ -62,13 +65,16 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeCustom,
+			Profile:         siderealv1alpha1.ProbeProfileCustom,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "ghcr.io/primaris-tech/custom-probe@sha256:abcdef1234567890",
-				ServiceAccountName: "sidereal-probe-custom-test",
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "ghcr.io/primaris-tech/custom-probe@sha256:abcdef1234567890",
+					ServiceAccountName: "sidereal-probe-custom-test",
+				},
 			},
 			ControlMappings: map[string][]string{
 				"nist-800-53": {"CA-7"},
@@ -78,7 +84,7 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 
 	// Custom probes produce the same result types and go through the same HMAC pipeline.
 	probeID := uid + "cbcb-cbcb-cbcb-cbcbcbcbcbcb"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeCustom),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileCustom),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Custom check failed", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -90,7 +96,7 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 
 	// Verify incident creation works for custom probes in enforce mode.
 	incident := waitForIncident(t, probeID, 10*time.Second)
-	if incident.Spec.ProbeType != siderealv1alpha1.ProbeTypeCustom {
-		t.Errorf("expected custom probe type in incident, got %s", incident.Spec.ProbeType)
+	if incident.Spec.Profile != siderealv1alpha1.ProbeProfileCustom {
+		t.Errorf("expected custom probe type in incident, got %s", incident.Spec.Profile)
 	}
 }

@@ -268,7 +268,7 @@ func TestSignAndWriteResult_ControllerCanVerify(t *testing.T) {
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("PROBE_ID", "test-id")
-	t.Setenv("PROBE_TYPE", "rbac")
+	t.Setenv("PROBE_PROFILE", "rbac")
 	t.Setenv("TARGET_NAMESPACE", "production")
 	t.Setenv("EXECUTION_MODE", "observe")
 	t.Setenv("HMAC_KEY_PATH", "/var/run/secrets/sidereal/hmac-key")
@@ -278,8 +278,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if cfg.ProbeID != "test-id" {
 		t.Errorf("expected ProbeID 'test-id', got %q", cfg.ProbeID)
 	}
-	if cfg.ProbeType != "rbac" {
-		t.Errorf("expected ProbeType 'rbac', got %q", cfg.ProbeType)
+	if cfg.Profile != "rbac" {
+		t.Errorf("expected Profile 'rbac', got %q", cfg.Profile)
 	}
 	if cfg.TargetNamespace != "production" {
 		t.Errorf("expected TargetNamespace 'production', got %q", cfg.TargetNamespace)

@@ -71,7 +71,7 @@ func (d *SecretDiscoverer) Discover(ctx context.Context, c client.Client) ([]Rec
 			Confidence:     confidence,
 			Rationale:      rationale,
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeSecret,
+				Profile:         siderealv1alpha1.ProbeProfileSecret,
 				TargetNamespace: ns,
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,

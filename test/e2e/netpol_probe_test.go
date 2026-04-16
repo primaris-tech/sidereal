@@ -22,7 +22,7 @@ func TestNetPolProbe_Blocked(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeNetPol,
+			Profile:         siderealv1alpha1.ProbeProfileNetPol,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -33,7 +33,7 @@ func TestNetPolProbe_Blocked(t *testing.T) {
 	})
 
 	probeID := uid + "eeee-eeee-eeee-eeeeeeeeeeee"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeNetPol),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileNetPol),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeBlocked), "NetworkPolicy blocked cross-namespace flow", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -58,7 +58,7 @@ func TestNetPolProbe_NotEnforced(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeNetPol,
+			Profile:         siderealv1alpha1.ProbeProfileNetPol,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -69,7 +69,7 @@ func TestNetPolProbe_NotEnforced(t *testing.T) {
 	})
 
 	probeID := uid + "ffff-ffff-ffff-ffffffffffff"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeNetPol),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileNetPol),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeNotEnforced), "NetworkPolicy not enforced by CNI", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -93,7 +93,7 @@ func TestNetPolProbe_BackendUnreachable(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeNetPol,
+			Profile:         siderealv1alpha1.ProbeProfileNetPol,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -101,7 +101,7 @@ func TestNetPolProbe_BackendUnreachable(t *testing.T) {
 	})
 
 	probeID := uid + "abab-abab-abab-abababababab"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeNetPol),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileNetPol),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeBackendUnreachable), "Hubble endpoint unreachable", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)

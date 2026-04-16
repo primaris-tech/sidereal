@@ -17,7 +17,7 @@ metadata:
   name: netpol-production
   namespace: sidereal-system
 spec:
-  probeType: netpol
+  profile: netpol
   targetNamespace: production
   executionMode: observe
   intervalSeconds: 21600

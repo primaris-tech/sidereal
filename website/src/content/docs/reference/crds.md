@@ -9,9 +9,9 @@ Sidereal defines nine custom resource definitions in the `sidereal.cloud/v1alpha
 
 **Short name**: `sp`
 
-Defines a security control validation probe. Each probe targets a specific surface (RBAC, NetworkPolicy, Admission, Secret Access, Detection, or Custom), runs on a configurable interval, and maps to MITRE ATT&CK techniques and compliance framework controls.
+Defines a security control validation probe. Each probe selects a semantic `profile`, runs on a configurable interval, and maps to MITRE ATT&CK techniques and compliance framework controls. Execution is configured separately through `runner`.
 
-Key spec fields: `probeType`, `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), `intervalSeconds` (300-86400), `controlMappings`, `mitreAttackId`, `aoAuthorizationRef` (required for detection), `customProbe` (for custom probe type).
+Key spec fields: `profile`, `runner`, `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), `intervalSeconds` (300-86400), `controlMappings`, `mitreAttackId`, `aoAuthorizationRef` (required for detection).
 
 Status tracks `lastExecutedAt`, `lastOutcome`, `lastControlEffectiveness`, `consecutiveFailures`, and `recentResults`.
 
@@ -21,7 +21,7 @@ Status tracks `lastExecutedAt`, `lastOutcome`, `lastControlEffectiveness`, `cons
 
 An append-only audit record created for each probe execution. Results are HMAC-signed by the probe runner and verified by the controller. Admission policy denies UPDATE and DELETE operations to guarantee immutability.
 
-Each result contains: `probe` reference (execution ID, type, target namespace), `result` (raw `outcome`, derived `controlEffectiveness`, `controlMappings`, `integrityStatus`), `execution` metadata (timestamp, duration, Job name), and `audit` tracking (`exportStatus`).
+Each result contains: `probe` reference (execution ID, profile, target namespace), `result` (raw `outcome`, derived `controlEffectiveness`, `controlMappings`, `integrityStatus`), `execution` metadata (timestamp, duration, Job name), and `audit` tracking (`exportStatus`).
 
 **Raw outcomes**: Pass, Fail, Detected, Undetected, Blocked, Rejected, Accepted, NotApplicable, BackendUnreachable, NotEnforced, Indeterminate, TamperedResult.
 
@@ -81,9 +81,9 @@ Status tracks `lastGeneratedAt` and `lastGenerationStatus` (Success or Failed).
 
 **Short name**: `sf`
 
-A compliance framework crosswalk definition. Maps `(probeType, NIST 800-53 control)` pairs to framework-specific control IDs. The `FrameworkReconciler` loads each resource into the in-memory crosswalk resolver, which the result reconciler uses to populate `controlMappings` on every `SiderealProbeResult`.
+A compliance framework crosswalk definition. Maps `(profile, NIST 800-53 control)` pairs to framework-specific control IDs. The `FrameworkReconciler` loads each resource into the in-memory crosswalk resolver, which the result reconciler uses to populate `controlMappings` on every `SiderealProbeResult`.
 
-Key spec fields: `frameworkID` (must match `metadata.name`), `frameworkName`, `version`, `mappings` (list of `probeType` + `nistControl` + `controlIDs` entries).
+Key spec fields: `frameworkID` (must match `metadata.name`), `frameworkName`, `version`, `mappings` (list of `profile` + `nistControl` + `controlIDs` entries).
 
 `SiderealFramework` resources are cluster-scoped. The seven built-in frameworks (nist-800-53, cmmc, cjis, hipaa, irs-1075, nist-800-171, kubernetes-stig) are installed by default via the Helm chart and can be opted out with `crosswalk.installDefaults: false`. Custom frameworks are added with a standard `kubectl apply`.
 

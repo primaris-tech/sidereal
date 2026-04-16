@@ -12,7 +12,7 @@ metadata:
   name: rbac-all-apps
   namespace: sidereal-system
 spec:
-  probeType: rbac
+  profile: rbac
   targetNamespaceSelector:
     matchLabels:
       sidereal.cloud/probe-target: "true"

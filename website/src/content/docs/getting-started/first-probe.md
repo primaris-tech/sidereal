@@ -40,7 +40,7 @@ metadata:
   name: rbac-test
   namespace: sidereal-system
 spec:
-  probeType: rbac
+  profile: rbac
   targetNamespace: sidereal-test-target
   executionMode: observe
   intervalSeconds: 300
@@ -87,7 +87,7 @@ Labels:       sidereal.cloud/control-effectiveness=Effective
               sidereal.cloud/outcome=Pass
               sidereal.cloud/probe-id=8700ac70-f99c-4b43-952d-fd302bccf7c0
               sidereal.cloud/probe-name=rbac-test
-              sidereal.cloud/probe-type=rbac
+              sidereal.cloud/probe-profile=rbac
               sidereal.cloud/target-namespace=sidereal-test-target
 API Version:  sidereal.cloud/v1alpha1
 Kind:         SiderealProbeResult
@@ -100,8 +100,8 @@ Spec:
     Timestamp:    2026-04-13T22:25:18.989275093Z
   Probe:
     Id:                8700ac70-f99c-4b43-952d-fd302bccf7c0
+    Profile:           rbac
     Target Namespace:  sidereal-test-target
-    Type:              rbac
   Result:
     Control Effectiveness:  Effective
     Control Mappings:
@@ -151,6 +151,6 @@ The `.status` section shows `lastExecutedAt`, `lastOutcome`, `lastControlEffecti
 
 ## Next steps
 
-- Run a secret access probe: same steps, change `probeType: rbac` to `probeType: secret`
+- Run a secret access probe: same steps, change `profile: rbac` to `profile: secret`
 - Move from observe to enforce: [Execution Modes](/concepts/execution-modes/)
 - Let Sidereal find probes automatically: [Discovery](/getting-started/discovery/)

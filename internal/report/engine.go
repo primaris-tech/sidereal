@@ -56,23 +56,23 @@ type EffectivenessDistribution struct {
 	Total       int `json:"total"`
 }
 
-// ProbeTypeSummary aggregates results for a single probe type.
-type ProbeTypeSummary struct {
-	ProbeType    string                    `json:"probeType"`
+// ProfileSummary aggregates results for a single probe profile.
+type ProfileSummary struct {
+	Profile      string                    `json:"profile"`
 	TotalRuns    int                       `json:"totalRuns"`
 	Distribution EffectivenessDistribution `json:"distribution"`
 }
 
 // ControlStatus tracks the status of a single compliance control.
 type ControlStatus struct {
-	ControlID            string `json:"controlId"`
-	Framework            string `json:"framework"`
-	ProbeType            string `json:"probeType,omitempty"`
-	LastOutcome          string `json:"lastOutcome,omitempty"`
-	LastEffectiveness    string `json:"lastEffectiveness,omitempty"`
-	HasActiveProbe       bool   `json:"hasActiveProbe"`
-	TotalExecutions      int    `json:"totalExecutions"`
-	EffectiveCount       int    `json:"effectiveCount"`
+	ControlID            string  `json:"controlId"`
+	Framework            string  `json:"framework"`
+	Profile              string  `json:"profile,omitempty"`
+	LastOutcome          string  `json:"lastOutcome,omitempty"`
+	LastEffectiveness    string  `json:"lastEffectiveness,omitempty"`
+	HasActiveProbe       bool    `json:"hasActiveProbe"`
+	TotalExecutions      int     `json:"totalExecutions"`
+	EffectiveCount       int     `json:"effectiveCount"`
 	EffectivenessPercent float64 `json:"effectivenessPercent"`
 }
 
@@ -126,18 +126,18 @@ func ComputeDistribution(results []siderealv1alpha1.SiderealProbeResult) Effecti
 	return dist
 }
 
-// ComputeProbeTypeSummaries aggregates results by probe type.
-func ComputeProbeTypeSummaries(results []siderealv1alpha1.SiderealProbeResult) []ProbeTypeSummary {
+// ComputeProfileSummaries aggregates results by probe profile.
+func ComputeProfileSummaries(results []siderealv1alpha1.SiderealProbeResult) []ProfileSummary {
 	byType := make(map[string][]siderealv1alpha1.SiderealProbeResult)
 	for _, r := range results {
-		pt := string(r.Spec.Probe.Type)
+		pt := string(r.Spec.Probe.Profile)
 		byType[pt] = append(byType[pt], r)
 	}
 
-	var summaries []ProbeTypeSummary
+	var summaries []ProfileSummary
 	for pt, rs := range byType {
-		summaries = append(summaries, ProbeTypeSummary{
-			ProbeType:    pt,
+		summaries = append(summaries, ProfileSummary{
+			Profile:      pt,
 			TotalRuns:    len(rs),
 			Distribution: ComputeDistribution(rs),
 		})

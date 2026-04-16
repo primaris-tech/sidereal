@@ -22,7 +22,7 @@ func TestSecretProbe_CrossNamespaceDenial(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeSecret,
+			Profile:         siderealv1alpha1.ProbeProfileSecret,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -33,7 +33,7 @@ func TestSecretProbe_CrossNamespaceDenial(t *testing.T) {
 	})
 
 	probeID := uid + "9999-9999-9999-999999999999"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeSecret),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileSecret),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Cross-namespace Secret read denied", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -41,8 +41,8 @@ func TestSecretProbe_CrossNamespaceDenial(t *testing.T) {
 	if result.Spec.Result.Outcome != siderealv1alpha1.OutcomePass {
 		t.Errorf("expected Pass, got %s", result.Spec.Result.Outcome)
 	}
-	if result.Spec.Probe.Type != siderealv1alpha1.ProbeTypeSecret {
-		t.Errorf("expected secret probe type, got %s", result.Spec.Probe.Type)
+	if result.Spec.Probe.Profile != siderealv1alpha1.ProbeProfileSecret {
+		t.Errorf("expected secret probe type, got %s", result.Spec.Probe.Profile)
 	}
 }
 
@@ -57,7 +57,7 @@ func TestSecretProbe_AccessAllowed(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeSecret,
+			Profile:         siderealv1alpha1.ProbeProfileSecret,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
@@ -68,7 +68,7 @@ func TestSecretProbe_AccessAllowed(t *testing.T) {
 	})
 
 	probeID := uid + "aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeSecret),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileSecret),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Cross-namespace Secret read was permitted", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)

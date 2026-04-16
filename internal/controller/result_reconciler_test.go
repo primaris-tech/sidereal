@@ -81,7 +81,7 @@ func TestResultReconciler_ValidResult(t *testing.T) {
 			Namespace: SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -201,7 +201,7 @@ func TestResultReconciler_TamperedResult(t *testing.T) {
 			Namespace: SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -388,7 +388,7 @@ func TestResultReconciler_IdempotentOnDuplicate(t *testing.T) {
 			Namespace: SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,

@@ -17,7 +17,7 @@ metadata:
   name: rbac-enforce-production
   namespace: sidereal-system
 spec:
-  probeType: rbac
+  profile: rbac
   targetNamespace: production
   executionMode: enforce
   intervalSeconds: 21600

@@ -1,7 +1,7 @@
 // Package crosswalk resolves multi-framework compliance control mappings.
 //
 // Crosswalk data is loaded from JSON files shipped in the Helm chart.
-// Each file maps (probe_type, nist_800_53_control) → [framework_control_ids].
+// Each file maps (profile, nist_800_53_control) → [framework_control_ids].
 // The resolver is used by the result reconciler to populate controlMappings
 // on every SiderealProbeResult.
 package crosswalk
@@ -16,9 +16,9 @@ import (
 
 // Mapping represents a single crosswalk entry.
 type Mapping struct {
-	ProbeType    string   `json:"probe_type"`
-	NISTControl  string   `json:"nist_control"`
-	ControlIDs   []string `json:"control_ids"`
+	Profile     string   `json:"profile"`
+	NISTControl string   `json:"nist_control"`
+	ControlIDs  []string `json:"control_ids"`
 }
 
 // Framework represents a loaded crosswalk file.
@@ -104,9 +104,9 @@ func (r *Resolver) LoadFramework(data []byte) error {
 	return nil
 }
 
-// Resolve maps a probe type and its NIST 800-53 controls to all active framework control IDs.
+// Resolve maps a profile and its NIST 800-53 controls to all active framework control IDs.
 // Returns a map of framework_id → []control_id.
-func (r *Resolver) Resolve(probeType string, nistControls []string) map[string][]string {
+func (r *Resolver) Resolve(profile string, nistControls []string) map[string][]string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -125,7 +125,7 @@ func (r *Resolver) Resolve(probeType string, nistControls []string) map[string][
 
 		var matched []string
 		for _, mapping := range fw.Mappings {
-			if mapping.ProbeType != probeType {
+			if mapping.Profile != profile {
 				continue
 			}
 			for _, nist := range nistControls {

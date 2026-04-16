@@ -62,9 +62,9 @@ type SiderealIncidentSpec struct {
 	// +kubebuilder:validation:Required
 	TargetNamespace string `json:"targetNamespace"`
 
-	// ProbeType is the type of probe that detected the failure.
+	// Profile is the probe profile that detected the failure.
 	// +kubebuilder:validation:Required
-	ProbeType ProbeType `json:"probeType"`
+	Profile ProbeProfile `json:"profile"`
 
 	// ControlEffectiveness is the effectiveness at the time of incident creation.
 	// +kubebuilder:validation:Required
@@ -82,7 +82,7 @@ type SiderealIncidentSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=si
 // +kubebuilder:printcolumn:name="Severity",type=string,JSONPath=`.spec.severity`
-// +kubebuilder:printcolumn:name="Probe Type",type=string,JSONPath=`.spec.probeType`
+// +kubebuilder:printcolumn:name="Profile",type=string,JSONPath=`.spec.profile`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.targetNamespace`
 // +kubebuilder:printcolumn:name="Remediation",type=string,JSONPath=`.spec.remediationStatus`
 // +kubebuilder:printcolumn:name="Webhook",type=string,JSONPath=`.spec.webhookDeliveryStatus`

@@ -30,7 +30,7 @@ crosswalk:
 
 ## How crosswalks work
 
-Each `SiderealFramework` resource defines a list of mappings. Each mapping associates a `(probeType, nistControl)` pair with one or more framework-specific control IDs. NIST 800-53 serves as the canonical pivot: every probe maps to NIST 800-53 controls first, then the crosswalk resolver expands those to all loaded frameworks.
+Each `SiderealFramework` resource defines a list of mappings. Each mapping associates a `(profile, nistControl)` pair with one or more framework-specific control IDs. NIST 800-53 serves as the canonical pivot: every probe profile maps to NIST 800-53 controls first, then the crosswalk resolver expands those to all loaded frameworks.
 
 For example, an RBAC probe that maps to NIST 800-53 AC-6 (Least Privilege) will also map to CMMC AC.L2-3.1.5, CJIS 5.5.2, and other framework-specific controls through the crosswalk data.
 
@@ -61,10 +61,10 @@ spec:
   frameworkName: "Agency-Specific Control Overlay"
   version: "1.0.0"
   mappings:
-    - probeType: rbac
+    - profile: rbac
       nistControl: AC-6
       controlIDs: ["AGENCY-AC-001", "AGENCY-AC-002"]
-    - probeType: netpol
+    - profile: netpol
       nistControl: SC-7
       controlIDs: ["AGENCY-SC-001"]
 ```

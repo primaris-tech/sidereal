@@ -40,8 +40,12 @@ const (
 	// FingerprintLabel is the mandatory label on all probe Jobs.
 	FingerprintLabel = "sidereal.cloud/probe-id"
 
-	// ProbeTypeLabel identifies the probe type on Jobs and results.
-	ProbeTypeLabel = "sidereal.cloud/probe-type"
+	// ProbeProfileLabel identifies the probe profile on Jobs and results.
+	ProbeProfileLabel = "sidereal.cloud/probe-profile"
+
+	// ProbeTypeLabel is retained as an internal alias while the codebase
+	// transitions to profile terminology.
+	ProbeTypeLabel = ProbeProfileLabel
 
 	// ProbeNameLabel references the SiderealProbe resource name.
 	ProbeNameLabel = "sidereal.cloud/probe-name"
@@ -50,24 +54,24 @@ const (
 	TargetNamespaceLabel = "sidereal.cloud/target-namespace"
 )
 
-// probeServiceAccounts maps probe types to their dedicated ServiceAccount names.
-var probeServiceAccounts = map[siderealv1alpha1.ProbeType]string{
-	siderealv1alpha1.ProbeTypeRBAC:      "sidereal-probe-rbac",
-	siderealv1alpha1.ProbeTypeNetPol:    "sidereal-probe-netpol",
-	siderealv1alpha1.ProbeTypeAdmission: "sidereal-probe-admission",
-	siderealv1alpha1.ProbeTypeSecret:    "sidereal-probe-secret",
-	siderealv1alpha1.ProbeTypeDetection: "sidereal-probe-detection",
+// profileServiceAccounts maps built-in profiles to their dedicated ServiceAccount names.
+var profileServiceAccounts = map[siderealv1alpha1.ProbeProfile]string{
+	siderealv1alpha1.ProbeProfileRBAC:      "sidereal-probe-rbac",
+	siderealv1alpha1.ProbeProfileNetPol:    "sidereal-probe-netpol",
+	siderealv1alpha1.ProbeProfileAdmission: "sidereal-probe-admission",
+	siderealv1alpha1.ProbeProfileSecret:    "sidereal-probe-secret",
+	siderealv1alpha1.ProbeProfileDetection: "sidereal-probe-detection",
 }
 
-// probeCommands maps probe types to the binary path within their container image.
+// profileCommands maps built-in profiles to the binary path within their container image.
 // Go probes all live in sidereal-probe-go; each has its own binary.
 // The detection probe has its own image (Rust, scratch base).
-var probeCommands = map[siderealv1alpha1.ProbeType][]string{
-	siderealv1alpha1.ProbeTypeRBAC:      {"/probe-rbac"},
-	siderealv1alpha1.ProbeTypeNetPol:    {"/probe-netpol"},
-	siderealv1alpha1.ProbeTypeAdmission: {"/probe-admission"},
-	siderealv1alpha1.ProbeTypeSecret:    {"/probe-secret"},
-	siderealv1alpha1.ProbeTypeDetection: {"/detection-probe"},
+var profileCommands = map[siderealv1alpha1.ProbeProfile][]string{
+	siderealv1alpha1.ProbeProfileRBAC:      {"/probe-rbac"},
+	siderealv1alpha1.ProbeProfileNetPol:    {"/probe-netpol"},
+	siderealv1alpha1.ProbeProfileAdmission: {"/probe-admission"},
+	siderealv1alpha1.ProbeProfileSecret:    {"/probe-secret"},
+	siderealv1alpha1.ProbeProfileDetection: {"/detection-probe"},
 }
 
 // ProbeSchedulerReconciler reconciles SiderealProbe resources by scheduling probe Jobs.
@@ -113,7 +117,7 @@ func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	// For detection probes, verify active AO authorization.
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeDetection {
+	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileDetection {
 		if err := r.verifyAOAuthorization(ctx, &probe); err != nil {
 			logger.Info("detection probe skipped: no active AO authorization", "probe", probe.Name, "error", err)
 			return ctrl.Result{RequeueAfter: time.Minute}, nil
@@ -256,7 +260,7 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 	probeID := uuid.New().String()
 
 	// Validate custom probe ServiceAccount is registered.
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom {
+	if probe.Spec.RunnerType() == siderealv1alpha1.ProbeRunnerCustom {
 		if err := r.validateCustomProbe(probe); err != nil {
 			return err
 		}
@@ -267,11 +271,11 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 		logger.Info("dryRun: would create probe job",
 			"probe", probe.Name,
 			"probeID", probeID,
-			"probeType", probe.Spec.ProbeType,
+			"profile", probe.Spec.Profile,
 			"targetNamespace", targetNamespace,
 		)
 		metrics.ProbeExecutionsTotal.WithLabelValues(
-			string(probe.Spec.ProbeType), "DryRun", "Effective",
+			string(probe.Spec.Profile), "DryRun", "Effective",
 		).Inc()
 		return nil
 	}
@@ -331,6 +335,7 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 		"probeID", probeID,
 		"job", job.Name,
 		"targetNamespace", targetNamespace,
+		"profile", probe.Spec.Profile,
 		"executionMode", probe.Spec.ExecutionMode,
 	)
 
@@ -352,27 +357,30 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 
 	jobLabels := map[string]string{
 		FingerprintLabel:     probeID,
-		ProbeTypeLabel:       string(probe.Spec.ProbeType),
+		ProbeProfileLabel:    string(probe.Spec.Profile),
 		ProbeNameLabel:       probe.Name,
 		TargetNamespaceLabel: targetNamespace,
 	}
 
 	env := []corev1.EnvVar{
 		{Name: "PROBE_ID", Value: probeID},
-		{Name: "PROBE_TYPE", Value: string(probe.Spec.ProbeType)},
+		{Name: "PROBE_PROFILE", Value: string(probe.Spec.Profile)},
 		{Name: "TARGET_NAMESPACE", Value: targetNamespace},
 		{Name: "EXECUTION_MODE", Value: string(probe.Spec.ExecutionMode)},
 		{Name: "HMAC_KEY_PATH", Value: "/var/run/secrets/sidereal/hmac-key"},
 	}
 
 	// Add MITRE technique ID for detection probes.
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeDetection && probe.Spec.MitreAttackID != "" {
+	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileDetection && probe.Spec.MitreAttackID != "" {
 		env = append(env, corev1.EnvVar{Name: "TECHNIQUE_ID", Value: probe.Spec.MitreAttackID})
 	}
 
 	// Add custom probe config (opaque JSON passed through to the container).
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom && probe.Spec.CustomProbe != nil && probe.Spec.CustomProbe.Config != nil {
-		env = append(env, corev1.EnvVar{Name: "PROBE_CONFIG", Value: string(probe.Spec.CustomProbe.Config.Raw)})
+	if probe.Spec.RunnerType() == siderealv1alpha1.ProbeRunnerCustom &&
+		probe.Spec.Runner != nil &&
+		probe.Spec.Runner.Custom != nil &&
+		probe.Spec.Runner.Custom.Config != nil {
+		env = append(env, corev1.EnvVar{Name: "PROBE_CONFIG", Value: string(probe.Spec.Runner.Custom.Config.Raw)})
 	}
 
 	return &batchv1.Job{
@@ -389,8 +397,8 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 					Labels: jobLabels,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: sa,
-					RestartPolicy:      corev1.RestartPolicyNever,
+					ServiceAccountName:           sa,
+					RestartPolicy:                corev1.RestartPolicyNever,
 					AutomountServiceAccountToken: ptr.To(true),
 					Containers: []corev1.Container{
 						{
@@ -447,32 +455,36 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 
 // serviceAccountForProbe returns the ServiceAccount name for a probe type.
 func (r *ProbeSchedulerReconciler) serviceAccountForProbe(probe *siderealv1alpha1.SiderealProbe) string {
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom && probe.Spec.CustomProbe != nil {
-		return probe.Spec.CustomProbe.ServiceAccountName
+	if probe.Spec.RunnerType() == siderealv1alpha1.ProbeRunnerCustom &&
+		probe.Spec.Runner != nil &&
+		probe.Spec.Runner.Custom != nil {
+		return probe.Spec.Runner.Custom.ServiceAccountName
 	}
-	if sa, ok := probeServiceAccounts[probe.Spec.ProbeType]; ok {
+	if sa, ok := profileServiceAccounts[probe.Spec.Profile]; ok {
 		return sa
 	}
 	return "sidereal-probe-rbac" // fallback, should not happen
 }
 
-// imageForProbe returns the container image for a probe type.
+// imageForProbe returns the container image for a probe profile.
 func (r *ProbeSchedulerReconciler) imageForProbe(probe *siderealv1alpha1.SiderealProbe) string {
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom && probe.Spec.CustomProbe != nil {
-		return probe.Spec.CustomProbe.Image
+	if probe.Spec.RunnerType() == siderealv1alpha1.ProbeRunnerCustom &&
+		probe.Spec.Runner != nil &&
+		probe.Spec.Runner.Custom != nil {
+		return probe.Spec.Runner.Custom.Image
 	}
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeDetection {
+	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileDetection {
 		return r.ProbeDetectionImage
 	}
 	return r.ProbeGoImage
 }
 
-// commandForProbe returns the container command for a probe type.
+// commandForProbe returns the container command for a probe profile.
 func (r *ProbeSchedulerReconciler) commandForProbe(probe *siderealv1alpha1.SiderealProbe) []string {
-	if probe.Spec.ProbeType == siderealv1alpha1.ProbeTypeCustom {
+	if probe.Spec.RunnerType() == siderealv1alpha1.ProbeRunnerCustom {
 		return nil // custom probes define their own entrypoint
 	}
-	if cmd, ok := probeCommands[probe.Spec.ProbeType]; ok {
+	if cmd, ok := profileCommands[probe.Spec.Profile]; ok {
 		return cmd
 	}
 	return []string{"/probe"}
@@ -485,21 +497,21 @@ func (r *ProbeSchedulerReconciler) commandForProbe(probe *siderealv1alpha1.Sider
 //  3. ServiceAccountName must be specified
 //  4. ServiceAccountName must be pre-registered (if RegisteredCustomSAs is set)
 func (r *ProbeSchedulerReconciler) validateCustomProbe(probe *siderealv1alpha1.SiderealProbe) error {
-	if probe.Spec.CustomProbe == nil {
-		return fmt.Errorf("custom probe %q missing customProbe spec", probe.Name)
+	if probe.Spec.Runner == nil || probe.Spec.Runner.Custom == nil {
+		return fmt.Errorf("probe %q uses runner.type=custom but runner.custom is missing", probe.Name)
 	}
-	if probe.Spec.CustomProbe.Image == "" {
-		return fmt.Errorf("custom probe %q missing image", probe.Name)
+	if probe.Spec.Runner.Custom.Image == "" {
+		return fmt.Errorf("custom runner probe %q missing image", probe.Name)
 	}
-	if probe.Spec.CustomProbe.ServiceAccountName == "" {
-		return fmt.Errorf("custom probe %q missing serviceAccountName", probe.Name)
+	if probe.Spec.Runner.Custom.ServiceAccountName == "" {
+		return fmt.Errorf("custom runner probe %q missing serviceAccountName", probe.Name)
 	}
 
 	// Validate SA is registered (skip if RegisteredCustomSAs is nil, e.g., in tests).
 	if r.RegisteredCustomSAs != nil {
-		if !r.RegisteredCustomSAs[probe.Spec.CustomProbe.ServiceAccountName] {
-			return fmt.Errorf("custom probe %q references unregistered ServiceAccount %q; register via Helm values customProbes.serviceAccounts",
-				probe.Name, probe.Spec.CustomProbe.ServiceAccountName)
+		if !r.RegisteredCustomSAs[probe.Spec.Runner.Custom.ServiceAccountName] {
+			return fmt.Errorf("custom runner probe %q references unregistered ServiceAccount %q; register via Helm values customProbes.serviceAccounts",
+				probe.Name, probe.Spec.Runner.Custom.ServiceAccountName)
 		}
 	}
 

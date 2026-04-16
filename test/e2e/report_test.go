@@ -23,7 +23,7 @@ func TestReport_QueryReportData(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -34,7 +34,7 @@ func TestReport_QueryReportData(t *testing.T) {
 	})
 
 	probeID := uid + "rpt0-rpt0-rpt0-rpt0rpt0rpt0"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Report data test", rootKey)
 
 	waitForProbeResult(t, probeID, 10*time.Second)
@@ -69,7 +69,7 @@ func TestReport_EffectivenessDistribution(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -78,12 +78,12 @@ func TestReport_EffectivenessDistribution(t *testing.T) {
 
 	// Create Pass and Fail results.
 	passID := uid + "rpas-rpas-rpas-rpasrpasrpas"
-	simulateProbeResult(t, passID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, passID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Pass result", rootKey)
 	waitForProbeResult(t, passID, 10*time.Second)
 
 	failID := uid + "rfal-rfal-rfal-rfalrfalrfal"
-	simulateProbeResult(t, failID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, failID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Fail result", rootKey)
 	waitForProbeResult(t, failID, 10*time.Second)
 

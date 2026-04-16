@@ -2,12 +2,12 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// FrameworkMapping maps a (probe_type, NIST 800-53 control) pair to one or
+// FrameworkMapping maps a (profile, NIST 800-53 control) pair to one or
 // more framework-specific control IDs.
 type FrameworkMapping struct {
-	// ProbeType is the Sidereal probe type this mapping applies to.
+	// Profile is the Sidereal probe profile this mapping applies to.
 	// +kubebuilder:validation:Required
-	ProbeType ProbeType `json:"probeType"`
+	Profile ProbeProfile `json:"profile"`
 
 	// NISTControl is the NIST SP 800-53 Rev 5 control identifier (e.g., AC-3).
 	// +kubebuilder:validation:Required
@@ -41,7 +41,7 @@ type SiderealFrameworkSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	Version string `json:"version"`
 
-	// Mappings is the list of (probeType, nistControl) → controlIDs entries.
+	// Mappings is the list of (profile, nistControl) → controlIDs entries.
 	// +kubebuilder:validation:MinItems=1
 	Mappings []FrameworkMapping `json:"mappings"`
 }
@@ -74,7 +74,7 @@ type SiderealFrameworkStatus struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // SiderealFramework defines a compliance framework crosswalk, mapping
-// (probeType, NIST 800-53 control) pairs to framework-specific control IDs.
+// (profile, NIST 800-53 control) pairs to framework-specific control IDs.
 // Apply SiderealFramework resources to add, update, or remove compliance
 // frameworks without restarting the controller.
 type SiderealFramework struct {

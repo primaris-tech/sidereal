@@ -26,7 +26,7 @@ func testResults() []siderealv1alpha1.SiderealProbeResult {
 			ObjectMeta: metav1.ObjectMeta{Name: "result-1"},
 			Spec: siderealv1alpha1.SiderealProbeResultSpec{
 				Probe: siderealv1alpha1.ProbeResultProbeRef{
-					ID: "probe-1", Type: "rbac", TargetNamespace: "production",
+					ID: "probe-1", Profile: "rbac", TargetNamespace: "production",
 				},
 				Result: siderealv1alpha1.ProbeResultResult{
 					Outcome:              siderealv1alpha1.OutcomePass,
@@ -39,7 +39,7 @@ func testResults() []siderealv1alpha1.SiderealProbeResult {
 			ObjectMeta: metav1.ObjectMeta{Name: "result-2"},
 			Spec: siderealv1alpha1.SiderealProbeResultSpec{
 				Probe: siderealv1alpha1.ProbeResultProbeRef{
-					ID: "probe-2", Type: "secret", TargetNamespace: "production",
+					ID: "probe-2", Profile: "secret", TargetNamespace: "production",
 				},
 				Result: siderealv1alpha1.ProbeResultResult{
 					Outcome:              siderealv1alpha1.OutcomeFail,
@@ -52,7 +52,7 @@ func testResults() []siderealv1alpha1.SiderealProbeResult {
 			ObjectMeta: metav1.ObjectMeta{Name: "result-3"},
 			Spec: siderealv1alpha1.SiderealProbeResultSpec{
 				Probe: siderealv1alpha1.ProbeResultProbeRef{
-					ID: "probe-3", Type: "rbac", TargetNamespace: "staging",
+					ID: "probe-3", Profile: "rbac", TargetNamespace: "staging",
 				},
 				Result: siderealv1alpha1.ProbeResultResult{
 					Outcome:              siderealv1alpha1.OutcomePass,
@@ -74,7 +74,7 @@ func testIncidents() []siderealv1alpha1.SiderealIncident {
 			Spec: siderealv1alpha1.SiderealIncidentSpec{
 				ProbeResultRef:        "result-2",
 				ControlID:             "AC-4",
-				ProbeType:             "secret",
+				Profile:               "secret",
 				TargetNamespace:       "production",
 				Severity:              siderealv1alpha1.SeverityHigh,
 				ControlEffectiveness:  siderealv1alpha1.EffectivenessIneffective,
@@ -111,16 +111,16 @@ func TestComputeDistribution(t *testing.T) {
 	}
 }
 
-func TestComputeProbeTypeSummaries(t *testing.T) {
-	summaries := ComputeProbeTypeSummaries(testResults())
+func TestComputeProfileSummaries(t *testing.T) {
+	summaries := ComputeProfileSummaries(testResults())
 
 	if len(summaries) != 2 {
-		t.Fatalf("expected 2 probe types, got %d", len(summaries))
+		t.Fatalf("expected 2 profiles, got %d", len(summaries))
 	}
 
-	byType := make(map[string]ProbeTypeSummary)
+	byType := make(map[string]ProfileSummary)
 	for _, s := range summaries {
-		byType[s.ProbeType] = s
+		byType[s.Profile] = s
 	}
 
 	rbac := byType["rbac"]
@@ -209,7 +209,7 @@ func TestPOAM_OpenOnly(t *testing.T) {
 	d.Incidents = append(d.Incidents, siderealv1alpha1.SiderealIncident{
 		ObjectMeta: metav1.ObjectMeta{Name: "incident-remediated"},
 		Spec: siderealv1alpha1.SiderealIncidentSpec{
-			ProbeType:         "rbac",
+			Profile:           "rbac",
 			Severity:          siderealv1alpha1.SeverityMedium,
 			RemediationStatus: siderealv1alpha1.RemediationRemediated,
 		},

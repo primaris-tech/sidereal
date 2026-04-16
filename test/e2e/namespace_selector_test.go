@@ -54,7 +54,7 @@ func TestNamespaceSelector_MatchesLabeledNamespaces(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeRBAC,
+			Profile: siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespaceSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"sidereal-test": uid,

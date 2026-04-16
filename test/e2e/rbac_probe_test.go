@@ -22,7 +22,7 @@ func TestRBACProbe_DenyPathVerification(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -35,7 +35,7 @@ func TestRBACProbe_DenyPathVerification(t *testing.T) {
 
 	// Simulate a Pass result (deny path was enforced).
 	probeID := uid + "7777-7777-7777-777777777777"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "SelfSubjectAccessReview denied as expected", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -63,7 +63,7 @@ func TestRBACProbe_AllowPathVerification(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
@@ -75,7 +75,7 @@ func TestRBACProbe_AllowPathVerification(t *testing.T) {
 
 	// Simulate a Fail result (deny path was NOT enforced, access was allowed).
 	probeID := uid + "8888-8888-8888-888888888888"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "SelfSubjectAccessReview allowed unexpectedly", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -90,8 +90,8 @@ func TestRBACProbe_AllowPathVerification(t *testing.T) {
 	// Enforce mode + Ineffective should create an incident.
 	incident := waitForIncident(t, probeID, 10*time.Second)
 
-	if incident.Spec.ProbeType != siderealv1alpha1.ProbeTypeRBAC {
-		t.Errorf("expected probe type rbac, got %s", incident.Spec.ProbeType)
+	if incident.Spec.Profile != siderealv1alpha1.ProbeProfileRBAC {
+		t.Errorf("expected probe type rbac, got %s", incident.Spec.Profile)
 	}
 	if incident.Spec.TargetNamespace != ns {
 		t.Errorf("expected target namespace %s, got %s", ns, incident.Spec.TargetNamespace)

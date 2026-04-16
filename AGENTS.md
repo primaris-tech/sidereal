@@ -30,7 +30,7 @@ Probe surfaces: RBAC, NetworkPolicy, Admission Control, Secret Access, Detection
 - Rust detection probe: aws-lc-rs FIPS (CMVP #4816), scratch base, no network/no mounts
 
 **Core CRDs** (8 total, API group `sidereal.cloud/v1alpha1`):
-- `SiderealProbe` — probe configuration; maps to MITRE ATT&CK technique + multi-framework controls; includes `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), `intervalSeconds`; supports built-in and `custom` probe types
+- `SiderealProbe` — probe configuration; selects a semantic `profile` and a `runner`, maps to MITRE ATT&CK technique + multi-framework controls, and includes `targetNamespace` or `targetNamespaceSelector`, `executionMode` (`dryRun`/`observe`/`enforce`), and `intervalSeconds`
 - `SiderealProbeResult` — append-only audit record; HMAC-verified; TTL per impact level (365d High/Moderate, 180d Low); unified outcome enum + derived `controlEffectiveness` (Effective/Ineffective/Degraded/Compromised); `controlMappings` for multi-framework tagging
 - `SiderealIncident` — control failure record; created only in `enforce` execution mode when `controlEffectiveness` is `Ineffective` or `Compromised`; delivers to IR webhook
 - `SiderealSystemAlert` — degraded state indicator; requires individual principal acknowledgment before probes resume
@@ -156,7 +156,7 @@ sidereal/
 
 **Release cadence**: Semantic versioning driven by what changed, not by time.
 - Patch (`0.1.x`): bug fixes, security patches, dependency updates — no API surface change
-- Minor (`0.x.0`): new features, new probe types, new framework crosswalks — backward-compatible
+- Minor (`0.x.0`): new features, new probe profiles, new framework crosswalks — backward-compatible
 - Major (`x.0.0`): breaking CRD changes, controller API changes, anything requiring migration
 - Security fixes (govulncheck, cargo audit, Trivy) should be patched and released promptly per CVE SLAs
 

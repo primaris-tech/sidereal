@@ -18,7 +18,7 @@ metadata:
   name: detection-t1059
   namespace: sidereal-system
 spec:
-  probeType: detection
+  profile: detection
   targetNamespace: default
   executionMode: observe
   intervalSeconds: 21600

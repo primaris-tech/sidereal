@@ -12,7 +12,7 @@ import (
 func baseCfg() probe.Config {
 	return probe.Config{
 		ProbeID:         "test-netpol-1",
-		ProbeType:       "netpol",
+		Profile:         "netpol",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}

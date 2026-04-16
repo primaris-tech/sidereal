@@ -593,7 +593,7 @@ A custom probe is a container image that conforms to a standardized input/output
 - Environment variable `SIDEREAL_PROBE_ID` — the unique execution ID (UUID)
 - Environment variable `SIDEREAL_TARGET_NAMESPACE` — the namespace under test
 - Environment variable `SIDEREAL_EXECUTION_MODE` — `dryRun`, `observe`, or `enforce`
-- Volume mount `/sidereal/config` — probe-specific configuration from `SiderealProbe.spec.customProbe.config` (JSON)
+- Volume mount `/sidereal/config` — probe-specific configuration from `SiderealProbe.spec.runner.custom.config` (JSON)
 - Volume mount `/sidereal/hmac` — the per-execution HMAC key (same mechanism as built-in probes)
 
 **Output contract** — the probe writes a JSON result to `/sidereal/result/outcome.json`:
@@ -616,15 +616,18 @@ kind: SiderealProbe
 metadata:
   name: etcd-encryption-verify
 spec:
-  type: custom
-  customProbe:
-    image: ghcr.io/agency/sidereal-probe-etcd-encryption@sha256:abc123...
-    serviceAccountRef: sidereal-probe-etcd-encryption
-    config:
-      encryptionProvider: "aescbc"
-      verifyNamespaces: ["production", "staging"]
-    nistControls: ["SC-28"]
-    mitreAttackId: "T1552"
+  profile: agency.example/etcd-encryption
+  controlMappings:
+    nist-800-53: ["SC-28"]
+  mitreAttackId: "T1552"
+  runner:
+    type: custom
+    custom:
+      image: ghcr.io/agency/sidereal-probe-etcd-encryption@sha256:abc123...
+      serviceAccountName: sidereal-probe-etcd-encryption
+      config:
+        encryptionProvider: "aescbc"
+        verifyNamespaces: ["production", "staging"]
   targetNamespaceSelector:
     matchLabels:
       data-classification: "high"
@@ -894,7 +897,7 @@ Every `SiderealProbeResult` carries a `controlMappings` field — a map from fra
 | `nist-800-171` | NIST SP 800-171 Rev 3 (CUI Protection) | `3.1.1`, `3.13.1` |
 | `kubernetes-stig` | DISA Kubernetes STIG | `V-242435`, `V-242437` |
 
-**Crosswalk data model**: Crosswalk tables are defined as `SiderealFramework` CRDs (cluster-scoped). Each resource maps `(probeType, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
+**Crosswalk data model**: Crosswalk tables are defined as `SiderealFramework` CRDs (cluster-scoped). Each resource maps `(profile, nist_800_53_control) → [framework_control_ids]`. This makes crosswalks:
 - **Auditable** — an assessor can `kubectl get siderealframeworks` to inspect exactly which mappings are active
 - **Updateable** — agencies add, update, or remove frameworks with `kubectl apply`/`kubectl delete`; no controller restart required
 - **Versionable** — each `SiderealFramework` carries a `spec.version` field recorded on every `SiderealProbeResult` in `spec.result.crosswalkVersion`

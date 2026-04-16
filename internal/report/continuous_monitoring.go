@@ -8,23 +8,23 @@ import (
 
 // ContinuousMonitoringReport is the continuous monitoring summary output.
 type ContinuousMonitoringReport struct {
-	ReportType  string                    `json:"reportType"`
-	Period      string                    `json:"period"`
-	Frameworks  []string                  `json:"frameworks"`
-	Summary     EffectivenessDistribution `json:"summary"`
-	ByProbeType []ProbeTypeSummary        `json:"byProbeType"`
-	Controls    []ControlStatus           `json:"controls,omitempty"`
+	ReportType string                    `json:"reportType"`
+	Period     string                    `json:"period"`
+	Frameworks []string                  `json:"frameworks"`
+	Summary    EffectivenessDistribution `json:"summary"`
+	ByProfile  []ProfileSummary          `json:"byProfile"`
+	Controls   []ControlStatus           `json:"controls,omitempty"`
 }
 
 // GenerateContinuousMonitoring produces a continuous monitoring summary.
 func GenerateContinuousMonitoring(data *ReportData, format string) ([]byte, error) {
 	report := ContinuousMonitoringReport{
-		ReportType:  "continuous-monitoring",
-		Period:      fmt.Sprintf("%s to %s", data.TimeRange.From.Format("2006-01-02"), data.TimeRange.To.Format("2006-01-02")),
-		Frameworks:  data.Frameworks,
-		Summary:     ComputeDistribution(data.Results),
-		ByProbeType: ComputeProbeTypeSummaries(data.Results),
-		Controls:    computeControlStatuses(data),
+		ReportType: "continuous-monitoring",
+		Period:     fmt.Sprintf("%s to %s", data.TimeRange.From.Format("2006-01-02"), data.TimeRange.To.Format("2006-01-02")),
+		Frameworks: data.Frameworks,
+		Summary:    ComputeDistribution(data.Results),
+		ByProfile:  ComputeProfileSummaries(data.Results),
+		Controls:   computeControlStatuses(data),
 	}
 
 	switch format {
@@ -49,9 +49,9 @@ func computeControlStatuses(data *ReportData) []ControlStatus {
 				cs, ok := controlResults[key]
 				if !ok {
 					cs = &ControlStatus{
-						ControlID:     controlID,
-						Framework:     framework,
-						ProbeType:     string(result.Spec.Probe.Type),
+						ControlID:      controlID,
+						Framework:      framework,
+						Profile:        string(result.Spec.Probe.Profile),
 						HasActiveProbe: true,
 					}
 					controlResults[key] = cs
@@ -90,13 +90,13 @@ func renderContinuousMonitoringMarkdown(report ContinuousMonitoringReport) []byt
 	b.WriteString(fmt.Sprintf("| Degraded | %d |\n", report.Summary.Degraded))
 	b.WriteString(fmt.Sprintf("| Compromised | %d |\n\n", report.Summary.Compromised))
 
-	if len(report.ByProbeType) > 0 {
-		b.WriteString("## By Probe Type\n\n")
-		b.WriteString("| Probe Type | Runs | Effective | Ineffective | Degraded | Compromised |\n")
+	if len(report.ByProfile) > 0 {
+		b.WriteString("## By Profile\n\n")
+		b.WriteString("| Profile | Runs | Effective | Ineffective | Degraded | Compromised |\n")
 		b.WriteString("|---|---|---|---|---|---|\n")
-		for _, pt := range report.ByProbeType {
+		for _, pt := range report.ByProfile {
 			b.WriteString(fmt.Sprintf("| %s | %d | %d | %d | %d | %d |\n",
-				pt.ProbeType, pt.TotalRuns,
+				pt.Profile, pt.TotalRuns,
 				pt.Distribution.Effective, pt.Distribution.Ineffective,
 				pt.Distribution.Degraded, pt.Distribution.Compromised))
 		}

@@ -51,8 +51,8 @@ type Discoverer interface {
 
 // Engine orchestrates all discoverers and deduplicates recommendations.
 type Engine struct {
-	discoverers         []Discoverer
-	excludedNamespaces  map[string]bool
+	discoverers        []Discoverer
+	excludedNamespaces map[string]bool
 }
 
 // NewEngine creates a discovery engine with the standard set of discoverers.
@@ -98,34 +98,34 @@ func (e *Engine) RunAll(ctx context.Context, c client.Client) ([]Recommendation,
 	return deduplicate(all), nil
 }
 
-// RunByType executes only the discoverer matching the given probe type.
-func (e *Engine) RunByType(ctx context.Context, c client.Client, probeType siderealv1alpha1.ProbeType) ([]Recommendation, error) {
+// RunByProfile executes only the discoverer matching the given probe profile.
+func (e *Engine) RunByProfile(ctx context.Context, c client.Client, profile siderealv1alpha1.ProbeProfile) ([]Recommendation, error) {
 	for _, d := range e.discoverers {
-		switch probeType {
-		case siderealv1alpha1.ProbeTypeNetPol:
+		switch profile {
+		case siderealv1alpha1.ProbeProfileNetPol:
 			if _, ok := d.(*NetworkPolicyDiscoverer); ok {
 				return d.Discover(ctx, c)
 			}
-		case siderealv1alpha1.ProbeTypeRBAC:
+		case siderealv1alpha1.ProbeProfileRBAC:
 			if _, ok := d.(*RBACDiscoverer); ok {
 				return d.Discover(ctx, c)
 			}
-		case siderealv1alpha1.ProbeTypeAdmission:
+		case siderealv1alpha1.ProbeProfileAdmission:
 			if _, ok := d.(*AdmissionDiscoverer); ok {
 				return d.Discover(ctx, c)
 			}
-		case siderealv1alpha1.ProbeTypeSecret:
+		case siderealv1alpha1.ProbeProfileSecret:
 			if _, ok := d.(*SecretDiscoverer); ok {
 				return d.Discover(ctx, c)
 			}
-		case siderealv1alpha1.ProbeTypeDetection:
+		case siderealv1alpha1.ProbeProfileDetection:
 			if _, ok := d.(*DetectionDiscoverer); ok {
 				return d.Discover(ctx, c)
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("no discoverer for probe type %s", probeType)
+	return nil, fmt.Errorf("no discoverer for profile %s", profile)
 }
 
 // HashResource computes a stable hash for a Kubernetes resource for change detection.

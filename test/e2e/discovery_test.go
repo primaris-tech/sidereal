@@ -29,7 +29,7 @@ func TestDiscovery_RecommendationLifecycle(t *testing.T) {
 			Confidence:         siderealv1alpha1.ConfidenceHigh,
 			Rationale:          "RoleBinding grants cluster-admin to SA in default namespace",
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+				Profile:         siderealv1alpha1.ProbeProfileRBAC,
 				TargetNamespace: "default",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -72,7 +72,7 @@ func TestDiscovery_RecommendationDismissal(t *testing.T) {
 			Confidence:         siderealv1alpha1.ConfidenceMedium,
 			Rationale:          "NetworkPolicy deny-all in staging namespace",
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeNetPol,
+				Profile:         siderealv1alpha1.ProbeProfileNetPol,
 				TargetNamespace: "staging",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -125,7 +125,7 @@ func TestDiscovery_RecommendationPromotion(t *testing.T) {
 			Confidence:         siderealv1alpha1.ConfidenceHigh,
 			Rationale:          "Admin RoleBinding discovered in default namespace",
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+				Profile:         siderealv1alpha1.ProbeProfileRBAC,
 				TargetNamespace: "default",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -192,7 +192,7 @@ func TestDiscovery_RecommendationSupersession(t *testing.T) {
 			Confidence:         siderealv1alpha1.ConfidenceHigh,
 			Rationale:          "ValidatingWebhookConfiguration for policy enforcement",
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+				Profile:         siderealv1alpha1.ProbeProfileAdmission,
 				TargetNamespace: "default",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -219,7 +219,7 @@ func TestDiscovery_RecommendationSupersession(t *testing.T) {
 			Confidence:         siderealv1alpha1.ConfidenceHigh,
 			Rationale:          "Updated ValidatingWebhookConfiguration for policy enforcement",
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+				Profile:         siderealv1alpha1.ProbeProfileAdmission,
 				TargetNamespace: "default",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,

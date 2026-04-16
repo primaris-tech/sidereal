@@ -58,8 +58,8 @@ func TestNetworkPolicyDiscoverer(t *testing.T) {
 	if rec.SourceResource.Kind != "NetworkPolicy" {
 		t.Errorf("expected source kind NetworkPolicy, got %s", rec.SourceResource.Kind)
 	}
-	if rec.ProbeTemplate.ProbeType != siderealv1alpha1.ProbeTypeNetPol {
-		t.Errorf("expected netpol probe type, got %s", rec.ProbeTemplate.ProbeType)
+	if rec.ProbeTemplate.Profile != siderealv1alpha1.ProbeProfileNetPol {
+		t.Errorf("expected netpol probe type, got %s", rec.ProbeTemplate.Profile)
 	}
 	if rec.ProbeTemplate.TargetNamespace != "production" {
 		t.Errorf("expected target namespace production, got %s", rec.ProbeTemplate.TargetNamespace)
@@ -106,8 +106,8 @@ func TestRBACDiscoverer(t *testing.T) {
 	if rec.SourceResource.Kind != "RoleBinding" {
 		t.Errorf("expected source kind RoleBinding, got %s", rec.SourceResource.Kind)
 	}
-	if rec.ProbeTemplate.ProbeType != siderealv1alpha1.ProbeTypeRBAC {
-		t.Errorf("expected rbac probe type, got %s", rec.ProbeTemplate.ProbeType)
+	if rec.ProbeTemplate.Profile != siderealv1alpha1.ProbeProfileRBAC {
+		t.Errorf("expected rbac probe type, got %s", rec.ProbeTemplate.Profile)
 	}
 }
 
@@ -171,8 +171,8 @@ func TestAdmissionDiscoverer(t *testing.T) {
 	}
 
 	rec := recs[0]
-	if rec.ProbeTemplate.ProbeType != siderealv1alpha1.ProbeTypeAdmission {
-		t.Errorf("expected admission probe type, got %s", rec.ProbeTemplate.ProbeType)
+	if rec.ProbeTemplate.Profile != siderealv1alpha1.ProbeProfileAdmission {
+		t.Errorf("expected admission probe type, got %s", rec.ProbeTemplate.Profile)
 	}
 }
 
@@ -198,8 +198,8 @@ func TestSecretDiscoverer(t *testing.T) {
 	}
 
 	rec := recs[0]
-	if rec.ProbeTemplate.ProbeType != siderealv1alpha1.ProbeTypeSecret {
-		t.Errorf("expected secret probe type, got %s", rec.ProbeTemplate.ProbeType)
+	if rec.ProbeTemplate.Profile != siderealv1alpha1.ProbeProfileSecret {
+		t.Errorf("expected secret probe type, got %s", rec.ProbeTemplate.Profile)
 	}
 	if rec.ProbeTemplate.TargetNamespace != "production" {
 		t.Errorf("expected target namespace production, got %s", rec.ProbeTemplate.TargetNamespace)

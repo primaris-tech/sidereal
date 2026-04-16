@@ -9,13 +9,13 @@ import (
 // ExecutiveSummaryReport is the AO/ISSO-facing summary that uses only
 // controlEffectiveness (no raw outcomes).
 type ExecutiveSummaryReport struct {
-	ReportType  string                    `json:"reportType"`
-	Period      string                    `json:"period"`
-	Frameworks  []string                  `json:"frameworks"`
-	Overall     EffectivenessDistribution `json:"overall"`
-	ByProbeType []ProbeTypeSummary        `json:"byProbeType"`
-	OpenIncidents int                     `json:"openIncidents"`
-	Posture     string                    `json:"posture"`
+	ReportType    string                    `json:"reportType"`
+	Period        string                    `json:"period"`
+	Frameworks    []string                  `json:"frameworks"`
+	Overall       EffectivenessDistribution `json:"overall"`
+	ByProfile     []ProfileSummary          `json:"byProfile"`
+	OpenIncidents int                       `json:"openIncidents"`
+	Posture       string                    `json:"posture"`
 }
 
 // GenerateExecutiveSummary produces an executive summary for AO/ISSO consumption.
@@ -34,7 +34,7 @@ func GenerateExecutiveSummary(data *ReportData, format string) ([]byte, error) {
 		Period:        fmt.Sprintf("%s to %s", data.TimeRange.From.Format("2006-01-02"), data.TimeRange.To.Format("2006-01-02")),
 		Frameworks:    data.Frameworks,
 		Overall:       dist,
-		ByProbeType:   ComputeProbeTypeSummaries(data.Results),
+		ByProfile:     ComputeProfileSummaries(data.Results),
 		OpenIncidents: openIncidents,
 		Posture:       computePosture(dist, openIncidents),
 	}

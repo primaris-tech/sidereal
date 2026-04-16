@@ -58,7 +58,7 @@ Use "sidereal <command> --help" for more information about a command.`)
 
 func runDiscover(args []string) error {
 	fs := flag.NewFlagSet("discover", flag.ExitOnError)
-	probeType := fs.String("type", "", "Probe type to discover (rbac, netpol, admission, secret, detection). Empty for all.")
+	profile := fs.String("profile", "", "Probe profile to discover (rbac, netpol, admission, secret, detection). Empty for all.")
 	namespace := fs.String("namespace", "", "Limit discovery to a specific namespace")
 	output := fs.String("output", "", "Output directory or file for generated probe YAML. Empty for stdout.")
 	dryRun := fs.Bool("dry-run", false, "Show what would be discovered without writing files")
@@ -80,9 +80,9 @@ func runDiscover(args []string) error {
 
 	var recs []discovery.Recommendation
 
-	if *probeType != "" {
-		pt := siderealv1alpha1.ProbeType(*probeType)
-		recs, err = engine.RunByType(ctx, c, pt)
+	if *profile != "" {
+		p := siderealv1alpha1.ProbeProfile(*profile)
+		recs, err = engine.RunByProfile(ctx, c, p)
 	} else {
 		recs, err = engine.RunAll(ctx, c)
 	}
@@ -109,7 +109,7 @@ func runDiscover(args []string) error {
 				rec.SourceResource.Kind,
 				rec.SourceResource.Namespace,
 				rec.SourceResource.Name,
-				rec.ProbeTemplate.ProbeType,
+				rec.ProbeTemplate.Profile,
 				rec.ProbeTemplate.TargetNamespace,
 				rec.Confidence,
 			)

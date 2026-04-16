@@ -73,7 +73,7 @@ func (r *FrameworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	mappings := make([]crosswalk.Mapping, len(fw.Spec.Mappings))
 	for i, m := range fw.Spec.Mappings {
 		mappings[i] = crosswalk.Mapping{
-			ProbeType:   string(m.ProbeType),
+			Profile:     string(m.Profile),
 			NISTControl: m.NISTControl,
 			ControlIDs:  m.ControlIDs,
 		}

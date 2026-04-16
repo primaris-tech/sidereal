@@ -16,8 +16,8 @@ type CoverageMatrixReport struct {
 
 // CoverageStats summarizes coverage across all controls.
 type CoverageStats struct {
-	TotalControls  int     `json:"totalControls"`
-	CoveredByProbe int     `json:"coveredByProbe"`
+	TotalControls   int     `json:"totalControls"`
+	CoveredByProbe  int     `json:"coveredByProbe"`
 	CoveragePercent float64 `json:"coveragePercent"`
 }
 
@@ -57,8 +57,8 @@ func GenerateCoverageMatrix(data *ReportData, format string) ([]byte, error) {
 		Frameworks: data.Frameworks,
 		Controls:   controls,
 		Coverage: CoverageStats{
-			TotalControls:  len(controls),
-			CoveredByProbe: covered,
+			TotalControls:   len(controls),
+			CoveredByProbe:  covered,
 			CoveragePercent: coveragePercent,
 		},
 	}
@@ -75,10 +75,10 @@ func GenerateCoverageMatrix(data *ReportData, format string) ([]byte, error) {
 
 func renderCoverageCSV(controls []ControlStatus) []byte {
 	var b strings.Builder
-	b.WriteString("Framework,Control ID,Probe Type,Active,Executions,Effective,Effectiveness %\n")
+	b.WriteString("Framework,Control ID,Profile,Active,Executions,Effective,Effectiveness %\n")
 	for _, cs := range controls {
 		b.WriteString(fmt.Sprintf("%s,%s,%s,%t,%d,%d,%.1f\n",
-			cs.Framework, cs.ControlID, cs.ProbeType,
+			cs.Framework, cs.ControlID, cs.Profile,
 			cs.HasActiveProbe, cs.TotalExecutions,
 			cs.EffectiveCount, cs.EffectivenessPercent))
 	}
@@ -93,11 +93,11 @@ func renderCoverageMarkdown(report CoverageMatrixReport) []byte {
 		report.Coverage.CoveredByProbe, report.Coverage.TotalControls, report.Coverage.CoveragePercent))
 
 	if len(report.Controls) > 0 {
-		b.WriteString("| Framework | Control | Probe Type | Executions | Effectiveness |\n")
+		b.WriteString("| Framework | Control | Profile | Executions | Effectiveness |\n")
 		b.WriteString("|---|---|---|---|---|\n")
 		for _, cs := range report.Controls {
 			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %.1f%% |\n",
-				cs.Framework, cs.ControlID, cs.ProbeType,
+				cs.Framework, cs.ControlID, cs.Profile,
 				cs.TotalExecutions, cs.EffectivenessPercent))
 		}
 	}

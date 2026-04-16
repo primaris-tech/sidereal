@@ -24,7 +24,7 @@ func TestDetectionProbe_RequiresAOAuthorization(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:          siderealv1alpha1.ProbeTypeDetection,
+			Profile:            siderealv1alpha1.ProbeProfileDetection,
 			TargetNamespace:    ns,
 			ExecutionMode:      siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds:    300,
@@ -85,7 +85,7 @@ func TestDetectionProbe_WithActiveAuthorization(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:          siderealv1alpha1.ProbeTypeDetection,
+			Profile:            siderealv1alpha1.ProbeProfileDetection,
 			TargetNamespace:    ns,
 			ExecutionMode:      siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds:    300,
@@ -96,7 +96,7 @@ func TestDetectionProbe_WithActiveAuthorization(t *testing.T) {
 
 	// Simulate detection result.
 	probeID := uid + "dede-dede-dede-dededededede"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeDetection),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileDetection),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeDetected), "Falco alert correlated for T1053.007", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -143,7 +143,7 @@ func TestDetectionProbe_Undetected(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:          siderealv1alpha1.ProbeTypeDetection,
+			Profile:            siderealv1alpha1.ProbeProfileDetection,
 			TargetNamespace:    ns,
 			ExecutionMode:      siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds:    300,
@@ -156,7 +156,7 @@ func TestDetectionProbe_Undetected(t *testing.T) {
 	})
 
 	probeID := uid + "fafa-fafa-fafa-fafafafafafa"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeDetection),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileDetection),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeUndetected), "No Falco alert within verification window", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)

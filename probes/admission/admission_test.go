@@ -22,7 +22,7 @@ import (
 func baseCfg() probe.Config {
 	return probe.Config{
 		ProbeID:         "test-admission-1",
-		ProbeType:       "admission",
+		Profile:         "admission",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -265,4 +265,3 @@ func TestDefaultBadPod(t *testing.T) {
 		t.Error("expected privileged=true in bad pod")
 	}
 }
-

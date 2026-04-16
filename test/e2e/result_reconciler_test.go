@@ -22,7 +22,7 @@ func TestResultReconciler_CreatesProbeResult(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -33,7 +33,7 @@ func TestResultReconciler_CreatesProbeResult(t *testing.T) {
 	})
 
 	probeID := uid + "0000-0000-0000-000000000000"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "RBAC deny verified", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -48,8 +48,8 @@ func TestResultReconciler_CreatesProbeResult(t *testing.T) {
 	if result.Spec.Result.IntegrityStatus != siderealv1alpha1.IntegrityVerified {
 		t.Errorf("expected integrity Verified, got %s", result.Spec.Result.IntegrityStatus)
 	}
-	if result.Spec.Probe.Type != siderealv1alpha1.ProbeTypeRBAC {
-		t.Errorf("expected probe type rbac, got %s", result.Spec.Probe.Type)
+	if result.Spec.Probe.Profile != siderealv1alpha1.ProbeProfileRBAC {
+		t.Errorf("expected probe type rbac, got %s", result.Spec.Probe.Profile)
 	}
 	if result.Spec.Probe.TargetNamespace != ns {
 		t.Errorf("expected target namespace %s, got %s", ns, result.Spec.Probe.TargetNamespace)
@@ -70,7 +70,7 @@ func TestResultReconciler_Idempotency(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -78,7 +78,7 @@ func TestResultReconciler_Idempotency(t *testing.T) {
 	})
 
 	probeID := uid + "1111-1111-1111-111111111111"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "first run", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)

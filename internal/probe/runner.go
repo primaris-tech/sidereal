@@ -23,7 +23,7 @@ const (
 // Config holds the environment-provided configuration for a probe runner.
 type Config struct {
 	ProbeID         string
-	ProbeType       string
+	Profile         string
 	TargetNamespace string
 	ExecutionMode   string
 	HMACKeyPath     string
@@ -33,7 +33,7 @@ type Config struct {
 func LoadConfigFromEnv() Config {
 	return Config{
 		ProbeID:         os.Getenv("PROBE_ID"),
-		ProbeType:       os.Getenv("PROBE_TYPE"),
+		Profile:         os.Getenv("PROBE_PROFILE"),
 		TargetNamespace: os.Getenv("TARGET_NAMESPACE"),
 		ExecutionMode:   os.Getenv("EXECUTION_MODE"),
 		HMACKeyPath:     os.Getenv("HMAC_KEY_PATH"),

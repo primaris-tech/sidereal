@@ -72,7 +72,7 @@ func TestExecute_AllDenied(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-1",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -90,7 +90,7 @@ func TestExecute_SecretsAccessible(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-2",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "observe",
 	}
@@ -119,7 +119,7 @@ func TestExecute_PartialAccess(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-3",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -140,7 +140,7 @@ func TestExecute_NotFoundTreatedAsDenied(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-4",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -160,7 +160,7 @@ func TestExecute_APIError(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-5",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -177,7 +177,7 @@ func TestExecute_DurationTracked(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-6",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "default",
 		ExecutionMode:   "dryRun",
 	}
@@ -244,7 +244,7 @@ func TestExecute_CrossNamespaceOnly(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-secret-7",
-		ProbeType:       "secret",
+		Profile:         "secret",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}

@@ -28,7 +28,7 @@ func TestHMACIntegrity_ValidSignature(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -36,7 +36,7 @@ func TestHMACIntegrity_ValidSignature(t *testing.T) {
 	})
 
 	probeID := uid + "2222-2222-2222-222222222222"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "HMAC valid test", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -61,7 +61,7 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -135,7 +135,7 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 			Labels: map[string]string{
 				controller.FingerprintLabel:     probeID,
-				controller.ProbeTypeLabel:       string(siderealv1alpha1.ProbeTypeRBAC),
+				controller.ProbeTypeLabel:       string(siderealv1alpha1.ProbeProfileRBAC),
 				controller.ProbeNameLabel:       probe.Name,
 				controller.TargetNamespaceLabel: ns,
 			},

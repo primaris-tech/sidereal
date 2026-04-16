@@ -13,7 +13,7 @@ metadata:
   name: rbac-production
   namespace: sidereal-system
 spec:
-  probeType: rbac
+  profile: rbac
   targetNamespace: production
   executionMode: observe
   intervalSeconds: 21600  # 6 hours

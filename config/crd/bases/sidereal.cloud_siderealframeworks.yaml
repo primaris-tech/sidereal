@@ -37,7 +37,7 @@ spec:
       openAPIV3Schema:
         description: |-
           SiderealFramework defines a compliance framework crosswalk, mapping
-          (probeType, NIST 800-53 control) pairs to framework-specific control IDs.
+          (profile, NIST 800-53 control) pairs to framework-specific control IDs.
           Apply SiderealFramework resources to add, update, or remove compliance
           frameworks without restarting the controller.
         properties:
@@ -74,11 +74,11 @@ spec:
                 minLength: 1
                 type: string
               mappings:
-                description: Mappings is the list of (probeType, nistControl) → controlIDs
+                description: Mappings is the list of (profile, nistControl) → controlIDs
                   entries.
                 items:
                   description: |-
-                    FrameworkMapping maps a (probe_type, NIST 800-53 control) pair to one or
+                    FrameworkMapping maps a (profile, NIST 800-53 control) pair to one or
                     more framework-specific control IDs.
                   properties:
                     controlIDs:
@@ -94,21 +94,15 @@ spec:
                         identifier (e.g., AC-3).
                       minLength: 1
                       type: string
-                    probeType:
-                      description: ProbeType is the Sidereal probe type this mapping
+                    profile:
+                      description: Profile is the Sidereal probe profile this mapping
                         applies to.
-                      enum:
-                      - rbac
-                      - netpol
-                      - admission
-                      - secret
-                      - detection
-                      - custom
+                      minLength: 1
                       type: string
                   required:
                   - controlIDs
                   - nistControl
-                  - probeType
+                  - profile
                   type: object
                 minItems: 1
                 type: array

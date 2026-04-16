@@ -23,7 +23,7 @@ func TestExecutionMode_DryRunNoJob(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 			IntervalSeconds: 300,
@@ -56,7 +56,7 @@ func TestExecutionMode_ObserveCreatesJobNoIncident(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -85,7 +85,7 @@ func TestExecutionMode_ObserveCreatesJobNoIncident(t *testing.T) {
 
 	// Simulate a failing result.
 	probeID := uid + "4444-4444-4444-444444444444"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "RBAC deny not enforced", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -121,7 +121,7 @@ func TestExecutionMode_EnforceCreatesIncident(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
@@ -132,7 +132,7 @@ func TestExecutionMode_EnforceCreatesIncident(t *testing.T) {
 	})
 
 	probeID := uid + "5555-5555-5555-555555555555"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeRBAC),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "RBAC deny not enforced", rootKey)
 
 	// Wait for ProbeResult.

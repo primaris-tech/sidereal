@@ -93,7 +93,7 @@ func (r *IncidentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	logger.Info("created incident",
 		"incident", incident.Name,
 		"severity", incident.Spec.Severity,
-		"probeType", incident.Spec.ProbeType,
+		"profile", incident.Spec.Profile,
 		"targetNamespace", incident.Spec.TargetNamespace,
 	)
 
@@ -136,7 +136,7 @@ func (r *IncidentReconciler) buildIncident(
 			Namespace: result.Namespace,
 			Labels: map[string]string{
 				FingerprintLabel:     probeID,
-				ProbeTypeLabel:       string(probe.Spec.ProbeType),
+				ProbeProfileLabel:    string(probe.Spec.Profile),
 				TargetNamespaceLabel: result.Spec.Probe.TargetNamespace,
 			},
 		},
@@ -147,7 +147,7 @@ func (r *IncidentReconciler) buildIncident(
 			Description:           result.Spec.Result.Detail,
 			Severity:              severity,
 			TargetNamespace:       result.Spec.Probe.TargetNamespace,
-			ProbeType:             probe.Spec.ProbeType,
+			Profile:               probe.Spec.Profile,
 			ControlEffectiveness:  result.Spec.Result.ControlEffectiveness,
 			RemediationStatus:     siderealv1alpha1.RemediationOpen,
 			WebhookDeliveryStatus: siderealv1alpha1.WebhookPending,
@@ -159,7 +159,7 @@ func (r *IncidentReconciler) buildIncident(
 func (r *IncidentReconciler) deliverWebhook(ctx context.Context, incident *siderealv1alpha1.SiderealIncident) error {
 	payload := webhook.IncidentPayload{
 		IncidentName:         incident.Name,
-		ProbeType:            string(incident.Spec.ProbeType),
+		ProbeType:            string(incident.Spec.Profile),
 		TargetNamespace:      incident.Spec.TargetNamespace,
 		Outcome:              string(incident.Spec.ControlEffectiveness),
 		ControlEffectiveness: string(incident.Spec.ControlEffectiveness),

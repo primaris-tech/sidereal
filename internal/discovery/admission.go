@@ -87,7 +87,7 @@ func (d *AdmissionDiscoverer) discoverValidatingWebhooks(ctx context.Context, c 
 			Confidence:     confidence,
 			Rationale:      rationale,
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+				Profile:         siderealv1alpha1.ProbeProfileAdmission,
 				TargetNamespace: targetNamespace,
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -143,7 +143,7 @@ func (d *AdmissionDiscoverer) discoverMutatingWebhooks(ctx context.Context, c cl
 			Confidence:     siderealv1alpha1.ConfidenceLow,
 			Rationale:      rationale,
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+				Profile:         siderealv1alpha1.ProbeProfileAdmission,
 				TargetNamespace: targetNamespace,
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,

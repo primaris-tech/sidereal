@@ -16,7 +16,7 @@ metadata:
   name: rbac-boundary-check
   namespace: sidereal-system
 spec:
-  probeType: rbac
+  profile: rbac
   executionMode: observe
   intervalSeconds: 21600
   targetNamespaceSelector:

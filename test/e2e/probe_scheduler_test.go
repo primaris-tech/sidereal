@@ -25,7 +25,7 @@ func TestProbeScheduler_CreatesJob(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -59,7 +59,7 @@ func TestProbeScheduler_CreatesJob(t *testing.T) {
 	}
 
 	// Verify probe type label.
-	if job.Labels[controller.ProbeTypeLabel] != string(siderealv1alpha1.ProbeTypeRBAC) {
+	if job.Labels[controller.ProbeTypeLabel] != string(siderealv1alpha1.ProbeProfileRBAC) {
 		t.Errorf("unexpected probe type label: %s", job.Labels[controller.ProbeTypeLabel])
 	}
 
@@ -113,7 +113,7 @@ func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 			IntervalSeconds: 300,
@@ -150,7 +150,7 @@ func TestProbeScheduler_IdentitySeparation(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeSecret,
+			Profile:         siderealv1alpha1.ProbeProfileSecret,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -194,7 +194,7 @@ func TestProbeScheduler_RateLimiting(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,

@@ -5,17 +5,28 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ProbeType defines the type of security control probe.
-// +kubebuilder:validation:Enum=rbac;netpol;admission;secret;detection;custom
-type ProbeType string
+// ProbeProfile defines the semantic validation profile for a probe.
+// Built-in profiles are reserved by Sidereal. Custom profiles should use an
+// organization-qualified identifier to avoid collisions.
+// +kubebuilder:validation:MinLength=1
+type ProbeProfile string
 
 const (
-	ProbeTypeRBAC      ProbeType = "rbac"
-	ProbeTypeNetPol    ProbeType = "netpol"
-	ProbeTypeAdmission ProbeType = "admission"
-	ProbeTypeSecret    ProbeType = "secret"
-	ProbeTypeDetection ProbeType = "detection"
-	ProbeTypeCustom    ProbeType = "custom"
+	ProbeProfileRBAC      ProbeProfile = "rbac"
+	ProbeProfileNetPol    ProbeProfile = "netpol"
+	ProbeProfileAdmission ProbeProfile = "admission"
+	ProbeProfileSecret    ProbeProfile = "secret"
+	ProbeProfileDetection ProbeProfile = "detection"
+	ProbeProfileCustom    ProbeProfile = "custom"
+)
+
+// ProbeRunnerType defines how a probe is executed.
+// +kubebuilder:validation:Enum=builtin;custom
+type ProbeRunnerType string
+
+const (
+	ProbeRunnerBuiltin ProbeRunnerType = "builtin"
+	ProbeRunnerCustom  ProbeRunnerType = "custom"
 )
 
 // ExecutionMode defines the operational mode for a probe.
@@ -33,9 +44,9 @@ const (
 
 // SiderealProbeSpec defines the desired state of a SiderealProbe.
 type SiderealProbeSpec struct {
-	// ProbeType is the type of security control to validate.
+	// Profile is the semantic validation profile this probe instantiates.
 	// +kubebuilder:validation:Required
-	ProbeType ProbeType `json:"probeType"`
+	Profile ProbeProfile `json:"profile"`
 
 	// TargetNamespace is the explicit namespace to probe. Mutually exclusive with TargetNamespaceSelector.
 	// +optional
@@ -64,7 +75,9 @@ type SiderealProbeSpec struct {
 	// +optional
 	VerificationWindowSeconds int32 `json:"verificationWindowSeconds,omitempty"`
 
-	// ControlMappings maps framework IDs to control IDs for multi-framework compliance tagging.
+	// ControlMappings declares the canonical control IDs this profile validates.
+	// Sidereal treats nist-800-53 as the canonical key and derives other
+	// framework mappings through SiderealFramework crosswalks.
 	// +optional
 	ControlMappings map[string][]string `json:"controlMappings,omitempty"`
 
@@ -80,9 +93,9 @@ type SiderealProbeSpec struct {
 	// +optional
 	AdmissionProbe *AdmissionProbeConfig `json:"admissionProbe,omitempty"`
 
-	// CustomProbe contains configuration specific to custom probes.
+	// Runner configures how the selected profile is executed.
 	// +optional
-	CustomProbe *CustomProbeConfig `json:"customProbe,omitempty"`
+	Runner *ProbeRunnerSpec `json:"runner,omitempty"`
 }
 
 // AdmissionProbeConfig holds admission-specific probe configuration.
@@ -96,7 +109,20 @@ type AdmissionProbeConfig struct {
 	KnownBadSpec *runtime.RawExtension `json:"knownBadSpec,omitempty"`
 }
 
-// CustomProbeConfig holds configuration for operator-extensible custom probes.
+// ProbeRunnerSpec holds execution configuration for a probe profile.
+type ProbeRunnerSpec struct {
+	// Type selects the runner implementation. Built-in profiles default to
+	// builtin if omitted.
+	// +optional
+	Type ProbeRunnerType `json:"type,omitempty"`
+
+	// Custom holds configuration for operator-extensible custom runners.
+	// Required when type=custom.
+	// +optional
+	Custom *CustomProbeConfig `json:"custom,omitempty"`
+}
+
+// CustomProbeConfig holds configuration for operator-extensible custom runners.
 type CustomProbeConfig struct {
 	// Image is the container image for the custom probe (must be digest-pinned and cosign-signed).
 	// +kubebuilder:validation:Required
@@ -109,6 +135,14 @@ type CustomProbeConfig struct {
 	// Config is opaque JSON configuration passed to the custom probe container.
 	// +optional
 	Config *runtime.RawExtension `json:"config,omitempty"`
+}
+
+// RunnerType returns the effective runner type for this probe spec.
+func (s *SiderealProbeSpec) RunnerType() ProbeRunnerType {
+	if s.Runner != nil && s.Runner.Type != "" {
+		return s.Runner.Type
+	}
+	return ProbeRunnerBuiltin
 }
 
 // ProbeResultSummary is a compact summary of a recent probe result.
@@ -156,7 +190,7 @@ type SiderealProbeStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=sp
-// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.probeType`
+// +kubebuilder:printcolumn:name="Profile",type=string,JSONPath=`.spec.profile`
 // +kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.spec.executionMode`
 // +kubebuilder:printcolumn:name="Interval",type=integer,JSONPath=`.spec.intervalSeconds`
 // +kubebuilder:printcolumn:name="Last Outcome",type=string,JSONPath=`.status.lastOutcome`

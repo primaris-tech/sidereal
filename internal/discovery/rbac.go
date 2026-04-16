@@ -80,7 +80,7 @@ func (d *RBACDiscoverer) roleBindingRecommendation(rb *rbacv1.RoleBinding) (Reco
 		Confidence:     confidence,
 		Rationale:      rationale,
 		ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: rb.Namespace,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 			IntervalSeconds: 21600,

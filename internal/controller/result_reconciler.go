@@ -100,20 +100,20 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	signature := resultCM.Data["hmac"]
 
 	// Verify HMAC.
-	probeType := job.Labels[ProbeTypeLabel]
+	profile := job.Labels[ProbeProfileLabel]
 	probeName := job.Labels[ProbeNameLabel]
 	targetNamespace := job.Labels[TargetNamespaceLabel]
 
 	err := siderealhmac.VerifyResult(hmacKey, []byte(resultPayload), signature)
 	if err != nil {
-		return r.handleTamperedResult(ctx, &job, probeID, probeType, probeName, targetNamespace)
+		return r.handleTamperedResult(ctx, &job, probeID, profile, probeName, targetNamespace)
 	}
 
 	// Parse the result payload.
 	var runnerResult ProbeRunnerResult
 	if err := json.Unmarshal([]byte(resultPayload), &runnerResult); err != nil {
 		logger.Error(err, "failed to parse result payload")
-		return r.handleTamperedResult(ctx, &job, probeID, probeType, probeName, targetNamespace)
+		return r.handleTamperedResult(ctx, &job, probeID, profile, probeName, targetNamespace)
 	}
 
 	// Derive control effectiveness.
@@ -131,7 +131,7 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if r.Crosswalk != nil && len(nistControls) > 0 {
-		controlMappings = r.Crosswalk.Resolve(probeType, nistControls)
+		controlMappings = r.Crosswalk.Resolve(profile, nistControls)
 		crosswalkVersion = r.Crosswalk.Version()
 	} else if len(nistControls) > 0 {
 		controlMappings = map[string][]string{"nist-800-53": nistControls}
@@ -144,18 +144,18 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			Name:      fmt.Sprintf("sidereal-result-%s", probeID[:8]),
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
-				FingerprintLabel:                  probeID,
-				ProbeTypeLabel:                    probeType,
-				ProbeNameLabel:                    probeName,
-				TargetNamespaceLabel:              targetNamespace,
-				"sidereal.cloud/outcome":          string(outcome),
+				FingerprintLabel:                       probeID,
+				ProbeProfileLabel:                      profile,
+				ProbeNameLabel:                         probeName,
+				TargetNamespaceLabel:                   targetNamespace,
+				"sidereal.cloud/outcome":               string(outcome),
 				"sidereal.cloud/control-effectiveness": string(effectiveness),
 			},
 		},
 		Spec: siderealv1alpha1.SiderealProbeResultSpec{
 			Probe: siderealv1alpha1.ProbeResultProbeRef{
 				ID:              probeID,
-				Type:            siderealv1alpha1.ProbeType(probeType),
+				Profile:         siderealv1alpha1.ProbeProfile(profile),
 				TargetNamespace: targetNamespace,
 			},
 			Result: siderealv1alpha1.ProbeResultResult{
@@ -189,9 +189,9 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Record metrics.
 	metrics.ProbeExecutionsTotal.WithLabelValues(
-		probeType, string(outcome), string(effectiveness),
+		profile, string(outcome), string(effectiveness),
 	).Inc()
-	metrics.ProbeDurationSeconds.WithLabelValues(probeType).Observe(
+	metrics.ProbeDurationSeconds.WithLabelValues(profile).Observe(
 		float64(runnerResult.DurationMs) / 1000.0,
 	)
 
@@ -203,7 +203,7 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		"probeResult", probeResult.Name,
 		"outcome", outcome,
 		"effectiveness", effectiveness,
-		"probeType", probeType,
+		"profile", profile,
 		"targetNamespace", targetNamespace,
 	)
 
@@ -214,7 +214,7 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *ResultReconciler) handleTamperedResult(
 	ctx context.Context,
 	job *batchv1.Job,
-	probeID, probeType, probeName, targetNamespace string,
+	probeID, profile, probeName, targetNamespace string,
 ) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Error(nil, "HMAC verification failed — tampered result detected",
@@ -230,18 +230,18 @@ func (r *ResultReconciler) handleTamperedResult(
 			Name:      fmt.Sprintf("sidereal-result-%s", probeID[:8]),
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
-				FingerprintLabel:                  probeID,
-				ProbeTypeLabel:                    probeType,
-				ProbeNameLabel:                    probeName,
-				TargetNamespaceLabel:              targetNamespace,
-				"sidereal.cloud/outcome":          string(siderealv1alpha1.OutcomeTamperedResult),
+				FingerprintLabel:                       probeID,
+				ProbeProfileLabel:                      profile,
+				ProbeNameLabel:                         probeName,
+				TargetNamespaceLabel:                   targetNamespace,
+				"sidereal.cloud/outcome":               string(siderealv1alpha1.OutcomeTamperedResult),
 				"sidereal.cloud/control-effectiveness": string(siderealv1alpha1.EffectivenessCompromised),
 			},
 		},
 		Spec: siderealv1alpha1.SiderealProbeResultSpec{
 			Probe: siderealv1alpha1.ProbeResultProbeRef{
 				ID:              probeID,
-				Type:            siderealv1alpha1.ProbeType(probeType),
+				Profile:         siderealv1alpha1.ProbeProfile(profile),
 				TargetNamespace: targetNamespace,
 			},
 			Result: siderealv1alpha1.ProbeResultResult{
@@ -272,7 +272,7 @@ func (r *ResultReconciler) handleTamperedResult(
 		},
 		Spec: siderealv1alpha1.SiderealSystemAlertSpec{
 			Reason:  siderealv1alpha1.AlertReasonTamperedResult,
-			Message: fmt.Sprintf("HMAC verification failed for probe %s (job %s). Probe surface %s suspended.", probeName, job.Name, probeType),
+			Message: fmt.Sprintf("HMAC verification failed for probe %s (job %s). Probe profile %s suspended.", probeName, job.Name, profile),
 		},
 	}
 
@@ -291,7 +291,7 @@ func (r *ResultReconciler) handleTamperedResult(
 	}
 
 	metrics.ProbeExecutionsTotal.WithLabelValues(
-		probeType,
+		profile,
 		string(siderealv1alpha1.OutcomeTamperedResult),
 		string(siderealv1alpha1.EffectivenessCompromised),
 	).Inc()

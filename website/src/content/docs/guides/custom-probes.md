@@ -9,7 +9,7 @@ Sidereal supports custom probes for agency-specific security controls that fall 
 
 A custom probe is a container image that receives configuration as a JSON file and writes its result as a JSON file. The controller mounts these paths into the probe Job.
 
-**Input**: The probe reads its configuration from a file at a well-known path. The content is the opaque JSON you provide in the `SiderealProbe` spec under `customProbe.config`.
+**Input**: The probe reads its configuration from a file at a well-known path. The content is the opaque JSON you provide in the `SiderealProbe` spec under `runner.custom.config`.
 
 **Output**: The probe writes a JSON result to a well-known path. The result must include an `outcome` field with one of the standard `ProbeOutcome` values: `Pass`, `Fail`, `Blocked`, `Rejected`, `Accepted`, `NotApplicable`, `Indeterminate`, or `NotEnforced`. It may optionally include a `detail` string with a human-readable explanation.
 
@@ -48,7 +48,7 @@ metadata:
   name: dns-resolution-check
   namespace: sidereal-system
 spec:
-  probeType: custom
+  profile: agency.example/dns-resolution
   targetNamespace: production
   executionMode: observe
   intervalSeconds: 3600
@@ -56,18 +56,20 @@ spec:
     nist-800-53:
       - SC-20
       - SC-22
-  customProbe:
-    image: ghcr.io/my-agency/sidereal-probe-dns@sha256:abc123...
-    serviceAccountName: sidereal-probe-dns-resolution
-    config:
-      domains:
-        - "api.internal.agency.gov"
-        - "auth.internal.agency.gov"
-      expectedResolvers:
-        - "10.0.0.53"
+  runner:
+    type: custom
+    custom:
+      image: ghcr.io/my-agency/sidereal-probe-dns@sha256:abc123...
+      serviceAccountName: sidereal-probe-dns-resolution
+      config:
+        domains:
+          - "api.internal.agency.gov"
+          - "auth.internal.agency.gov"
+        expectedResolvers:
+          - "10.0.0.53"
 ```
 
-The `controlMappings` field lets you tag custom probe results with the compliance controls they validate, using the same multi-framework mapping that built-in probes use.
+The `profile` identifies the probe's semantics. The `runner` tells Sidereal how to execute that profile. The `controlMappings` field lets the profile declare its canonical NIST controls, which Sidereal then expands through the same multi-framework mapping pipeline built-in profiles use.
 
 ## Security controls
 

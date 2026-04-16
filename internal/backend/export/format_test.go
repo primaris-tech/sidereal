@@ -189,11 +189,11 @@ func TestSyslogPriority(t *testing.T) {
 		effectiveness string
 		expected      int
 	}{
-		{"Effective", 134},    // 16*8 + 6
-		{"Degraded", 132},     // 16*8 + 4
-		{"Ineffective", 131},  // 16*8 + 3
-		{"Compromised", 130},  // 16*8 + 2
-		{"Unknown", 133},      // 16*8 + 5
+		{"Effective", 134},   // 16*8 + 6
+		{"Degraded", 132},    // 16*8 + 4
+		{"Ineffective", 131}, // 16*8 + 3
+		{"Compromised", 130}, // 16*8 + 2
+		{"Unknown", 133},     // 16*8 + 5
 	}
 	for _, tt := range tests {
 		if got := syslogPriority(tt.effectiveness); got != tt.expected {

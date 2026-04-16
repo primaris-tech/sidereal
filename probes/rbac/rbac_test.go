@@ -35,7 +35,7 @@ func TestExecute_AllPass(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-1",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -56,7 +56,7 @@ func TestExecute_DenyPathViolation(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-2",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "production",
 		ExecutionMode:   "observe",
 	}
@@ -80,7 +80,7 @@ func TestExecute_AllowPathViolation(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-3",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "staging",
 		ExecutionMode:   "dryRun",
 	}
@@ -101,7 +101,7 @@ func TestExecute_APIError(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-4",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -128,7 +128,7 @@ func TestExecute_MixedViolation(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-5",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "production",
 		ExecutionMode:   "dryRun",
 	}
@@ -147,7 +147,7 @@ func TestExecute_DurationTracked(t *testing.T) {
 
 	cfg := probe.Config{
 		ProbeID:         "test-probe-6",
-		ProbeType:       "rbac",
+		Profile:         "rbac",
 		TargetNamespace: "default",
 		ExecutionMode:   "dryRun",
 	}

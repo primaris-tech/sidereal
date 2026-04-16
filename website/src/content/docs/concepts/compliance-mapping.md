@@ -19,7 +19,7 @@ Every SiderealProbeResult is tagged with controls from all loaded compliance fra
 
 ## How it works
 
-`SiderealFramework` resources define mappings from `(probeType, nist_800_53_control)` to each framework's control IDs. The `FrameworkReconciler` loads these into the in-memory crosswalk resolver when resources are created or updated. The result reconciler reads the resolver after each probe execution to populate the `controlMappings` field on every ProbeResult.
+`SiderealFramework` resources define mappings from `(profile, nist_800_53_control)` to each framework's control IDs. The `FrameworkReconciler` loads these into the in-memory crosswalk resolver when resources are created or updated. The result reconciler reads the resolver after each probe execution to populate the `controlMappings` field on every ProbeResult.
 
 For example, when an RBAC probe validates control `AC-6(5)`, the crosswalk resolver maps it to:
 - CMMC: `AC.L2-3.1.5`
@@ -51,10 +51,10 @@ spec:
   frameworkName: "Agency-Specific Controls"
   version: "1.0.0"
   mappings:
-    - probeType: rbac
+    - profile: rbac
       nistControl: AC-6
       controlIDs: ["AGENCY-AC-001"]
-    - probeType: netpol
+    - profile: netpol
       nistControl: SC-7
       controlIDs: ["AGENCY-SC-001"]
 ```

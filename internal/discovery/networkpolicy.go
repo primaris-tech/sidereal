@@ -112,7 +112,7 @@ func (d *NetworkPolicyDiscoverer) generateRecommendation(np *networkingv1.Networ
 		Confidence:     confidence,
 		Rationale:      rationale,
 		ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeNetPol,
+			Profile:         siderealv1alpha1.ProbeProfileNetPol,
 			TargetNamespace: np.Namespace,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 			IntervalSeconds: 21600,

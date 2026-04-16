@@ -35,7 +35,7 @@ func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
 			UID:       "test-uid-123",
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 			IntervalSeconds: 300,
@@ -80,7 +80,7 @@ func TestProbeScheduler_ObserveModeCreatesJob(t *testing.T) {
 			UID:       "test-uid-456",
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -196,7 +196,7 @@ func TestProbeScheduler_NotDueYet(t *testing.T) {
 			UID:       "test-uid-789",
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeRBAC,
+			Profile:         siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 86400, // 24 hours
@@ -258,7 +258,7 @@ func TestProbeScheduler_DetectionRequiresAuthorization(t *testing.T) {
 			UID:       "test-uid-det",
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:          siderealv1alpha1.ProbeTypeDetection,
+			Profile:            siderealv1alpha1.ProbeProfileDetection,
 			TargetNamespace:    "production",
 			ExecutionMode:      siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds:    300,
@@ -304,7 +304,7 @@ func TestProbeScheduler_NamespaceSelectorExpansion(t *testing.T) {
 			UID:       "test-uid-sel",
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeRBAC,
+			Profile: siderealv1alpha1.ProbeProfileRBAC,
 			TargetNamespaceSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "production"},
 			},
@@ -399,20 +399,20 @@ func TestServiceAccountMapping(t *testing.T) {
 	reconciler := &ProbeSchedulerReconciler{}
 
 	tests := []struct {
-		probeType siderealv1alpha1.ProbeType
-		expected  string
+		profile  siderealv1alpha1.ProbeProfile
+		expected string
 	}{
-		{siderealv1alpha1.ProbeTypeRBAC, "sidereal-probe-rbac"},
-		{siderealv1alpha1.ProbeTypeNetPol, "sidereal-probe-netpol"},
-		{siderealv1alpha1.ProbeTypeAdmission, "sidereal-probe-admission"},
-		{siderealv1alpha1.ProbeTypeSecret, "sidereal-probe-secret"},
-		{siderealv1alpha1.ProbeTypeDetection, "sidereal-probe-detection"},
+		{siderealv1alpha1.ProbeProfileRBAC, "sidereal-probe-rbac"},
+		{siderealv1alpha1.ProbeProfileNetPol, "sidereal-probe-netpol"},
+		{siderealv1alpha1.ProbeProfileAdmission, "sidereal-probe-admission"},
+		{siderealv1alpha1.ProbeProfileSecret, "sidereal-probe-secret"},
+		{siderealv1alpha1.ProbeProfileDetection, "sidereal-probe-detection"},
 	}
 
 	for _, tc := range tests {
-		t.Run(string(tc.probeType), func(t *testing.T) {
+		t.Run(string(tc.profile), func(t *testing.T) {
 			probe := &siderealv1alpha1.SiderealProbe{
-				Spec: siderealv1alpha1.SiderealProbeSpec{ProbeType: tc.probeType},
+				Spec: siderealv1alpha1.SiderealProbeSpec{Profile: tc.profile},
 			}
 			got := reconciler.serviceAccountForProbe(probe)
 			if got != tc.expected {
@@ -427,10 +427,13 @@ func TestCustomProbeUsesCustomSA(t *testing.T) {
 
 	probe := &siderealv1alpha1.SiderealProbe{
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "registry.example.com/my-probe@sha256:abc123",
-				ServiceAccountName: "my-custom-probe-sa",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "registry.example.com/my-probe@sha256:abc123",
+					ServiceAccountName: "my-custom-probe-sa",
+				},
 			},
 		},
 	}
@@ -456,10 +459,13 @@ func TestValidateCustomProbe_Valid(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "registry.example.com/probe@sha256:abc123",
-				ServiceAccountName: "my-custom-sa",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "registry.example.com/probe@sha256:abc123",
+					ServiceAccountName: "my-custom-sa",
+				},
 			},
 		},
 	}
@@ -479,10 +485,13 @@ func TestValidateCustomProbe_UnregisteredSA(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "registry.example.com/probe@sha256:abc123",
-				ServiceAccountName: "unapproved-sa",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "registry.example.com/probe@sha256:abc123",
+					ServiceAccountName: "unapproved-sa",
+				},
 			},
 		},
 	}
@@ -499,7 +508,7 @@ func TestValidateCustomProbe_MissingSpec(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
+			Profile: siderealv1alpha1.ProbeProfileCustom,
 		},
 	}
 
@@ -514,9 +523,12 @@ func TestValidateCustomProbe_MissingImage(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				ServiceAccountName: "my-sa",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					ServiceAccountName: "my-sa",
+				},
 			},
 		},
 	}
@@ -532,9 +544,12 @@ func TestValidateCustomProbe_MissingSA(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image: "registry.example.com/probe@sha256:abc123",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image: "registry.example.com/probe@sha256:abc123",
+				},
 			},
 		},
 	}
@@ -551,10 +566,13 @@ func TestValidateCustomProbe_NilRegistryAllowsAll(t *testing.T) {
 	probe := &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-custom"},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType: siderealv1alpha1.ProbeTypeCustom,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "registry.example.com/probe@sha256:abc123",
-				ServiceAccountName: "any-sa",
+			Profile: siderealv1alpha1.ProbeProfileCustom,
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "registry.example.com/probe@sha256:abc123",
+					ServiceAccountName: "any-sa",
+				},
 			},
 		},
 	}
@@ -569,13 +587,16 @@ func TestCustomProbeJobHasConfigEnv(t *testing.T) {
 
 	probe := &siderealv1alpha1.SiderealProbe{
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:     siderealv1alpha1.ProbeTypeCustom,
+			Profile:       siderealv1alpha1.ProbeProfileCustom,
 			ExecutionMode: siderealv1alpha1.ExecutionModeObserve,
-			CustomProbe: &siderealv1alpha1.CustomProbeConfig{
-				Image:              "registry.example.com/probe@sha256:abc123",
-				ServiceAccountName: "my-sa",
-				Config: &runtime.RawExtension{
-					Raw: []byte(`{"threshold":42,"checkType":"deep"}`),
+			Runner: &siderealv1alpha1.ProbeRunnerSpec{
+				Type: siderealv1alpha1.ProbeRunnerCustom,
+				Custom: &siderealv1alpha1.CustomProbeConfig{
+					Image:              "registry.example.com/probe@sha256:abc123",
+					ServiceAccountName: "my-sa",
+					Config: &runtime.RawExtension{
+						Raw: []byte(`{"threshold":42,"checkType":"deep"}`),
+					},
 				},
 			},
 		},
@@ -604,7 +625,7 @@ func TestBuiltInProbeJobNoConfigEnv(t *testing.T) {
 
 	probe := &siderealv1alpha1.SiderealProbe{
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:     siderealv1alpha1.ProbeTypeRBAC,
+			Profile:       siderealv1alpha1.ProbeProfileRBAC,
 			ExecutionMode: siderealv1alpha1.ExecutionModeObserve,
 		},
 	}

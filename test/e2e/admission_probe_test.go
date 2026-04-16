@@ -22,7 +22,7 @@ func TestAdmissionProbe_PolicyRejection(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+			Profile:         siderealv1alpha1.ProbeProfileAdmission,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -33,7 +33,7 @@ func TestAdmissionProbe_PolicyRejection(t *testing.T) {
 	})
 
 	probeID := uid + "bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeAdmission),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileAdmission),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeRejected), "Kyverno policy rejected known-bad spec", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -57,7 +57,7 @@ func TestAdmissionProbe_PolicyNotEnforced(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+			Profile:         siderealv1alpha1.ProbeProfileAdmission,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -68,7 +68,7 @@ func TestAdmissionProbe_PolicyNotEnforced(t *testing.T) {
 	})
 
 	probeID := uid + "cccc-cccc-cccc-cccccccccccc"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeAdmission),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileAdmission),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeAccepted), "Known-bad spec was accepted", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
@@ -92,7 +92,7 @@ func TestAdmissionProbe_Indeterminate(t *testing.T) {
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeAdmission,
+			Profile:         siderealv1alpha1.ProbeProfileAdmission,
 			TargetNamespace: ns,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -100,7 +100,7 @@ func TestAdmissionProbe_Indeterminate(t *testing.T) {
 	})
 
 	probeID := uid + "dddd-dddd-dddd-dddddddddddd"
-	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeTypeAdmission),
+	simulateProbeResult(t, probeID, string(siderealv1alpha1.ProbeProfileAdmission),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeIndeterminate), "No webhook evaluation in response", rootKey)
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)

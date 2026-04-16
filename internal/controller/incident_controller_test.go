@@ -30,7 +30,7 @@ func createProbeResult(probeID, probeType, probeName, targetNS string, outcome s
 		Spec: siderealv1alpha1.SiderealProbeResultSpec{
 			Probe: siderealv1alpha1.ProbeResultProbeRef{
 				ID:              probeID,
-				Type:            siderealv1alpha1.ProbeType(probeType),
+				Profile:         siderealv1alpha1.ProbeProfile(probeType),
 				TargetNamespace: targetNS,
 			},
 			Result: siderealv1alpha1.ProbeResultResult{
@@ -49,7 +49,7 @@ func createEnforceProbe(name, targetNS, probeType string) *siderealv1alpha1.Side
 			Namespace: SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeType(probeType),
+			Profile:         siderealv1alpha1.ProbeProfile(probeType),
 			TargetNamespace: targetNS,
 			ExecutionMode:   siderealv1alpha1.ExecutionModeEnforce,
 			IntervalSeconds: 300,
@@ -100,8 +100,8 @@ func TestIncidentReconciler_CreatesIncident(t *testing.T) {
 	if incident.Spec.Severity != siderealv1alpha1.SeverityHigh {
 		t.Errorf("expected severity High, got %q", incident.Spec.Severity)
 	}
-	if incident.Spec.ProbeType != siderealv1alpha1.ProbeTypeSecret {
-		t.Errorf("expected probe type secret, got %q", incident.Spec.ProbeType)
+	if incident.Spec.Profile != siderealv1alpha1.ProbeProfileSecret {
+		t.Errorf("expected probe type secret, got %q", incident.Spec.Profile)
 	}
 	if incident.Spec.TargetNamespace != "production" {
 		t.Errorf("expected target namespace production, got %q", incident.Spec.TargetNamespace)
@@ -202,7 +202,7 @@ func TestIncidentReconciler_ObserveModeNoIncident(t *testing.T) {
 			Namespace: SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
-			ProbeType:       siderealv1alpha1.ProbeTypeSecret,
+			Profile:         siderealv1alpha1.ProbeProfileSecret,
 			TargetNamespace: "production",
 			ExecutionMode:   siderealv1alpha1.ExecutionModeObserve,
 			IntervalSeconds: 300,
@@ -255,7 +255,7 @@ func TestIncidentReconciler_IdempotentCreation(t *testing.T) {
 		Spec: siderealv1alpha1.SiderealIncidentSpec{
 			ProbeResultRef: result.Name,
 			Severity:       siderealv1alpha1.SeverityHigh,
-			ProbeType:      siderealv1alpha1.ProbeTypeRBAC,
+			Profile:        siderealv1alpha1.ProbeProfileRBAC,
 		},
 	}
 

@@ -62,7 +62,7 @@ metadata:
   name: detect-container-drift-staging
   namespace: sidereal-system
 spec:
-  probeType: detection
+  profile: detection
   targetNamespace: staging
   executionMode: observe
   intervalSeconds: 21600

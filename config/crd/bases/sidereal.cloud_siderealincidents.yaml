@@ -20,8 +20,8 @@ spec:
     - jsonPath: .spec.severity
       name: Severity
       type: string
-    - jsonPath: .spec.probeType
-      name: Probe Type
+    - jsonPath: .spec.profile
+      name: Profile
       type: string
     - jsonPath: .spec.targetNamespace
       name: Namespace
@@ -85,15 +85,9 @@ spec:
                 description: ProbeResultRef is the name of the SiderealProbeResult
                   that triggered this incident.
                 type: string
-              probeType:
-                description: ProbeType is the type of probe that detected the failure.
-                enum:
-                - rbac
-                - netpol
-                - admission
-                - secret
-                - detection
-                - custom
+              profile:
+                description: Profile is the probe profile that detected the failure.
+                minLength: 1
                 type: string
               remediationStatus:
                 default: Open
@@ -128,7 +122,7 @@ spec:
             - controlEffectiveness
             - description
             - probeResultRef
-            - probeType
+            - profile
             - remediationStatus
             - severity
             - targetNamespace

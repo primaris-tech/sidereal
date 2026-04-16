@@ -89,7 +89,7 @@ func (d *DetectionDiscoverer) discoverTetragonPolicies(ctx context.Context, c cl
 				"Map this policy to a MITRE ATT&CK technique from the approved catalog.",
 				policy.GetName()),
 			ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-				ProbeType:       siderealv1alpha1.ProbeTypeDetection,
+				Profile:         siderealv1alpha1.ProbeProfileDetection,
 				TargetNamespace: "default",
 				ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 				IntervalSeconds: 21600,
@@ -147,7 +147,7 @@ func (d *DetectionDiscoverer) discoverFalcoRules(ctx context.Context, c client.C
 					"in the approved catalog. Review and map rules to techniques.",
 					cm.Namespace, cm.Name),
 				ProbeTemplate: siderealv1alpha1.SiderealProbeSpec{
-					ProbeType:       siderealv1alpha1.ProbeTypeDetection,
+					Profile:         siderealv1alpha1.ProbeProfileDetection,
 					TargetNamespace: "default",
 					ExecutionMode:   siderealv1alpha1.ExecutionModeDryRun,
 					IntervalSeconds: 21600,

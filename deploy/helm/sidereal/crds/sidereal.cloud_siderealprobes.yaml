@@ -17,8 +17,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.probeType
-      name: Type
+    - jsonPath: .spec.profile
+      name: Profile
       type: string
     - jsonPath: .spec.executionMode
       name: Mode
@@ -85,29 +85,10 @@ spec:
                   items:
                     type: string
                   type: array
-                description: ControlMappings maps framework IDs to control IDs for
-                  multi-framework compliance tagging.
-                type: object
-              customProbe:
-                description: CustomProbe contains configuration specific to custom
-                  probes.
-                properties:
-                  config:
-                    description: Config is opaque JSON configuration passed to the
-                      custom probe container.
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  image:
-                    description: Image is the container image for the custom probe
-                      (must be digest-pinned and cosign-signed).
-                    type: string
-                  serviceAccountName:
-                    description: ServiceAccountName is the pre-registered ServiceAccount
-                      for this custom probe.
-                    type: string
-                required:
-                - image
-                - serviceAccountName
+                description: |-
+                  ControlMappings declares the canonical control IDs this profile validates.
+                  Sidereal treats nist-800-53 as the canonical key and derives other
+                  framework mappings through SiderealFramework crosswalks.
                 type: object
               executionMode:
                 default: dryRun
@@ -130,16 +111,45 @@ spec:
                 description: MitreAttackID is the MITRE ATT&CK technique ID this probe
                   validates against.
                 type: string
-              probeType:
-                description: ProbeType is the type of security control to validate.
-                enum:
-                - rbac
-                - netpol
-                - admission
-                - secret
-                - detection
-                - custom
+              profile:
+                description: Profile is the semantic validation profile this probe
+                  instantiates.
+                minLength: 1
                 type: string
+              runner:
+                description: Runner configures how the selected profile is executed.
+                properties:
+                  custom:
+                    description: |-
+                      Custom holds configuration for operator-extensible custom runners.
+                      Required when type=custom.
+                    properties:
+                      config:
+                        description: Config is opaque JSON configuration passed to
+                          the custom probe container.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      image:
+                        description: Image is the container image for the custom probe
+                          (must be digest-pinned and cosign-signed).
+                        type: string
+                      serviceAccountName:
+                        description: ServiceAccountName is the pre-registered ServiceAccount
+                          for this custom probe.
+                        type: string
+                    required:
+                    - image
+                    - serviceAccountName
+                    type: object
+                  type:
+                    description: |-
+                      Type selects the runner implementation. Built-in profiles default to
+                      builtin if omitted.
+                    enum:
+                    - builtin
+                    - custom
+                    type: string
+                type: object
               targetNamespace:
                 description: TargetNamespace is the explicit namespace to probe. Mutually
                   exclusive with TargetNamespaceSelector.
@@ -202,7 +212,7 @@ spec:
             required:
             - executionMode
             - intervalSeconds
-            - probeType
+            - profile
             type: object
           status:
             description: SiderealProbeStatus defines the observed state of a SiderealProbe.

@@ -15,7 +15,7 @@ metadata:
   name: admission-production
   namespace: sidereal-system
 spec:
-  probeType: admission
+  profile: admission
   targetNamespace: production
   executionMode: observe
   intervalSeconds: 21600

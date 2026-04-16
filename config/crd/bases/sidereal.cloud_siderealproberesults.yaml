@@ -17,8 +17,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.probe.type
-      name: Probe Type
+    - jsonPath: .spec.probe.profile
+      name: Profile
       type: string
     - jsonPath: .spec.probe.targetNamespace
       name: Namespace
@@ -110,23 +110,17 @@ spec:
                   id:
                     description: ID is the unique execution identifier (UUID).
                     type: string
+                  profile:
+                    description: Profile is the probe profile.
+                    minLength: 1
+                    type: string
                   targetNamespace:
                     description: TargetNamespace is the namespace that was probed.
                     type: string
-                  type:
-                    description: Type is the probe type.
-                    enum:
-                    - rbac
-                    - netpol
-                    - admission
-                    - secret
-                    - detection
-                    - custom
-                    type: string
                 required:
                 - id
+                - profile
                 - targetNamespace
-                - type
                 type: object
               result:
                 description: Result contains the probe's findings.

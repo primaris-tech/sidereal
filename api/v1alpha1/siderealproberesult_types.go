@@ -56,7 +56,7 @@ func DeriveControlEffectiveness(outcome ProbeOutcome) ControlEffectiveness {
 type IntegrityStatus string
 
 const (
-	IntegrityVerified      IntegrityStatus = "Verified"
+	IntegrityVerified       IntegrityStatus = "Verified"
 	IntegrityTamperedResult IntegrityStatus = "TamperedResult"
 )
 
@@ -75,8 +75,8 @@ type ProbeResultProbeRef struct {
 	// ID is the unique execution identifier (UUID).
 	ID string `json:"id"`
 
-	// Type is the probe type.
-	Type ProbeType `json:"type"`
+	// Profile is the probe profile.
+	Profile ProbeProfile `json:"profile"`
 
 	// TargetNamespace is the namespace that was probed.
 	TargetNamespace string `json:"targetNamespace"`
@@ -162,7 +162,7 @@ type SiderealProbeResultSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=spr
-// +kubebuilder:printcolumn:name="Probe Type",type=string,JSONPath=`.spec.probe.type`
+// +kubebuilder:printcolumn:name="Profile",type=string,JSONPath=`.spec.probe.profile`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.probe.targetNamespace`
 // +kubebuilder:printcolumn:name="Outcome",type=string,JSONPath=`.spec.result.outcome`
 // +kubebuilder:printcolumn:name="Effectiveness",type=string,JSONPath=`.spec.result.controlEffectiveness`
