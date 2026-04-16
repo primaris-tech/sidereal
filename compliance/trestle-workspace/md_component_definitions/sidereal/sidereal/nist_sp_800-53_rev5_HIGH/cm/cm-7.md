@@ -110,21 +110,41 @@ be visible in the SBOM diff and would require explicit review.
 
 ### Enhancement: CM-7(2) — Prevent Program Execution
 
-The detection probe runner container operates with a seccomp profile that
-allows only the minimal syscall set required for:
-1. Emitting the targeted synthetic syscall pattern
-2. Writing the HMAC-signed result to the result ConfigMap
+CM-7(2) is enforced at two layers.
 
+**Sidereal's own components**: Detection probe runner containers operate with
+a custom seccomp profile that allows only the minimal syscall set required to
+emit the targeted synthetic syscall pattern and write the HMAC-signed result.
 All other syscalls are blocked at the kernel level. The container cannot
 execute arbitrary programs, spawn subprocesses, or perform network I/O.
 
-### Enhancement: CM-7(5) — Authorized Software / Whitelisting
+**Agency workload enforcement (active validation)**: The admission probe
+validates that the cluster's admission layer enforces execution controls on
+workloads. When seccomp enforcement is active (auto-detected via the target
+namespace's `pod-security.kubernetes.io/enforce: restricted` label, or
+explicitly enabled via `SeccompEnforcement: true`), the probe submits an
+otherwise-compliant pod spec with `seccompProfile: Unconfined` and expects
+rejection. A `Rejected` result confirms that the cluster prevents workloads
+from running without syscall restrictions; an `Accepted` result is a control
+gap finding.
 
-The cosign image signing and admission enforcement policy (CM-14) constitute a
-software whitelist: only images signed by the Sidereal release key are
-admitted into the `sidereal-system` namespace. No unsigned or externally
-sourced image can run as a Sidereal component, preventing unauthorized
-software from executing under the Sidereal identity.
+### Enhancement: CM-7(5) — Authorized Software / Allowlisting
+
+CM-7(5) is enforced at two layers.
+
+**Sidereal's own components**: Cosign image signing and the admission
+enforcement policy constitute a software allowlist for `sidereal-system`:
+only images signed by the Sidereal release key are admitted. No unsigned or
+externally sourced image can run as a Sidereal component.
+
+**Agency image authorization policy (active validation)**: When
+`UnauthorizedImageRef` is configured on a `SiderealProbe`, the admission probe
+submits an otherwise-compliant pod spec referencing that image and expects
+rejection. The pod is maximally compliant in every other respect (non-root,
+drop ALL capabilities, RuntimeDefault seccomp) so that any rejection is
+attributable to the image source, not the pod configuration. A `Rejected`
+result confirms the image authorization policy is enforced; an `Accepted`
+result is a control gap finding.
 
 ## Evidence Produced
 
@@ -132,6 +152,9 @@ software from executing under the Sidereal identity.
   (verifiable via `cosign verify-attestation --type cyclonedx`)
 - `SiderealProbeResult` CRs from the NetworkPolicy probe confirming that
   unexpected egress paths are blocked (continuous verification)
+- `SiderealProbeResult` CRs from the admission probe confirming that the
+  cluster's admission layer rejects pods with disabled seccomp (CM-7(2)) and
+  unauthorized images (CM-7(5)), when those tests are enabled
 - Pod Security Admission logs confirming probe runner security context
   enforcement
 - Admission policy events for any image admission attempt

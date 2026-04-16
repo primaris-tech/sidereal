@@ -106,6 +106,20 @@ type AdmissionProbeConfig struct {
 	// KnownBadSpec is an operator-provided pod spec that should be rejected.
 	// +optional
 	KnownBadSpec *runtime.RawExtension `json:"knownBadSpec,omitempty"`
+
+	// SeccompEnforcement enables the CM-7(2) seccomp test: an otherwise-compliant
+	// pod with seccompProfile: Unconfined is submitted and rejection is expected.
+	// Also auto-enabled when the target namespace carries the
+	// pod-security.kubernetes.io/enforce: restricted label.
+	// +optional
+	SeccompEnforcement bool `json:"seccompEnforcement,omitempty"`
+
+	// UnauthorizedImageRef is an image reference that the cluster's image
+	// authorization policy should reject (e.g., an unsigned or out-of-registry
+	// image). When set, an otherwise-compliant pod referencing this image is
+	// submitted and rejection is expected. Enables CM-7(5) coverage.
+	// +optional
+	UnauthorizedImageRef string `json:"unauthorizedImageRef,omitempty"`
 }
 
 // ProbeRunnerSpec holds execution configuration for a probe profile.
