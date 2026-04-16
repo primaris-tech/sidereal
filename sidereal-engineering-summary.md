@@ -874,7 +874,7 @@ Every probe result is tagged with specific NIST 800-53 controls. This makes the 
 | Probe | NIST 800-53 Controls |
 |---|---|
 | RBAC | AC-3, AC-6, AC-6(5) |
-| NetworkPolicy | SC-7, SC-8 |
+| NetworkPolicy | SC-7, SC-7(5) |
 | Admission Control | CM-6, CM-7 |
 | Secret Access | AC-3, AC-4 |
 | Detection Coverage | SI-3, SI-4, SI-7 |
@@ -1362,7 +1362,7 @@ The operator's first interaction after install is: `kubectl get siderealproberec
 
 | Cluster Resource | Generated Probe Type | Derivation |
 |---|---|---|
-| `NetworkPolicy` | `netpol` | Deny and allow paths derived from `podSelector`, `namespaceSelector`, `ports`. Uses `targetNamespaceSelector` when multiple namespaces share the same policy shape. |
+| `NetworkPolicy` | `netpol` | Deny and allow paths derived from `podSelector`, `namespaceSelector`, `ports`. Uses `targetNamespaceSelector` when multiple namespaces share the same policy shape. When both a deny path and an explicit allow path are discoverable, the recommendation includes `NETPOL_ALLOW_TARGET_HOST`/`NETPOL_ALLOW_TARGET_PORT` for SC-7(5) dual-path validation. |
 | `ValidatingWebhookConfiguration` / Kyverno `ClusterPolicy` / OPA `ConstraintTemplate` | `admission` | Known-bad spec derived from policy schema; skeleton generated for generic webhooks |
 | `RoleBinding` / `ClusterRoleBinding` | `rbac` | Allow-path and cross-namespace deny-path tests derived from binding scope |
 | `Secret` resources across namespaces | `secret` | Cross-namespace access denial probes; high-value Secrets prioritized by type (TLS, dockerconfigjson, opaque with size > threshold) |

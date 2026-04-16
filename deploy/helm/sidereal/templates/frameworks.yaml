@@ -292,10 +292,7 @@ spec:
       controlIDs: ["V-242417"]
     - profile: netpol
       nistControl: SC-7
-      controlIDs: ["V-242410", "V-242411", "V-242412", "V-242413", "V-242414"]
-    - profile: netpol
-      nistControl: SC-8
-      controlIDs: ["V-242395"]
+      controlIDs: ["V-242395", "V-242410", "V-242411", "V-242412", "V-242413", "V-242414"]
     - profile: admission
       nistControl: CM-6
       controlIDs: ["V-242436", "V-254800"]

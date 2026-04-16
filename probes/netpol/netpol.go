@@ -30,11 +30,21 @@ type Config struct {
 	// VerificationMode is one of: tcp-inference, cni-verdict, responder.
 	VerificationMode networkpolicy.VerificationMode
 
-	// TargetHost is the ClusterIP or DNS name to probe.
+	// TargetHost is the ClusterIP or DNS name that should be denied by
+	// NetworkPolicy (the default-deny path).
 	TargetHost string
 
-	// TargetPort is the TCP port to probe.
+	// TargetPort is the TCP port for the deny-path target.
 	TargetPort int
+
+	// AllowTargetHost is a second target that has an explicit NetworkPolicy
+	// allow rule. When set, the probe runs a dual-path SC-7(5) check:
+	// the deny target must be blocked and the allow target must be reachable.
+	// Only evaluated in tcp-inference mode.
+	AllowTargetHost string
+
+	// AllowTargetPort is the TCP port for the allow-path target.
+	AllowTargetPort int
 
 	// ConnectTimeout is the TCP connection timeout for tcp-inference mode.
 	ConnectTimeout time.Duration
@@ -45,6 +55,11 @@ func LoadConfig() Config {
 	port, _ := strconv.Atoi(os.Getenv("NETPOL_TARGET_PORT"))
 	if port == 0 {
 		port = 80
+	}
+
+	allowPort, _ := strconv.Atoi(os.Getenv("NETPOL_ALLOW_TARGET_PORT"))
+	if allowPort == 0 {
+		allowPort = 80
 	}
 
 	timeout, _ := time.ParseDuration(os.Getenv("NETPOL_CONNECT_TIMEOUT"))
@@ -61,6 +76,8 @@ func LoadConfig() Config {
 		VerificationMode: mode,
 		TargetHost:       os.Getenv("NETPOL_TARGET_HOST"),
 		TargetPort:       port,
+		AllowTargetHost:  os.Getenv("NETPOL_ALLOW_TARGET_HOST"),
+		AllowTargetPort:  allowPort,
 		ConnectTimeout:   timeout,
 	}
 }
@@ -108,6 +125,8 @@ func ExecuteWithConfig(ctx context.Context, cfg probe.Config, netCfg Config) pro
 }
 
 // executeTCPInference performs inline TCP connection inference.
+// If AllowTargetHost is configured, runs a dual-path SC-7(5) check: the deny
+// target must be blocked and the allow target must be reachable.
 func executeTCPInference(ctx context.Context, cfg probe.Config, netCfg Config, start time.Time) probe.Result {
 	backend := networkpolicy.NewTCPInferenceBackend(networkpolicy.TCPInferenceConfig{
 		TargetHost:     netCfg.TargetHost,
@@ -115,18 +134,65 @@ func executeTCPInference(ctx context.Context, cfg probe.Config, netCfg Config, s
 		ConnectTimeout: netCfg.ConnectTimeout,
 	})
 
-	verdict, err := backend.QueryFlowVerdict(ctx, cfg.ProbeID, 0)
-	duration := time.Since(start).Milliseconds()
-
+	denyVerdict, err := backend.QueryFlowVerdict(ctx, cfg.ProbeID, 0)
 	if err != nil {
 		return probe.Result{
 			Outcome:    "Indeterminate",
-			Detail:     fmt.Sprintf("tcp-inference error: %v", err),
-			DurationMs: duration,
+			Detail:     fmt.Sprintf("tcp-inference error on deny-path target: %v", err),
+			DurationMs: time.Since(start).Milliseconds(),
 		}
 	}
 
-	return verdictToResult(verdict, netCfg, duration)
+	if netCfg.AllowTargetHost != "" {
+		allowBackend := networkpolicy.NewTCPInferenceBackend(networkpolicy.TCPInferenceConfig{
+			TargetHost:     netCfg.AllowTargetHost,
+			TargetPort:     netCfg.AllowTargetPort,
+			ConnectTimeout: netCfg.ConnectTimeout,
+		})
+		allowVerdict, err := allowBackend.QueryFlowVerdict(ctx, cfg.ProbeID+"-allow", 0)
+		duration := time.Since(start).Milliseconds()
+		if err != nil {
+			return probe.Result{
+				Outcome:    "Indeterminate",
+				Detail:     fmt.Sprintf("tcp-inference error on allow-path target: %v", err),
+				DurationMs: duration,
+			}
+		}
+		return dualPathResult(netCfg, denyVerdict, allowVerdict, duration)
+	}
+
+	return verdictToResult(denyVerdict, netCfg, time.Since(start).Milliseconds())
+}
+
+// dualPathResult evaluates SC-7(5) deny-by-default / allow-by-exception from
+// pre-obtained verdicts. Separated from network I/O for testability.
+func dualPathResult(netCfg Config, denyVerdict, allowVerdict networkpolicy.Verdict, durationMs int64) probe.Result {
+	denyTarget := fmt.Sprintf("%s:%d", netCfg.TargetHost, netCfg.TargetPort)
+	allowTarget := fmt.Sprintf("%s:%d", netCfg.AllowTargetHost, netCfg.AllowTargetPort)
+
+	denyBlocked := denyVerdict == networkpolicy.VerdictDropped || denyVerdict == networkpolicy.VerdictInferredDropped
+	allowForwarded := allowVerdict == networkpolicy.VerdictForwarded || allowVerdict == networkpolicy.VerdictInferredForwarded
+
+	switch {
+	case denyBlocked && allowForwarded:
+		return probe.Result{
+			Outcome:    "Blocked",
+			Detail:     fmt.Sprintf("SC-7(5) validated: default-deny blocked %s; allow-by-exception permitted %s", denyTarget, allowTarget),
+			DurationMs: durationMs,
+		}
+	case !denyBlocked:
+		return probe.Result{
+			Outcome:    "NotEnforced",
+			Detail:     fmt.Sprintf("SC-7(5) fail: default-deny not blocking unapproved traffic to %s", denyTarget),
+			DurationMs: durationMs,
+		}
+	default: // deny blocked, allow not forwarded
+		return probe.Result{
+			Outcome:    "NotEnforced",
+			Detail:     fmt.Sprintf("SC-7(5) fail: allow-by-exception not permitting approved traffic to %s", allowTarget),
+			DurationMs: durationMs,
+		}
+	}
 }
 
 // executeDelegated sends the TCP probe and returns a preliminary result.

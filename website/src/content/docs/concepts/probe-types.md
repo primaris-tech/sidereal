@@ -25,7 +25,9 @@ The probe tests whether NetworkPolicy deny paths are actually blocking traffic, 
 - **tcp-inference**: Attempts a TCP connection and infers enforcement from timeout/reset (works with any CNI)
 - **responder**: Uses a Sidereal-deployed responder pod for controlled traffic tests
 
-**Outcomes**: `Blocked` (traffic denied), `NotEnforced` (traffic allowed despite policy), `BackendUnreachable` (CNI observability unavailable)
+When `NETPOL_ALLOW_TARGET_HOST` is configured alongside the deny-path target, the probe runs a dual-path SC-7(5) check: the deny target must be blocked by default-deny, and the allow target must be reachable via an explicit allow rule. Both must pass for the result to be `Blocked`. This is the strongest form of NetworkPolicy validation — it confirms deny-by-default and allow-by-exception are both operating correctly, not just one or the other.
+
+**Outcomes**: `Blocked` (traffic denied on deny path; allow path reachable when dual-path is configured), `NotEnforced` (deny path not blocking, or allow path unexpectedly blocked), `BackendUnreachable` (CNI observability unavailable)
 
 **Needs**: A CNI that enforces NetworkPolicy (most do). Hubble or Calico for cni-verdict mode.
 

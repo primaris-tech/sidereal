@@ -24,4 +24,38 @@ spec:
   controlMappings:
     nist-800-53:
       - SC-7
+      - SC-7(5)
+      - AC-4
+---
+# SC-7(5) dual-path probe — deny-by-default + allow-by-exception
+#
+# Set NETPOL_TARGET_HOST to an endpoint with no allow rule (should be blocked).
+# Set NETPOL_ALLOW_TARGET_HOST to an endpoint with an explicit allow rule (should be reachable).
+# Both paths must satisfy their expectation for the result to be Blocked.
+#
+# This validates SC-7(5): default-deny with allow-by-exception, not just one side.
+#
+# Deploy with env overrides on the probe Job (via runner.env in a future release,
+# or via Helm values for the built-in probe runner image):
+#
+#   NETPOL_VERIFICATION_MODE: tcp-inference
+#   NETPOL_TARGET_HOST: 10.96.0.100        # ClusterIP with no allow rule
+#   NETPOL_TARGET_PORT: "8080"
+#   NETPOL_ALLOW_TARGET_HOST: 10.96.0.200  # ClusterIP with explicit allow rule
+#   NETPOL_ALLOW_TARGET_PORT: "8080"
+#   NETPOL_CONNECT_TIMEOUT: 5s
+apiVersion: sidereal.cloud/v1alpha1
+kind: SiderealProbe
+metadata:
+  name: netpol-sc7-dual-path-production
+  namespace: sidereal-system
+spec:
+  profile: netpol
+  targetNamespace: production
+  executionMode: observe
+  intervalSeconds: 21600
+  controlMappings:
+    nist-800-53:
+      - SC-7
+      - SC-7(5)
       - AC-4

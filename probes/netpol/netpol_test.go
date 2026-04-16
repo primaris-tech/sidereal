@@ -108,6 +108,98 @@ func TestVerdictToResult_AllVerdicts(t *testing.T) {
 	}
 }
 
+func TestDualPathResult_BothPass(t *testing.T) {
+	// deny target: blocked; allow target: forwarded — SC-7(5) satisfied.
+	netCfg := Config{TargetHost: "10.0.0.1", TargetPort: 80, AllowTargetHost: "10.0.0.2", AllowTargetPort: 80}
+	result := dualPathResult(netCfg, networkpolicy.VerdictInferredDropped, networkpolicy.VerdictInferredForwarded, 100)
+
+	if result.Outcome != "Blocked" {
+		t.Errorf("expected Blocked, got %q: %s", result.Outcome, result.Detail)
+	}
+	if result.Detail == "" {
+		t.Error("expected non-empty detail")
+	}
+}
+
+func TestDualPathResult_DenyPathFails(t *testing.T) {
+	// deny target: forwarded (default-deny not working) — SC-7(5) fails.
+	netCfg := Config{TargetHost: "10.0.0.1", TargetPort: 80, AllowTargetHost: "10.0.0.2", AllowTargetPort: 80}
+	result := dualPathResult(netCfg, networkpolicy.VerdictInferredForwarded, networkpolicy.VerdictInferredForwarded, 100)
+
+	if result.Outcome != "NotEnforced" {
+		t.Errorf("expected NotEnforced when deny path is not blocked, got %q: %s", result.Outcome, result.Detail)
+	}
+}
+
+func TestDualPathResult_AllowPathFails(t *testing.T) {
+	// deny target: blocked; allow target: also blocked (allow rule missing/broken).
+	netCfg := Config{TargetHost: "10.0.0.1", TargetPort: 80, AllowTargetHost: "10.0.0.2", AllowTargetPort: 80}
+	result := dualPathResult(netCfg, networkpolicy.VerdictInferredDropped, networkpolicy.VerdictInferredDropped, 100)
+
+	if result.Outcome != "NotEnforced" {
+		t.Errorf("expected NotEnforced when allow path is blocked, got %q: %s", result.Outcome, result.Detail)
+	}
+}
+
+func TestDualPathResult_CoveredVerdictCombinations(t *testing.T) {
+	netCfg := Config{TargetHost: "10.0.0.1", TargetPort: 80, AllowTargetHost: "10.0.0.2", AllowTargetPort: 80}
+
+	// Both authoritative (non-inferred) verdicts should behave identically.
+	result := dualPathResult(netCfg, networkpolicy.VerdictDropped, networkpolicy.VerdictForwarded, 100)
+	if result.Outcome != "Blocked" {
+		t.Errorf("VerdictDropped+VerdictForwarded: expected Blocked, got %q", result.Outcome)
+	}
+
+	result = dualPathResult(netCfg, networkpolicy.VerdictForwarded, networkpolicy.VerdictForwarded, 100)
+	if result.Outcome != "NotEnforced" {
+		t.Errorf("VerdictForwarded deny: expected NotEnforced, got %q", result.Outcome)
+	}
+}
+
+func TestExecute_SinglePath_NoAllowTarget(t *testing.T) {
+	// When AllowTargetHost is empty, probe behaves as before (single deny-path check).
+	netCfg := Config{
+		VerificationMode: networkpolicy.ModeTCPInference,
+		TargetHost:       "10.96.0.1",
+		TargetPort:       443,
+		AllowTargetHost:  "",
+		ConnectTimeout:   100 * time.Millisecond,
+	}
+
+	result := ExecuteWithConfig(context.Background(), baseCfg(), netCfg)
+
+	// With a non-listening address the result will be Blocked or Indeterminate —
+	// either is acceptable. What matters is it does not panic and is not empty.
+	if result.Outcome == "" {
+		t.Error("expected non-empty outcome")
+	}
+}
+
+func TestLoadConfig_AllowTarget(t *testing.T) {
+	t.Setenv("NETPOL_ALLOW_TARGET_HOST", "10.96.0.2")
+	t.Setenv("NETPOL_ALLOW_TARGET_PORT", "8080")
+
+	cfg := LoadConfig()
+
+	if cfg.AllowTargetHost != "10.96.0.2" {
+		t.Errorf("expected allow target host 10.96.0.2, got %q", cfg.AllowTargetHost)
+	}
+	if cfg.AllowTargetPort != 8080 {
+		t.Errorf("expected allow target port 8080, got %d", cfg.AllowTargetPort)
+	}
+}
+
+func TestLoadConfig_AllowTargetPort_Default(t *testing.T) {
+	// No NETPOL_ALLOW_TARGET_PORT set — should default to 80.
+	t.Setenv("NETPOL_ALLOW_TARGET_HOST", "10.96.0.2")
+
+	cfg := LoadConfig()
+
+	if cfg.AllowTargetPort != 80 {
+		t.Errorf("expected allow target port default 80, got %d", cfg.AllowTargetPort)
+	}
+}
+
 func TestLoadConfig_Defaults(t *testing.T) {
 	// With no env vars set, should get sensible defaults.
 	cfg := LoadConfig()

@@ -36,6 +36,13 @@
       "nist_control": "SC-7",
       "stig_rules": [
         {
+          "id": "V-242395",
+          "stig_id": "CNTR-K8-000420",
+          "title": "Kubernetes dashboard must not be enabled",
+          "severity": "CAT II",
+          "sidereal_validation": "Probes continuously test reachability of the dashboard network endpoint. An unreachable endpoint provides stronger evidence than a static pod-presence check — it validates the boundary is enforced, not just that no pod is labeled kubernetes-dashboard."
+        },
+        {
           "id": "V-242410",
           "stig_id": "CNTR-K8-000920",
           "title": "API Server must enforce ports, protocols, services (PPS) registration process",
@@ -69,19 +76,6 @@
           "title": "Cluster must use non-privileged host ports for user pods",
           "severity": "CAT II",
           "sidereal_validation": "Probes scan running pods for privileged port usage (< 1024) and verify enforcement."
-        }
-      ]
-    },
-    {
-      "probe_type": "netpol",
-      "nist_control": "SC-8",
-      "stig_rules": [
-        {
-          "id": "V-242395",
-          "stig_id": "CNTR-K8-000420",
-          "title": "Kubernetes dashboard must not be enabled",
-          "severity": "CAT II",
-          "sidereal_validation": "Probes continuously query for dashboard pods (k8s-app=kubernetes-dashboard) and verify none are running. Detects re-deployment between scans."
         }
       ]
     },

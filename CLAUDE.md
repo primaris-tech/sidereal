@@ -1,18 +1,17 @@
-# AGENTS.md
+# CLAUDE.md
 
 This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Project Status
 
-Sidereal **v0.1.0** is feature-complete. All 22 implementation phases are done. The repository contains:
+Sidereal is currently at version **v0.1.1**. The repository contains:
 - Engineering specification (`sidereal-engineering-summary.md`) — the canonical design document
 - Complete ATO documentation package under `compliance/`
-- Implementation plan at `~/.claude/plans/keen-bouncing-unicorn.md` (completed)
 - Full operator implementation: 9 CRDs, 7 controller reconcilers, 5 built-in probe runners + custom extensibility, Rust detection probe (9 MITRE ATT&CK techniques), HMAC integrity, multi-framework crosswalk (7 built-in frameworks via SiderealFramework CRD, agency-extensible), SIEM export (5 formats, 3 backends), incident/alert/authorization lifecycle, discovery engine with CLI, report generation (5 types), Helm chart (6 profiles), FIPS 140-2 builds, CI/CD pipeline. 260 Go tests + 15 Rust tests + 46 E2E tests.
 
-**Repo**: `primaris-tech/sidereal` on GitHub (private).
+**Repo**: `primaris-tech/sidereal` on GitHub (public).
 
-**Status**: Tagged v0.1.0. Post-v0.1.0 work includes: community feedback, E2E test hardening on real clusters, additional crosswalk refinement, and eventual public release.
+**Status**: Tagged v0.1.1. Post-v0.1.0 work includes: community feedback, E2E test hardening on real clusters, additional crosswalk refinement.
 
 ## What Sidereal Is
 
