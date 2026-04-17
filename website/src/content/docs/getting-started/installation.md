@@ -18,13 +18,15 @@ This script stands up a complete local Sidereal environment on KIND and verifies
 1. Checks for `kind`, `kubectl`, `helm`, `docker`, and `make` unless you pass `--skip-build`
 2. Creates a KIND cluster from `hack/kind-config.yaml`
 3. Installs Kyverno `3.3.4`
-4. Builds Sidereal images with `make docker-build-all`
-5. Loads the locally built images into KIND
-6. Applies the Sidereal CRDs from `config/crd/bases/`
-7. Installs the Helm chart with a KIND-compatible development profile
-8. Verifies the controller is running and reports any `SiderealSystemAlert`
-9. Creates a demo namespace and applies a first RBAC probe
-10. Waits up to 90 seconds for the first `SiderealProbeResult`
+4. Installs Falco `4.18.0` if you pass `--with-detection` (requires kernel eBPF support)
+5. Builds Sidereal images with `make docker-build-all`
+6. Loads the locally built images into KIND
+7. Applies the Sidereal CRDs from `config/crd/bases/`
+8. Installs the Helm chart with a KIND-compatible development profile
+9. Verifies the controller is running and reports any `SiderealSystemAlert`
+10. Creates a demo namespace, applies a `NetworkPolicy`, and runs one probe of each built-in type: `rbac`, `secret`, `netpol`, and `admission` (plus `detection` if `--with-detection` is set)
+11. Creates a `SiderealAOAuthorization` and applies a detection probe if `--with-detection` is set
+12. Waits up to 120 seconds for all probe results and displays a results summary
 
 ### Assumptions the script makes
 
@@ -46,17 +48,20 @@ The script deliberately configures Sidereal for a safe development path:
 | `global.requireAdmissionController` | `true` | Kyverno is installed and should enforce Sidereal's admission policies |
 | `profile.admissionController` | `kyverno` | Matches the bootstrap-installed admission layer |
 | `profile.signatureVerifier` | `kyverno` | Uses Kyverno for image verification policy |
-| `profile.detectionBackend` | `none` | The detection probe image is skipped in dev |
+| `profile.detectionBackend` | `none` (default) or `falco` (with `--with-detection`) | `none` skips the detection probe; `falco` requires Falco installed |
 | `profile.cniObservability` | `tcp-inference` | KIND does not provide Hubble or Calico APIs |
 | `*.pullPolicy` | `Never` | Images are loaded directly into the KIND nodes |
 
-The detection probe image is intentionally skipped during image loading. The Rust FIPS build path is heavier than a typical first-time local setup, so the script installs Sidereal with `profile.detectionBackend=none`.
+The detection probe image is skipped by default. The Rust FIPS build path is heavier than a typical first-time local setup, so the script installs Sidereal with `profile.detectionBackend=none` unless `--with-detection` is passed. With that flag, the script installs Falco, loads the detection probe image, and runs a detection probe backed by a `SiderealAOAuthorization`.
 
 ### Useful flags
 
 ```bash
 # Reuse images already built in Docker
 ./hack/bootstrap-kind.sh --skip-build
+
+# Run the full probe suite including detection (installs Falco; requires kernel eBPF support)
+./hack/bootstrap-kind.sh --with-detection
 
 # Pick a different cluster name
 ./hack/bootstrap-kind.sh --cluster-name sidereal-test
@@ -72,9 +77,10 @@ On a healthy run, you should end with:
 - A `kind-<cluster-name>` context selected in `kubectl`
 - The `sidereal-controller-manager` deployment ready in `sidereal-system`
 - No blocking `SiderealSystemAlert` objects
-- A demo namespace named `sidereal-demo`
-- A first RBAC probe named `rbac-getting-started`
-- At least one `SiderealProbeResult` for that probe
+- A demo namespace named `sidereal-demo` with a `default-deny-ingress` NetworkPolicy
+- Four probes applied: `rbac-getting-started`, `secret-getting-started`, `netpol-getting-started`, `admission-getting-started`
+- A `SiderealProbeResult` for each probe showing `Outcome` and `ControlEffectiveness`
+- With `--with-detection`: a `SiderealAOAuthorization` and `detection-getting-started` probe result as well
 
 Useful follow-up commands:
 
@@ -174,9 +180,9 @@ Not all probe surfaces require extra infrastructure. In the bootstrap/manual KIN
 | `secret` | Yes | Nothing extra |
 | `netpol` | Yes (with `tcp-inference`) | A `NetworkPolicy` in the target namespace |
 | `admission` | Yes | Kyverno installed and healthy |
-| `detection` | No | Falco or Tetragon |
+| `detection` | Yes (with `--with-detection`) | Falco or Tetragon + kernel eBPF support + `SiderealAOAuthorization` |
 
-RBAC is still the best first probe because it works on every cluster and avoids extra prerequisites.
+The bootstrap script handles all of these automatically. Pass `--with-detection` to include Falco and the detection probe; omit it to run the first four types without the heavier toolchain.
 
 ---
 

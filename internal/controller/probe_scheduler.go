@@ -82,6 +82,17 @@ type ProbeSchedulerReconciler struct {
 	// Injected from the PROBE_DETECTION_IMAGE environment variable set by the Helm chart.
 	ProbeDetectionImage string
 
+	// ProbeNetpolTargetHost is the default target host injected into netpol probe Jobs as
+	// NETPOL_TARGET_HOST. When empty, the env var is not injected and the probe returns
+	// Indeterminate if the variable is also absent from other configuration.
+	// Injected from PROBE_NETPOL_DEFAULT_TARGET_HOST set by the Helm chart.
+	ProbeNetpolTargetHost string
+
+	// ProbeNetpolTargetPort is the target port paired with ProbeNetpolTargetHost.
+	// Injected from PROBE_NETPOL_DEFAULT_TARGET_PORT set by the Helm chart.
+	// Defaults to 80 in the probe binary when absent.
+	ProbeNetpolTargetPort string
+
 	// RegisteredCustomSAs is the set of ServiceAccount names pre-registered
 	// via Helm values for custom probe use. Custom probes referencing an
 	// unregistered SA will be rejected. If nil, all SAs are allowed (for testing).
@@ -377,6 +388,15 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 		probe.Spec.Runner.Custom != nil &&
 		probe.Spec.Runner.Custom.Config != nil {
 		env = append(env, corev1.EnvVar{Name: "PROBE_CONFIG", Value: string(probe.Spec.Runner.Custom.Config.Raw)})
+	}
+
+	// Inject netpol target host/port when a cluster-default has been configured.
+	// Without this, the probe returns Indeterminate immediately (no target to test).
+	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileNetPol && r.ProbeNetpolTargetHost != "" {
+		env = append(env, corev1.EnvVar{Name: "NETPOL_TARGET_HOST", Value: r.ProbeNetpolTargetHost})
+		if r.ProbeNetpolTargetPort != "" {
+			env = append(env, corev1.EnvVar{Name: "NETPOL_TARGET_PORT", Value: r.ProbeNetpolTargetPort})
+		}
 	}
 
 	return &batchv1.Job{

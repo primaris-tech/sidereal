@@ -79,9 +79,11 @@ func main() {
 	}
 
 	if err := (&controller.ProbeSchedulerReconciler{
-		Client:              mgr.GetClient(),
-		ProbeGoImage:        probeGoImage,
-		ProbeDetectionImage: probeDetectionImage,
+		Client:                mgr.GetClient(),
+		ProbeGoImage:          probeGoImage,
+		ProbeDetectionImage:   probeDetectionImage,
+		ProbeNetpolTargetHost: os.Getenv("PROBE_NETPOL_DEFAULT_TARGET_HOST"),
+		ProbeNetpolTargetPort: os.Getenv("PROBE_NETPOL_DEFAULT_TARGET_PORT"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ProbeScheduler")
 		os.Exit(1)

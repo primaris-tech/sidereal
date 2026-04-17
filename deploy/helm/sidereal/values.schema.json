@@ -53,6 +53,17 @@
           "type": "integer",
           "minimum": 300,
           "maximum": 86400
+        },
+        "netpol": {
+          "type": "object",
+          "properties": {
+            "defaultTargetHost": {
+              "type": "string"
+            },
+            "defaultTargetPort": {
+              "type": "string"
+            }
+          }
         }
       }
     },

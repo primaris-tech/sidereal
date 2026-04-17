@@ -39,6 +39,12 @@ spec:
               value: {{ include "sidereal.goProbeImage" . }}
             - name: PROBE_DETECTION_IMAGE
               value: {{ include "sidereal.detectionProbeImage" . }}
+            {{- if .Values.probe.netpol.defaultTargetHost }}
+            - name: PROBE_NETPOL_DEFAULT_TARGET_HOST
+              value: {{ .Values.probe.netpol.defaultTargetHost | quote }}
+            - name: PROBE_NETPOL_DEFAULT_TARGET_PORT
+              value: {{ .Values.probe.netpol.defaultTargetPort | default "80" | quote }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: 8080

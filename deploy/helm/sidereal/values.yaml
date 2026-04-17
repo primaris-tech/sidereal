@@ -45,6 +45,13 @@ controller:
 probe:
   # Default interval between probe executions (seconds). Overridden per-probe.
   intervalSeconds: 21600
+  # Default target for netpol probe Jobs in tcp-inference mode.
+  # Set to the ClusterIP of a service in the target namespace that the NetworkPolicy
+  # should be blocking. Required for netpol probes to produce a verdict; without it
+  # the probe returns Indeterminate.
+  netpol:
+    defaultTargetHost: ""
+    defaultTargetPort: "80"
   goImage:
     repository: ghcr.io/primaris-tech/sidereal-probe-go
     tag: ""
