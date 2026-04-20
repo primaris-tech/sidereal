@@ -30,8 +30,8 @@ RUN for b in bin/probe-rbac bin/probe-secret bin/probe-admission bin/probe-netpo
         || (echo "FATAL: BoringCrypto symbols not found in $b" && exit 1); \
     done
 
-# Runtime stage: distroless nonroot
-FROM gcr.io/distroless/base-debian12:nonroot
+# Runtime stage: static distroless (no glibc, no shell)
+FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.title="sidereal-probe-go" \
       org.opencontainers.image.description="Sidereal Go probe runners (rbac, secret, admission, netpol)" \
