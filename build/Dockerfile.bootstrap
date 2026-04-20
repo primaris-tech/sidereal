@@ -22,8 +22,8 @@ RUN GOOS=linux GOARCH=amd64 \
 RUN go tool nm bootstrap | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
     || (echo "FATAL: BoringCrypto symbols not found in bootstrap binary" && exit 1)
 
-# Runtime stage: distroless nonroot
-FROM gcr.io/distroless/base-debian12:nonroot
+# Runtime stage: static distroless (no glibc, no shell)
+FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.title="sidereal-probe-bootstrap" \
       org.opencontainers.image.description="Sidereal bootstrap verifier - Helm pre-install prerequisite checks" \
