@@ -13,14 +13,15 @@ RUN go mod download
 
 COPY . .
 
-# BoringCrypto FIPS build
-ENV GOEXPERIMENT=boringcrypto
-RUN GOOS=linux GOARCH=amd64 \
-    go build -trimpath -o controller ./cmd/controller/
+# BoringCrypto FIPS build — statically linked for distroless/static runtime
+# -linkmode external forces the external linker so -extldflags "-static" takes effect
+ENV GOEXPERIMENT=boringcrypto CGO_ENABLED=1
+RUN go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o controller ./cmd/controller/
 
-# Verify BoringCrypto symbols are linked
+# Verify BoringCrypto symbols are linked and binary is statically linked
 RUN go tool nm controller | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
     || (echo "FATAL: BoringCrypto symbols not found in controller binary" && exit 1)
+RUN ! ldd controller 2>/dev/null || (echo "FATAL: controller binary is dynamically linked" && exit 1)
 
 # Runtime stage: static distroless (no glibc, no shell)
 FROM gcr.io/distroless/static-debian12:nonroot

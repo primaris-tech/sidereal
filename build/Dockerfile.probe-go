@@ -17,17 +17,18 @@ RUN go mod download
 
 COPY . .
 
-# BoringCrypto FIPS build — all four probe binaries in one layer
-ENV GOEXPERIMENT=boringcrypto
-RUN GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-rbac      ./cmd/probe-rbac/      && \
-    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-secret    ./cmd/probe-secret/    && \
-    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-admission ./cmd/probe-admission/ && \
-    GOOS=linux GOARCH=amd64 go build -trimpath -o bin/probe-netpol    ./cmd/probe-netpol/
+# BoringCrypto FIPS build — statically linked for distroless/static runtime
+ENV GOEXPERIMENT=boringcrypto CGO_ENABLED=1
+RUN go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o bin/probe-rbac      ./cmd/probe-rbac/      && \
+    go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o bin/probe-secret    ./cmd/probe-secret/    && \
+    go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o bin/probe-admission ./cmd/probe-admission/ && \
+    go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o bin/probe-netpol    ./cmd/probe-netpol/
 
-# Verify BoringCrypto symbols in all four binaries
+# Verify BoringCrypto symbols and static linking in all four binaries
 RUN for b in bin/probe-rbac bin/probe-secret bin/probe-admission bin/probe-netpol; do \
       go tool nm "$b" | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
         || (echo "FATAL: BoringCrypto symbols not found in $b" && exit 1); \
+      ! ldd "$b" 2>/dev/null || (echo "FATAL: $b is dynamically linked" && exit 1); \
     done
 
 # Runtime stage: static distroless (no glibc, no shell)

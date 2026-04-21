@@ -13,14 +13,14 @@ RUN go mod download
 
 COPY . .
 
-# BoringCrypto FIPS build
-ENV GOEXPERIMENT=boringcrypto
-RUN GOOS=linux GOARCH=amd64 \
-    go build -trimpath -o bootstrap ./cmd/probe-bootstrap/
+# BoringCrypto FIPS build — statically linked for distroless/static runtime
+ENV GOEXPERIMENT=boringcrypto CGO_ENABLED=1
+RUN go build -trimpath -ldflags '-linkmode external -extldflags "-static"' -o bootstrap ./cmd/probe-bootstrap/
 
-# Verify BoringCrypto symbols are linked
+# Verify BoringCrypto symbols are linked and binary is statically linked
 RUN go tool nm bootstrap | grep -qE '_Cfunc__goboringcrypto_|crypto/internal/boring' \
     || (echo "FATAL: BoringCrypto symbols not found in bootstrap binary" && exit 1)
+RUN ! ldd bootstrap 2>/dev/null || (echo "FATAL: bootstrap binary is dynamically linked" && exit 1)
 
 # Runtime stage: static distroless (no glibc, no shell)
 FROM gcr.io/distroless/static-debian12:nonroot
