@@ -3,7 +3,7 @@
 #
 # Build: docker build -t ghcr.io/primaris-tech/sidereal-controller:latest -f build/Dockerfile.controller .
 
-FROM golang:1.25 AS builder
+FROM golang:1.25.10 AS builder
 
 WORKDIR /app
 
