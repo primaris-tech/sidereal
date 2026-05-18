@@ -307,8 +307,22 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 		return fmt.Errorf("failed to derive execution key: %w", err)
 	}
 
-	// Create the per-execution HMAC Secret.
+	// Build and create the probe Job first so the per-execution Secret can
+	// be owned by it. With the Secret owned by the Job, the Job's
+	// TTLSecondsAfterFinished cascades cleanup of the Secret on the failure
+	// paths where the result reconciler bypasses its explicit delete
+	// (tampered result, missing result ConfigMap, controller restart, etc).
 	hmacSecretName := fmt.Sprintf("sidereal-hmac-%s", probeID[:8])
+	job := r.buildProbeJob(probe, probeID, targetNamespace, hmacSecretName)
+	if err := ctrl.SetControllerReference(probe, job, r.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference on job: %w", err)
+	}
+	if err := r.Create(ctx, job); err != nil {
+		return fmt.Errorf("failed to create probe job: %w", err)
+	}
+
+	// Create the per-execution HMAC Secret, owned by the Job. The probe
+	// Pod will briefly retry the Secret volume mount until it appears.
 	hmacSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hmacSecretName,
@@ -321,20 +335,11 @@ func (r *ProbeSchedulerReconciler) scheduleProbeJob(ctx context.Context, probe *
 			"hmac-key": execKey,
 		},
 	}
-	if err := ctrl.SetControllerReference(probe, hmacSecret, r.Scheme()); err != nil {
+	if err := ctrl.SetControllerReference(job, hmacSecret, r.Scheme()); err != nil {
 		return fmt.Errorf("failed to set owner reference on HMAC secret: %w", err)
 	}
 	if err := r.Create(ctx, hmacSecret); err != nil {
 		return fmt.Errorf("failed to create HMAC secret: %w", err)
-	}
-
-	// Build and create the probe Job.
-	job := r.buildProbeJob(probe, probeID, targetNamespace, hmacSecretName)
-	if err := ctrl.SetControllerReference(probe, job, r.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference on job: %w", err)
-	}
-	if err := r.Create(ctx, job); err != nil {
-		return fmt.Errorf("failed to create probe job: %w", err)
 	}
 
 	logger.Info("scheduled probe job",
