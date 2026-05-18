@@ -33,7 +33,7 @@ func createHMACSecret() *corev1.Secret {
 			Namespace: SystemNamespace,
 		},
 		Data: map[string][]byte{
-			"hmac-key": []byte("root-key-32-bytes-long-enough!!!"),
+			HMACRootSecretKey: []byte("root-key-32-bytes-long-enough!!!"),
 		},
 	}
 }
@@ -160,7 +160,7 @@ func TestBootstrapVerification_EmptyHMACKey(t *testing.T) {
 			Namespace: SystemNamespace,
 		},
 		Data: map[string][]byte{
-			"hmac-key": {},
+			HMACRootSecretKey: {},
 		},
 	}
 	objects = append(objects, emptySecret)

@@ -193,18 +193,18 @@ func checkHMACSecret(ctx context.Context, c client.Client) BootstrapCheck {
 		}
 	}
 
-	if len(secret.Data["hmac-key"]) == 0 {
+	if len(secret.Data[HMACRootSecretKey]) == 0 {
 		return BootstrapCheck{
 			Name:   "Secret/sidereal-hmac-root",
 			Passed: false,
-			Detail: "hmac-key is empty",
+			Detail: fmt.Sprintf("%s is empty", HMACRootSecretKey),
 		}
 	}
 
 	return BootstrapCheck{
 		Name:   "Secret/sidereal-hmac-root",
 		Passed: true,
-		Detail: "exists with hmac-key data",
+		Detail: fmt.Sprintf("exists with %s data", HMACRootSecretKey),
 	}
 }
 
