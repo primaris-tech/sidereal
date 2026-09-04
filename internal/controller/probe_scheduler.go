@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -95,7 +96,7 @@ type ProbeSchedulerReconciler struct {
 
 	// RegisteredCustomSAs is the set of ServiceAccount names pre-registered
 	// via Helm values for custom probe use. Custom probes referencing an
-	// unregistered SA will be rejected. If nil, all SAs are allowed (for testing).
+	// unregistered SA will be rejected. An empty or nil registry denies all custom SAs.
 	RegisteredCustomSAs map[string]bool
 }
 
@@ -123,10 +124,13 @@ func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{RequeueAfter: nextIn}, nil
 	}
 
-	// For detection probes, verify active AO authorization.
-	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileDetection {
-		if err := r.verifyAOAuthorization(ctx, &probe); err != nil {
-			logger.Info("detection probe skipped: no active AO authorization", "probe", probe.Name, "error", err)
+	if probe.Spec.ExecutionMode != siderealv1alpha1.ExecutionModeDryRun {
+		blocked, err := HasUnacknowledgedAlerts(ctx, r.Client)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if blocked {
+			logger.Info("probe execution blocked by system alert", "probe", probe.Name)
 			return ctrl.Result{RequeueAfter: time.Minute}, nil
 		}
 	}
@@ -136,6 +140,15 @@ func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if err != nil {
 		logger.Error(err, "failed to resolve target namespaces")
 		return ctrl.Result{}, err
+	}
+
+	// Validate every target before creating any Jobs to avoid partial execution
+	// when a namespace selector includes an unauthorized namespace.
+	if probe.Spec.Profile == siderealv1alpha1.ProbeProfileDetection {
+		if err := r.verifyAOAuthorization(ctx, &probe, targetNamespaces); err != nil {
+			logger.Info("detection probe skipped: authorization does not cover execution", "probe", probe.Name, "error", err)
+			return ctrl.Result{RequeueAfter: time.Minute}, nil
+		}
 	}
 
 	// Schedule a Job for each target namespace.
@@ -240,8 +253,8 @@ func (r *ProbeSchedulerReconciler) resolveTargetNamespaces(ctx context.Context, 
 	return nil, fmt.Errorf("probe %s has neither targetNamespace nor targetNamespaceSelector", probe.Name)
 }
 
-// verifyAOAuthorization checks for an active SiderealAOAuthorization for detection probes.
-func (r *ProbeSchedulerReconciler) verifyAOAuthorization(ctx context.Context, probe *siderealv1alpha1.SiderealProbe) error {
+// verifyAOAuthorization checks the referenced authorization's time and scope.
+func (r *ProbeSchedulerReconciler) verifyAOAuthorization(ctx context.Context, probe *siderealv1alpha1.SiderealProbe, targetNamespaces []string) error {
 	if probe.Spec.AOAuthorizationRef == "" {
 		return fmt.Errorf("detection probe requires aoAuthorizationRef")
 	}
@@ -254,8 +267,17 @@ func (r *ProbeSchedulerReconciler) verifyAOAuthorization(ctx context.Context, pr
 		return fmt.Errorf("AO authorization %q not found: %w", probe.Spec.AOAuthorizationRef, err)
 	}
 
-	if !auth.Status.Active {
+	// Status can lag expiry or activation; the time bounds govern execution.
+	if !IsAuthorizationActive(&auth, time.Now().UTC()) {
 		return fmt.Errorf("AO authorization %q is not active", probe.Spec.AOAuthorizationRef)
+	}
+	if probe.Spec.MitreAttackID == "" || !slices.Contains(auth.Spec.AuthorizedTechniques, probe.Spec.MitreAttackID) {
+		return fmt.Errorf("AO authorization %q does not cover technique %q", auth.Name, probe.Spec.MitreAttackID)
+	}
+	for _, namespace := range targetNamespaces {
+		if !slices.Contains(auth.Spec.AuthorizedNamespaces, namespace) {
+			return fmt.Errorf("AO authorization %q does not cover namespace %q", auth.Name, namespace)
+		}
 	}
 
 	return nil
@@ -516,7 +538,7 @@ func (r *ProbeSchedulerReconciler) commandForProbe(probe *siderealv1alpha1.Sider
 //  1. CustomProbe spec must be present
 //  2. Image must be specified
 //  3. ServiceAccountName must be specified
-//  4. ServiceAccountName must be pre-registered (if RegisteredCustomSAs is set)
+//  4. ServiceAccountName must be pre-registered
 func (r *ProbeSchedulerReconciler) validateCustomProbe(probe *siderealv1alpha1.SiderealProbe) error {
 	if probe.Spec.Runner == nil || probe.Spec.Runner.Custom == nil {
 		return fmt.Errorf("probe %q uses runner.type=custom but runner.custom is missing", probe.Name)
@@ -528,12 +550,9 @@ func (r *ProbeSchedulerReconciler) validateCustomProbe(probe *siderealv1alpha1.S
 		return fmt.Errorf("custom runner probe %q missing serviceAccountName", probe.Name)
 	}
 
-	// Validate SA is registered (skip if RegisteredCustomSAs is nil, e.g., in tests).
-	if r.RegisteredCustomSAs != nil {
-		if !r.RegisteredCustomSAs[probe.Spec.Runner.Custom.ServiceAccountName] {
-			return fmt.Errorf("custom runner probe %q references unregistered ServiceAccount %q; register via Helm values customProbes.serviceAccounts",
-				probe.Name, probe.Spec.Runner.Custom.ServiceAccountName)
-		}
+	if !r.RegisteredCustomSAs[probe.Spec.Runner.Custom.ServiceAccountName] {
+		return fmt.Errorf("custom runner probe %q references unregistered ServiceAccount %q; register via Helm values customProbes.serviceAccounts",
+			probe.Name, probe.Spec.Runner.Custom.ServiceAccountName)
 	}
 
 	return nil

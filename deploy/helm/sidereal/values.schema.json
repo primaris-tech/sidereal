@@ -88,6 +88,29 @@
         }
       }
     },
+    "customProbes": {
+      "type": "object",
+      "properties": {
+        "serviceAccounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"
+              },
+              "namespace": {
+                "type": "string",
+                "const": "sidereal-system"
+              }
+            }
+          }
+        }
+      }
+    },
     "crosswalk": {
       "type": "object",
       "properties": {

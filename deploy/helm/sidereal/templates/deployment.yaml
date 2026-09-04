@@ -35,6 +35,8 @@ spec:
               value: {{ .Values.global.impactLevel }}
             - name: EXECUTION_MODE
               value: {{ .Values.global.executionMode }}
+            - name: CUSTOM_PROBE_SERVICE_ACCOUNTS
+              value: {{ .Values.customProbes.serviceAccounts | toJson | quote }}
             - name: PROBE_GO_IMAGE
               value: {{ include "sidereal.goProbeImage" . }}
             - name: PROBE_DETECTION_IMAGE
