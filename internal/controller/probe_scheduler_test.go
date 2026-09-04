@@ -559,8 +559,7 @@ func TestValidateCustomProbe_MissingSA(t *testing.T) {
 	}
 }
 
-func TestValidateCustomProbe_NilRegistryAllowsAll(t *testing.T) {
-	// When RegisteredCustomSAs is nil, skip SA validation (test mode).
+func TestValidateCustomProbe_NilRegistryDeniesAll(t *testing.T) {
 	reconciler := &ProbeSchedulerReconciler{}
 
 	probe := &siderealv1alpha1.SiderealProbe{
@@ -577,8 +576,8 @@ func TestValidateCustomProbe_NilRegistryAllowsAll(t *testing.T) {
 		},
 	}
 
-	if err := reconciler.validateCustomProbe(probe); err != nil {
-		t.Errorf("expected nil registry to allow all SAs, got error: %v", err)
+	if err := reconciler.validateCustomProbe(probe); err == nil {
+		t.Error("expected nil registry to deny custom SAs")
 	}
 }
 
