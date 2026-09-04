@@ -106,7 +106,9 @@ func HasUnacknowledgedAlerts(ctx context.Context, c client.Client) (bool, error)
 	}
 
 	for _, alert := range alerts.Items {
-		if !alert.Spec.Acknowledged {
+		// Validate here as well: scheduling may run before the alert reconciler
+		// has reverted an invalid acknowledgment.
+		if !alert.Spec.Acknowledged || ValidateAcknowledgment(&alert) != nil {
 			return true, nil
 		}
 	}

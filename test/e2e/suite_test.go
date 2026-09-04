@@ -98,7 +98,8 @@ func TestMain(m *testing.M) {
 	}
 
 	if err := (&controller.ProbeSchedulerReconciler{
-		Client: mgr.GetClient(),
+		Client:              mgr.GetClient(),
+		RegisteredCustomSAs: map[string]bool{"sidereal-probe-custom-test": true},
 	}).SetupWithManager(mgr); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup probe scheduler: %v\n", err)
 		os.Exit(1)
