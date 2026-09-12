@@ -107,6 +107,9 @@ tls:
 
 # Custom probe extensibility.
 customProbes:
+  # Explicitly register existing ServiceAccounts for custom runners.
+  # An empty list disables custom runners. Namespace defaults to sidereal-system
+  # and must match it because all probe Jobs execute there.
   serviceAccounts: []
   # Example:
   # - name: my-custom-probe

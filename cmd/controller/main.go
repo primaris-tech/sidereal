@@ -46,6 +46,12 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	registeredCustomSAs, err := parseCustomServiceAccounts(os.Getenv("CUSTOM_PROBE_SERVICE_ACCOUNTS"))
+	if err != nil {
+		setupLog.Error(err, "invalid custom probe ServiceAccount registrations")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -84,6 +90,7 @@ func main() {
 		ProbeDetectionImage:   probeDetectionImage,
 		ProbeNetpolTargetHost: os.Getenv("PROBE_NETPOL_DEFAULT_TARGET_HOST"),
 		ProbeNetpolTargetPort: os.Getenv("PROBE_NETPOL_DEFAULT_TARGET_PORT"),
+		RegisteredCustomSAs:   registeredCustomSAs,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ProbeScheduler")
 		os.Exit(1)
