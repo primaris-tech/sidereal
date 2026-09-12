@@ -13,8 +13,8 @@ import (
 
 func TestControlEffectiveness_OutcomeMapping(t *testing.T) {
 	tests := []struct {
-		name                string
-		outcome             siderealv1alpha1.ProbeOutcome
+		name                  string
+		outcome               siderealv1alpha1.ProbeOutcome
 		expectedEffectiveness siderealv1alpha1.ControlEffectiveness
 	}{
 		{"Pass is Effective", siderealv1alpha1.OutcomePass, siderealv1alpha1.EffectivenessEffective},
@@ -42,6 +42,7 @@ func TestControlEffectiveness_OutcomeMapping(t *testing.T) {
 }
 
 func TestControlEffectiveness_EndToEnd(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "eff-e2e-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -85,6 +86,7 @@ func TestControlEffectiveness_EndToEnd(t *testing.T) {
 }
 
 func TestControlEffectiveness_IncidentSeverityMapping(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "sev-map-"+uid)
 	rootKey := createHMACRootSecret(t)

@@ -9,7 +9,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
@@ -23,6 +25,73 @@ func newTestScheme() *runtime.Scheme {
 	_ = siderealv1alpha1.AddToScheme(s)
 	_ = batchv1.AddToScheme(s)
 	return s
+}
+
+func TestProbeScheduler_CacheLagDoesNotRepeatExecution(t *testing.T) {
+	ctx := context.Background()
+	probe := &siderealv1alpha1.SiderealProbe{
+		ObjectMeta: metav1.ObjectMeta{Name: "cache-lag", Namespace: SystemNamespace, UID: "cache-lag"},
+		Spec: siderealv1alpha1.SiderealProbeSpec{
+			Profile: siderealv1alpha1.ProbeProfileRBAC, TargetNamespace: "production",
+			ExecutionMode: siderealv1alpha1.ExecutionModeObserve, IntervalSeconds: 300,
+		},
+	}
+	root := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: HMACRootSecretName, Namespace: SystemNamespace},
+		Data:       map[string][]byte{HMACRootSecretKey: []byte("test-root-key-32-bytes-long!!!!")},
+	}
+	api := fake.NewClientBuilder().WithScheme(newTestScheme()).
+		WithObjects(probe, root).WithStatusSubresource(probe).Build()
+	key := client.ObjectKeyFromObject(probe)
+	var cached siderealv1alpha1.SiderealProbe
+	if err := api.Get(ctx, key, &cached); err != nil {
+		t.Fatal(err)
+	}
+	staleClient := interceptor.NewClient(api, interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if p, ok := obj.(*siderealv1alpha1.SiderealProbe); ok {
+				cached.DeepCopyInto(p)
+				return nil
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+		Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			if err := c.Create(ctx, obj, opts...); err != nil {
+				return err
+			}
+			if _, ok := obj.(*batchv1.Job); ok {
+				// A result from an earlier execution can update status while
+				// the scheduler creates the next Job.
+				var current siderealv1alpha1.SiderealProbe
+				if err := c.Get(ctx, key, &current); err != nil {
+					return err
+				}
+				current.Status.LastOutcome = string(siderealv1alpha1.OutcomePass)
+				return c.Status().Update(ctx, &current)
+			}
+			return nil
+		},
+	})
+	r := &ProbeSchedulerReconciler{Client: staleClient, APIReader: api, ProbeGoImage: "test-probe-go:latest"}
+	for i := 0; i < 2; i++ {
+		if _, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: key}); err != nil {
+			t.Fatalf("reconcile %d: %v", i+1, err)
+		}
+	}
+	var jobs batchv1.JobList
+	if err := api.List(ctx, &jobs); err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs.Items) != 1 {
+		t.Fatalf("expected one execution despite stale cache, got %d Jobs", len(jobs.Items))
+	}
+	var current siderealv1alpha1.SiderealProbe
+	if err := api.Get(ctx, key, &current); err != nil {
+		t.Fatal(err)
+	}
+	if current.Status.LastExecutedAt == nil || current.Status.LastOutcome != string(siderealv1alpha1.OutcomePass) {
+		t.Fatalf("scheduler and result status must both persist: %+v", current.Status)
+	}
 }
 
 func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {

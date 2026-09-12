@@ -12,6 +12,7 @@ import (
 
 // SAP: TEST-AC-04 (Admission probe - policy rejection)
 func TestAdmissionProbe_PolicyRejection(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "adm-reject-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -47,13 +48,14 @@ func TestAdmissionProbe_PolicyRejection(t *testing.T) {
 }
 
 func TestAdmissionProbe_PolicyNotEnforced(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
-	ns := createNamespace(t, "adm-notEnf-"+uid)
+	ns := createNamespace(t, "adm-notenf-"+uid)
 	rootKey := createHMACRootSecret(t)
 
 	probe := createProbe(t, &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "adm-notEnf-" + uid,
+			Name:      "adm-notenf-" + uid,
 			Namespace: controller.SystemNamespace,
 		},
 		Spec: siderealv1alpha1.SiderealProbeSpec{
@@ -82,6 +84,7 @@ func TestAdmissionProbe_PolicyNotEnforced(t *testing.T) {
 }
 
 func TestAdmissionProbe_Indeterminate(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "adm-indet-"+uid)
 	rootKey := createHMACRootSecret(t)

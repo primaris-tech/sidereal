@@ -74,6 +74,7 @@ var profileCommands = map[siderealv1alpha1.ProbeProfile][]string{
 // ProbeSchedulerReconciler reconciles SiderealProbe resources by scheduling probe Jobs.
 type ProbeSchedulerReconciler struct {
 	client.Client
+	APIReader client.Reader
 
 	// ProbeGoImage is the unified Go probe image (rbac, secret, admission, netpol).
 	// Injected from the PROBE_GO_IMAGE environment variable set by the Helm chart.
@@ -102,6 +103,9 @@ type ProbeSchedulerReconciler struct {
 
 // SetupWithManager registers the reconciler with the controller manager.
 func (r *ProbeSchedulerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.APIReader == nil {
+		r.APIReader = mgr.GetAPIReader()
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&siderealv1alpha1.SiderealProbe{}).
 		Owns(&batchv1.Job{}).
@@ -112,9 +116,14 @@ func (r *ProbeSchedulerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	// Fetch the SiderealProbe.
+	// Job watch events can arrive before the cache sees LastExecutedAt.
+	// Read scheduling state directly so those events cannot repeat an execution.
+	reader := r.APIReader
+	if reader == nil {
+		reader = r.Client
+	}
 	var probe siderealv1alpha1.SiderealProbe
-	if err := r.Get(ctx, req.NamespacedName, &probe); err != nil {
+	if err := reader.Get(ctx, req.NamespacedName, &probe); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -159,16 +168,12 @@ func (r *ProbeSchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// Re-fetch before status update to get the current resourceVersion.
-	// Job creation triggers the Owns watch which can re-queue the probe and
-	// advance the resourceVersion before we reach this point, causing a
-	// conflict error if we update the stale in-memory copy.
-	if err := r.Get(ctx, req.NamespacedName, &probe); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	// Patch only the scheduler's field so concurrent result status updates
+	// are preserved and cannot force a retry after Jobs have been created.
+	previous := probe.DeepCopy()
 	now := metav1.Now()
 	probe.Status.LastExecutedAt = &now
-	if err := r.Status().Update(ctx, &probe); err != nil {
+	if err := r.Status().Patch(ctx, &probe, client.MergeFrom(previous)); err != nil {
 		logger.Error(err, "failed to update probe status")
 		return ctrl.Result{}, err
 	}
@@ -391,7 +396,7 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 
 	jobLabels := map[string]string{
 		FingerprintLabel:     probeID,
-		ProbeProfileLabel:    string(probe.Spec.Profile),
+		ProbeProfileLabel:    ProbeProfileLabelValue(string(probe.Spec.Profile)),
 		ProbeNameLabel:       probe.Name,
 		TargetNamespaceLabel: targetNamespace,
 	}
@@ -428,16 +433,18 @@ func (r *ProbeSchedulerReconciler) buildProbeJob(
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("sidereal-probe-%s", probeID[:8]),
-			Namespace: SystemNamespace,
-			Labels:    jobLabels,
+			Name:        fmt.Sprintf("sidereal-probe-%s", probeID[:8]),
+			Namespace:   SystemNamespace,
+			Labels:      jobLabels,
+			Annotations: map[string]string{ProbeProfileAnnotation: string(probe.Spec.Profile)},
 		},
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: &ttl,
 			BackoffLimit:            &backoffLimit,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: jobLabels,
+					Labels:      jobLabels,
+					Annotations: map[string]string{ProbeProfileAnnotation: string(probe.Spec.Profile)},
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:           sa,

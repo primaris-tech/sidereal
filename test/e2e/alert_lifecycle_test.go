@@ -12,6 +12,7 @@ import (
 )
 
 func TestAlertLifecycle_AcknowledgmentValidation(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 
 	alert := &siderealv1alpha1.SiderealSystemAlert{
@@ -27,7 +28,7 @@ func TestAlertLifecycle_AcknowledgmentValidation(t *testing.T) {
 	if err := k8sClient.Create(ctx, alert); err != nil {
 		t.Fatalf("failed to create alert: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, alert) })
+	t.Cleanup(func() { deleteFixture(t, alert) })
 
 	// Try acknowledging with a ServiceAccount identity (should be reverted).
 	now := metav1.Now()
@@ -39,10 +40,11 @@ func TestAlertLifecycle_AcknowledgmentValidation(t *testing.T) {
 		t.Fatalf("failed to update alert: %v", err)
 	}
 
-	// Wait for the controller to revert the invalid acknowledgment.
-	time.Sleep(3 * time.Second)
-
 	var updated siderealv1alpha1.SiderealSystemAlert
+	eventually(t, "invalid acknowledgment reverted", 10*time.Second, func() (bool, error) {
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: alert.Name, Namespace: controller.SystemNamespace}, &updated)
+		return !updated.Spec.Acknowledged, err
+	})
 	if err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      alert.Name,
 		Namespace: controller.SystemNamespace,
@@ -56,6 +58,7 @@ func TestAlertLifecycle_AcknowledgmentValidation(t *testing.T) {
 }
 
 func TestAlertLifecycle_ValidAcknowledgment(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 
 	alert := &siderealv1alpha1.SiderealSystemAlert{
@@ -71,7 +74,7 @@ func TestAlertLifecycle_ValidAcknowledgment(t *testing.T) {
 	if err := k8sClient.Create(ctx, alert); err != nil {
 		t.Fatalf("failed to create alert: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, alert) })
+	t.Cleanup(func() { deleteFixture(t, alert) })
 
 	// Acknowledge with a valid user identity.
 	controller.AcknowledgeAlert(alert, "john.smith@agency.gov", "Splunk endpoint restored and verified")
@@ -79,10 +82,11 @@ func TestAlertLifecycle_ValidAcknowledgment(t *testing.T) {
 		t.Fatalf("failed to update alert: %v", err)
 	}
 
-	// Wait for reconciliation.
-	time.Sleep(3 * time.Second)
-
 	var updated siderealv1alpha1.SiderealSystemAlert
+	consistently(t, "valid acknowledgment preserved", time.Second, func() (bool, error) {
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: alert.Name, Namespace: controller.SystemNamespace}, &updated)
+		return updated.Spec.Acknowledged && updated.Spec.AcknowledgedBy == "john.smith@agency.gov", err
+	})
 	if err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      alert.Name,
 		Namespace: controller.SystemNamespace,
@@ -99,6 +103,7 @@ func TestAlertLifecycle_ValidAcknowledgment(t *testing.T) {
 }
 
 func TestAlertLifecycle_MissingFields(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 
 	alert := &siderealv1alpha1.SiderealSystemAlert{
@@ -114,7 +119,7 @@ func TestAlertLifecycle_MissingFields(t *testing.T) {
 	if err := k8sClient.Create(ctx, alert); err != nil {
 		t.Fatalf("failed to create alert: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, alert) })
+	t.Cleanup(func() { deleteFixture(t, alert) })
 
 	// Acknowledge without remediationAction (should be reverted).
 	now := metav1.Now()
@@ -126,9 +131,11 @@ func TestAlertLifecycle_MissingFields(t *testing.T) {
 		t.Fatalf("failed to update alert: %v", err)
 	}
 
-	time.Sleep(3 * time.Second)
-
 	var updated siderealv1alpha1.SiderealSystemAlert
+	eventually(t, "incomplete acknowledgment reverted", 10*time.Second, func() (bool, error) {
+		err := k8sClient.Get(ctx, types.NamespacedName{Name: alert.Name, Namespace: controller.SystemNamespace}, &updated)
+		return !updated.Spec.Acknowledged, err
+	})
 	if err := k8sClient.Get(ctx, types.NamespacedName{
 		Name:      alert.Name,
 		Namespace: controller.SystemNamespace,
@@ -142,6 +149,7 @@ func TestAlertLifecycle_MissingFields(t *testing.T) {
 }
 
 func TestAlertLifecycle_HasUnacknowledgedAlerts(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 
 	alert := &siderealv1alpha1.SiderealSystemAlert{
@@ -157,7 +165,7 @@ func TestAlertLifecycle_HasUnacknowledgedAlerts(t *testing.T) {
 	if err := k8sClient.Create(ctx, alert); err != nil {
 		t.Fatalf("failed to create alert: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, alert) })
+	t.Cleanup(func() { deleteFixture(t, alert) })
 
 	hasUnacked, err := controller.HasUnacknowledgedAlerts(ctx, k8sClient)
 	if err != nil {
@@ -172,8 +180,6 @@ func TestAlertLifecycle_HasUnacknowledgedAlerts(t *testing.T) {
 	if err := k8sClient.Update(ctx, alert); err != nil {
 		t.Fatalf("failed to acknowledge alert: %v", err)
 	}
-
-	time.Sleep(2 * time.Second)
 
 	// Re-read to get the acknowledged version.
 	if err := k8sClient.Get(ctx, types.NamespacedName{

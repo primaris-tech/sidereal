@@ -14,6 +14,7 @@ import (
 )
 
 func TestNamespaceSelector_MatchesLabeledNamespaces(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	createHMACRootSecret(t)
 
@@ -31,7 +32,7 @@ func TestNamespaceSelector_MatchesLabeledNamespaces(t *testing.T) {
 		if err := k8sClient.Create(ctx, ns); err != nil {
 			t.Fatalf("failed to create namespace %s: %v", nsName, err)
 		}
-		t.Cleanup(func() { _ = k8sClient.Delete(ctx, ns) })
+		t.Cleanup(func() { deleteFixture(t, ns) })
 	}
 
 	// Create a non-matching namespace.
@@ -46,7 +47,7 @@ func TestNamespaceSelector_MatchesLabeledNamespaces(t *testing.T) {
 	if err := k8sClient.Create(ctx, noMatchNS); err != nil {
 		t.Fatalf("failed to create non-matching namespace: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, noMatchNS) })
+	t.Cleanup(func() { deleteFixture(t, noMatchNS) })
 
 	probe := createProbe(t, &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{

@@ -12,6 +12,7 @@ import (
 
 // SAP: TEST-AC-03 (NetworkPolicy probe)
 func TestNetPolProbe_Blocked(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "netpol-blk-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -48,6 +49,7 @@ func TestNetPolProbe_Blocked(t *testing.T) {
 
 // SAP: TEST-SYS-04 (NetworkPolicy default-deny)
 func TestNetPolProbe_NotEnforced(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "netpol-ne-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -83,6 +85,7 @@ func TestNetPolProbe_NotEnforced(t *testing.T) {
 }
 
 func TestNetPolProbe_BackendUnreachable(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "netpol-bu-"+uid)
 	rootKey := createHMACRootSecret(t)

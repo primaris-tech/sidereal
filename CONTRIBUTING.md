@@ -35,6 +35,23 @@ make build-fips
 make verify-fips
 ```
 
+`make test-e2e` starts a local Kubernetes API server and etcd with pinned
+envtest binaries. Controllers run normally; fixtures simulate probe Job
+completion. Each test stops its controllers and removes generated resources
+before the next test starts.
+
+To use pre-downloaded binaries in a disconnected environment, set
+`KUBEBUILDER_ASSETS` to their directory. The target then skips the envtest
+download tool. Go dependencies and the Go toolchain must also be available
+locally.
+
+```bash
+KUBEBUILDER_ASSETS=/path/to/envtest-binaries make test-e2e
+
+# Check for races and dependencies on test order.
+make test-e2e E2E_TEST_ARGS='-v -race -shuffle=on -count=2 -timeout 300s'
+```
+
 ### Lint
 
 ```bash
