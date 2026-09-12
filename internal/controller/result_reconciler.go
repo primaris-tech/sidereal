@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,11 +32,15 @@ type ProbeRunnerResult struct {
 // creates SiderealProbeResult records, and handles tamper detection.
 type ResultReconciler struct {
 	client.Client
+	APIReader client.Reader
 	Crosswalk *crosswalk.Resolver
 }
 
 // SetupWithManager registers the reconciler with the controller manager.
 func (r *ResultReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.APIReader == nil {
+		r.APIReader = mgr.GetAPIReader()
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1.Job{}).
 		Complete(r)
@@ -100,7 +105,7 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	signature := resultCM.Data["hmac"]
 
 	// Verify HMAC.
-	profile := job.Labels[ProbeProfileLabel]
+	profile := profileFromJob(&job)
 	probeName := job.Labels[ProbeNameLabel]
 	targetNamespace := job.Labels[TargetNamespaceLabel]
 
@@ -145,7 +150,7 @@ func (r *ResultReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel:                       probeID,
-				ProbeProfileLabel:                      profile,
+				ProbeProfileLabel:                      ProbeProfileLabelValue(profile),
 				ProbeNameLabel:                         probeName,
 				TargetNamespaceLabel:                   targetNamespace,
 				"sidereal.cloud/outcome":               string(outcome),
@@ -231,7 +236,7 @@ func (r *ResultReconciler) handleTamperedResult(
 			Namespace: SystemNamespace,
 			Labels: map[string]string{
 				FingerprintLabel:                       probeID,
-				ProbeProfileLabel:                      profile,
+				ProbeProfileLabel:                      ProbeProfileLabelValue(profile),
 				ProbeNameLabel:                         probeName,
 				TargetNamespaceLabel:                   targetNamespace,
 				"sidereal.cloud/outcome":               string(siderealv1alpha1.OutcomeTamperedResult),
@@ -316,31 +321,44 @@ func (r *ResultReconciler) updateProbeStatus(
 	effectiveness siderealv1alpha1.ControlEffectiveness,
 	resultName string,
 ) {
-	probe.Status.LastOutcome = string(outcome)
-	probe.Status.LastControlEffectiveness = effectiveness
-
-	if effectiveness == siderealv1alpha1.EffectivenessEffective {
-		probe.Status.ConsecutiveFailures = 0
-	} else {
-		probe.Status.ConsecutiveFailures++
+	reader := r.APIReader
+	if reader == nil {
+		reader = r.Client
 	}
+	// The scheduler and other completed Jobs can update this probe while a
+	// result is processed. Re-read from the API on each conflict so the
+	// summary preserves their timestamps and accumulated results.
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := reader.Get(ctx, client.ObjectKeyFromObject(probe), probe); err != nil {
+			return err
+		}
+		probe.Status.LastOutcome = string(outcome)
+		probe.Status.LastControlEffectiveness = effectiveness
 
-	// Prepend to recent results (keep last 10).
-	summary := siderealv1alpha1.ProbeResultSummary{
-		Timestamp:            metav1.Now(),
-		Outcome:              string(outcome),
-		ControlEffectiveness: effectiveness,
-		ResultName:           resultName,
-	}
-	probe.Status.RecentResults = append(
-		[]siderealv1alpha1.ProbeResultSummary{summary},
-		probe.Status.RecentResults...,
-	)
-	if len(probe.Status.RecentResults) > 10 {
-		probe.Status.RecentResults = probe.Status.RecentResults[:10]
-	}
+		if effectiveness == siderealv1alpha1.EffectivenessEffective {
+			probe.Status.ConsecutiveFailures = 0
+		} else {
+			probe.Status.ConsecutiveFailures++
+		}
 
-	if err := r.Status().Update(ctx, probe); err != nil {
+		// Prepend to recent results (keep last 10).
+		summary := siderealv1alpha1.ProbeResultSummary{
+			Timestamp:            metav1.Now(),
+			Outcome:              string(outcome),
+			ControlEffectiveness: effectiveness,
+			ResultName:           resultName,
+		}
+		probe.Status.RecentResults = append(
+			[]siderealv1alpha1.ProbeResultSummary{summary},
+			probe.Status.RecentResults...,
+		)
+		if len(probe.Status.RecentResults) > 10 {
+			probe.Status.RecentResults = probe.Status.RecentResults[:10]
+		}
+
+		return r.Status().Update(ctx, probe)
+	})
+	if err != nil {
 		log.FromContext(ctx).Error(err, "failed to update probe status")
 	}
 }

@@ -13,6 +13,7 @@ import (
 )
 
 func TestExecutionMode_DryRunNoJob(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "exec-dry-"+uid)
 	createHMACRootSecret(t)
@@ -30,7 +31,7 @@ func TestExecutionMode_DryRunNoJob(t *testing.T) {
 		},
 	})
 
-	time.Sleep(3 * time.Second)
+	waitForScheduledProbe(t, probe)
 
 	var jobs batchv1.JobList
 	if err := k8sClient.List(ctx, &jobs,
@@ -46,6 +47,7 @@ func TestExecutionMode_DryRunNoJob(t *testing.T) {
 }
 
 func TestExecutionMode_ObserveCreatesJobNoIncident(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "exec-obs-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -94,8 +96,11 @@ func TestExecutionMode_ObserveCreatesJobNoIncident(t *testing.T) {
 		t.Errorf("expected Ineffective, got %s", result.Spec.Result.ControlEffectiveness)
 	}
 
-	// In observe mode, no incident should be created even for Ineffective results.
-	time.Sleep(3 * time.Second)
+	consistently(t, "observe mode creates no incidents", 3*time.Second, func() (bool, error) {
+		var current siderealv1alpha1.SiderealIncidentList
+		err := k8sClient.List(ctx, &current, client.InNamespace(controller.SystemNamespace), client.MatchingLabels{controller.FingerprintLabel: probeID})
+		return len(current.Items) == 0, err
+	})
 
 	var incidents siderealv1alpha1.SiderealIncidentList
 	if err := k8sClient.List(ctx, &incidents,
@@ -111,6 +116,7 @@ func TestExecutionMode_ObserveCreatesJobNoIncident(t *testing.T) {
 }
 
 func TestExecutionMode_EnforceCreatesIncident(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "exec-enf-"+uid)
 	rootKey := createHMACRootSecret(t)

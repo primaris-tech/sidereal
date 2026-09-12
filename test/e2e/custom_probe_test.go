@@ -12,6 +12,7 @@ import (
 )
 
 func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "custom-ok-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -40,7 +41,17 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 		},
 	})
 
-	probeID := uid + "caca-caca-caca-cacacacacaca"
+	job := scheduledJob(t, probe)
+	if job.Annotations[controller.ProbeProfileAnnotation] != string(probe.Spec.Profile) {
+		t.Fatal("Job lost the full custom profile")
+	}
+	if job.Spec.Template.Annotations[controller.ProbeProfileAnnotation] != string(probe.Spec.Profile) {
+		t.Fatal("Pod template lost the full custom profile")
+	}
+	if job.Spec.Template.Spec.ServiceAccountName != "sidereal-probe-custom-test" {
+		t.Fatal("custom Job uses the wrong ServiceAccount")
+	}
+	probeID := job.Labels[controller.FingerprintLabel]
 	simulateProbeResult(t, probeID, "acme-corp/compliance-check",
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Custom compliance check passed", rootKey)
 
@@ -55,6 +66,7 @@ func TestCustomProbe_ExecutesWithRegisteredSA(t *testing.T) {
 }
 
 func TestCustomProbe_SameSecurityControls(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "custom-sec-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -83,7 +95,8 @@ func TestCustomProbe_SameSecurityControls(t *testing.T) {
 	})
 
 	// Custom probes produce the same result types and go through the same HMAC pipeline.
-	probeID := uid + "cbcb-cbcb-cbcb-cbcbcbcbcbcb"
+	job := scheduledJob(t, probe)
+	probeID := job.Labels[controller.FingerprintLabel]
 	simulateProbeResult(t, probeID, "acme-corp/compliance-check",
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Custom check failed", rootKey)
 

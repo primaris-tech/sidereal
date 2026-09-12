@@ -12,6 +12,7 @@ import (
 
 // SAP: TEST-AC-01 (RBAC probe)
 func TestRBACProbe_DenyPathVerification(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "rbac-deny-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -53,6 +54,7 @@ func TestRBACProbe_DenyPathVerification(t *testing.T) {
 
 // SAP: TEST-AC-01 (RBAC probe - allow path)
 func TestRBACProbe_AllowPathVerification(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "rbac-allow-"+uid)
 	rootKey := createHMACRootSecret(t)

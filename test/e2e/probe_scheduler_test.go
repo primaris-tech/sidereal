@@ -15,6 +15,7 @@ import (
 
 // SAP: TEST-SYS-05 (Job security posture)
 func TestProbeScheduler_CreatesJob(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "sched-target-"+uid)
 	createHMACRootSecret(t)
@@ -103,6 +104,7 @@ func TestProbeScheduler_CreatesJob(t *testing.T) {
 }
 
 func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "sched-dry-"+uid)
 	createHMACRootSecret(t)
@@ -120,8 +122,7 @@ func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
 		},
 	})
 
-	// Wait a bit and verify no Job is created.
-	time.Sleep(3 * time.Second)
+	waitForScheduledProbe(t, probe)
 
 	var jobs batchv1.JobList
 	if err := k8sClient.List(ctx, &jobs,
@@ -140,6 +141,7 @@ func TestProbeScheduler_DryRunDoesNotCreateJob(t *testing.T) {
 
 // SAP: TEST-SYS-07 (Identity separation)
 func TestProbeScheduler_IdentitySeparation(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "sched-id-"+uid)
 	createHMACRootSecret(t)
@@ -184,6 +186,7 @@ func TestProbeScheduler_IdentitySeparation(t *testing.T) {
 }
 
 func TestProbeScheduler_RateLimiting(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "sched-rate-"+uid)
 	createHMACRootSecret(t)
@@ -219,9 +222,14 @@ func TestProbeScheduler_RateLimiting(t *testing.T) {
 	}
 
 	firstCount := len(jobs.Items)
+	if firstCount != 1 {
+		t.Fatalf("expected one execution, got %d Jobs", firstCount)
+	}
 
-	// Wait a short period and verify no duplicate Job is created.
-	time.Sleep(3 * time.Second)
+	consistently(t, "no additional execution within interval", 3*time.Second, func() (bool, error) {
+		err := k8sClient.List(ctx, &jobs, client.InNamespace(controller.SystemNamespace), client.MatchingLabels{controller.ProbeNameLabel: probe.Name})
+		return len(jobs.Items) == firstCount, err
+	})
 
 	if err := k8sClient.List(ctx, &jobs,
 		client.InNamespace(controller.SystemNamespace),

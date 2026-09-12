@@ -9,7 +9,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	siderealv1alpha1 "github.com/primaris-tech/sidereal/api/v1alpha1"
@@ -18,6 +20,59 @@ import (
 )
 
 const testProbeID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+func TestResultStatusPreservesConcurrentUpdates(t *testing.T) {
+	ctx := context.Background()
+	probe := createEnforceProbe("status-conflict", "production", "rbac")
+	api := fake.NewClientBuilder().WithScheme(newTestScheme()).WithObjects(probe).WithStatusSubresource(probe).Build()
+	key := client.ObjectKeyFromObject(probe)
+	var cached siderealv1alpha1.SiderealProbe
+	if err := api.Get(ctx, key, &cached); err != nil {
+		t.Fatal(err)
+	}
+	executedAt := metav1.Now()
+	updates := 0
+	c := interceptor.NewClient(api, interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if p, ok := obj.(*siderealv1alpha1.SiderealProbe); ok {
+				cached.DeepCopyInto(p)
+				return nil
+			}
+			return c.Get(ctx, key, obj, opts...)
+		},
+		SubResourceUpdate: func(ctx context.Context, c client.Client, subresource string, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+			updates++
+			if updates == 1 {
+				var concurrent siderealv1alpha1.SiderealProbe
+				if err := c.Get(ctx, key, &concurrent); err != nil {
+					return err
+				}
+				concurrent.Status.LastExecutedAt = &executedAt
+				concurrent.Status.ConsecutiveFailures = 3
+				concurrent.Status.RecentResults = []siderealv1alpha1.ProbeResultSummary{{ResultName: "earlier-result"}}
+				if err := c.Status().Update(ctx, &concurrent); err != nil {
+					return err
+				}
+			}
+			return c.SubResource(subresource).Update(ctx, obj, opts...)
+		},
+	})
+	r := &ResultReconciler{Client: c, APIReader: api}
+	r.updateProbeStatus(ctx, &cached, siderealv1alpha1.OutcomeFail, siderealv1alpha1.EffectivenessIneffective, "current-result")
+	var current siderealv1alpha1.SiderealProbe
+	if err := api.Get(ctx, key, &current); err != nil {
+		t.Fatal(err)
+	}
+	if updates != 2 || current.Status.ConsecutiveFailures != 4 || current.Status.LastExecutedAt == nil {
+		t.Fatalf("conflict retry lost or repeated a status update (%d attempts): %+v", updates, current.Status)
+	}
+	if current.Status.LastOutcome != string(siderealv1alpha1.OutcomeFail) || current.Status.LastControlEffectiveness != siderealv1alpha1.EffectivenessIneffective {
+		t.Fatalf("latest outcome was not saved: %+v", current.Status)
+	}
+	if len(current.Status.RecentResults) != 2 || current.Status.RecentResults[0].ResultName != "current-result" || current.Status.RecentResults[1].ResultName != "earlier-result" {
+		t.Fatalf("conflict retry lost or repeated a result: %+v", current.Status.RecentResults)
+	}
+}
 
 func createSignedResultCM(t *testing.T, hmacKey []byte, outcome, detail string) (*corev1.ConfigMap, string) {
 	t.Helper()

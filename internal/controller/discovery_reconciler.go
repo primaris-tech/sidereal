@@ -6,6 +6,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -103,6 +104,9 @@ func (r *DiscoveryReconciler) reconcileRecommendation(ctx context.Context, rec d
 	}, &existing)
 
 	if err == nil {
+		if initErr := r.initializeRecommendation(ctx, &existing); initErr != nil {
+			return initErr
+		}
 		// Existing recommendation found.
 		switch existing.Status.State {
 		case siderealv1alpha1.RecommendationDismissed:
@@ -136,6 +140,9 @@ func (r *DiscoveryReconciler) reconcileRecommendation(ctx context.Context, rec d
 
 		return nil
 	}
+	if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get recommendation %s: %w", recName, err)
+	}
 
 	// No existing recommendation. Create one.
 	newRec := &siderealv1alpha1.SiderealProbeRecommendation{
@@ -155,6 +162,9 @@ func (r *DiscoveryReconciler) reconcileRecommendation(ctx context.Context, rec d
 
 	if err := r.Create(ctx, newRec); err != nil {
 		return fmt.Errorf("failed to create recommendation %s: %w", recName, err)
+	}
+	if err := r.initializeRecommendation(ctx, newRec); err != nil {
+		return err
 	}
 
 	logger.Info("created recommendation",
@@ -203,6 +213,9 @@ func (r *DiscoveryReconciler) supersedAndCreate(
 	if err := r.Create(ctx, newRec); err != nil {
 		return fmt.Errorf("failed to create superseding recommendation: %w", err)
 	}
+	if err := r.initializeRecommendation(ctx, newRec); err != nil {
+		return err
+	}
 
 	// Mark the existing one as superseded.
 	existing.Status.State = siderealv1alpha1.RecommendationSuperseded
@@ -217,6 +230,20 @@ func (r *DiscoveryReconciler) supersedAndCreate(
 		"sourceKind", rec.SourceResource.Kind,
 	)
 
+	return nil
+}
+
+// initializeRecommendation also repairs recommendations created before status
+// initialization was explicit. A nested schema default cannot populate an
+// absent status object, and status must be written through its subresource.
+func (r *DiscoveryReconciler) initializeRecommendation(ctx context.Context, rec *siderealv1alpha1.SiderealProbeRecommendation) error {
+	if rec.Status.State != "" {
+		return nil
+	}
+	rec.Status.State = siderealv1alpha1.RecommendationPending
+	if err := r.Status().Update(ctx, rec); err != nil {
+		return fmt.Errorf("failed to initialize recommendation %s: %w", rec.Name, err)
+	}
 	return nil
 }
 

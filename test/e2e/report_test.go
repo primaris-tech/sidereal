@@ -12,6 +12,7 @@ import (
 )
 
 func TestReport_QueryReportData(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "report-data-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -59,6 +60,7 @@ func TestReport_QueryReportData(t *testing.T) {
 }
 
 func TestReport_EffectivenessDistribution(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "report-dist-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -77,12 +79,12 @@ func TestReport_EffectivenessDistribution(t *testing.T) {
 	})
 
 	// Create Pass and Fail results.
-	passID := uid + "rpas-rpas-rpas-rpasrpasrpas"
+	passID := uniqueID() + "rpas-rpas-rpas-rpasrpasrpas"
 	simulateProbeResult(t, passID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomePass), "Pass result", rootKey)
 	waitForProbeResult(t, passID, 10*time.Second)
 
-	failID := uid + "rfal-rfal-rfal-rfalrfalrfal"
+	failID := uniqueID() + "rfal-rfal-rfal-rfalrfalrfal"
 	simulateProbeResult(t, failID, string(siderealv1alpha1.ProbeProfileRBAC),
 		probe.Name, ns, string(siderealv1alpha1.OutcomeFail), "Fail result", rootKey)
 	waitForProbeResult(t, failID, 10*time.Second)

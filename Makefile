@@ -23,8 +23,10 @@ endif
 
 # envtest setup
 LOCALBIN ?= $(shell pwd)/bin
-ENVTEST ?= go run sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-ENVTEST_K8S_VERSION ?= 1.31.0
+ENVTEST_VERSION ?= v0.0.0-20260305142021-f9589b9f2b9d
+ENVTEST ?= go run sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
+ENVTEST_K8S_VERSION ?= 1.35.0
+E2E_TEST_ARGS ?= -v -count=1 -timeout 300s
 
 .PHONY: all
 all: generate manifests build
@@ -104,9 +106,13 @@ test: ## Run unit tests
 	go test $(shell go list -f '{{if .TestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v '/test/e2e') -coverprofile cover.out
 
 .PHONY: test-e2e
-test-e2e: envtest ## Run end-to-end tests (requires envtest binaries)
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
-		go test ./test/e2e/... -v -count=1 -timeout 300s
+test-e2e: ## Run controller integration tests with a local envtest API server
+	@assets="$(KUBEBUILDER_ASSETS)"; \
+	if [ -z "$$assets" ]; then \
+		assets="$$($(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" || exit $$?; \
+	fi; \
+	KUBEBUILDER_ASSETS="$$assets" USE_EXISTING_CLUSTER=false \
+		go test ./test/e2e/... $(E2E_TEST_ARGS)
 
 .PHONY: test-integration
 test-integration: ## Run integration tests

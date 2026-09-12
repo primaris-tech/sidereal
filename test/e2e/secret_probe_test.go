@@ -12,6 +12,7 @@ import (
 
 // SAP: TEST-AC-02 (Secret probe - cross-namespace access denial)
 func TestSecretProbe_CrossNamespaceDenial(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "secret-deny-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -47,6 +48,7 @@ func TestSecretProbe_CrossNamespaceDenial(t *testing.T) {
 }
 
 func TestSecretProbe_AccessAllowed(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "secret-allow-"+uid)
 	rootKey := createHMACRootSecret(t)

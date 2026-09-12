@@ -14,6 +14,7 @@ import (
 
 // SAP: TEST-SYS-08 (Bootstrap verification)
 func TestBootstrap_ServiceAccountCheck(t *testing.T) {
+	defer startControllers(t)()
 	// Create all built-in ServiceAccounts.
 	for _, saName := range controller.BuiltInServiceAccounts {
 		sa := &corev1.ServiceAccount{
@@ -23,10 +24,9 @@ func TestBootstrap_ServiceAccountCheck(t *testing.T) {
 			},
 		}
 		if err := k8sClient.Create(ctx, sa); err != nil {
-			// Ignore already exists.
-			t.Logf("SA %s: %v", saName, err)
+			t.Fatalf("create ServiceAccount %s: %v", saName, err)
 		}
-		t.Cleanup(func() { _ = k8sClient.Delete(ctx, sa) })
+		t.Cleanup(func() { deleteFixture(t, sa) })
 	}
 
 	result := controller.RunBootstrapVerification(ctx, k8sClient)
@@ -41,7 +41,7 @@ func TestBootstrap_ServiceAccountCheck(t *testing.T) {
 	// At minimum, the SA checks should pass since we just created them.
 	saCheckPassed := false
 	for _, check := range result.Checks {
-		if check.Name == "ServiceAccount: sidereal-controller" && check.Passed {
+		if check.Name == "ServiceAccount/sidereal-controller" && check.Passed {
 			saCheckPassed = true
 			break
 		}
@@ -52,13 +52,14 @@ func TestBootstrap_ServiceAccountCheck(t *testing.T) {
 }
 
 func TestBootstrap_HMACSecretCheck(t *testing.T) {
+	defer startControllers(t)()
 	createHMACRootSecret(t)
 
 	result := controller.RunBootstrapVerification(ctx, k8sClient)
 
 	hmacCheckPassed := false
 	for _, check := range result.Checks {
-		if check.Name == "HMAC Root Secret" && check.Passed {
+		if check.Name == "Secret/sidereal-hmac-root" && check.Passed {
 			hmacCheckPassed = true
 			break
 		}
@@ -69,6 +70,7 @@ func TestBootstrap_HMACSecretCheck(t *testing.T) {
 }
 
 func TestBootstrap_NetworkPolicyCheck(t *testing.T) {
+	defer startControllers(t)()
 	// Create a default-deny NetworkPolicy in the system namespace.
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,15 +86,15 @@ func TestBootstrap_NetworkPolicyCheck(t *testing.T) {
 		},
 	}
 	if err := k8sClient.Create(ctx, np); err != nil {
-		t.Logf("NetworkPolicy: %v", err)
+		t.Fatalf("create NetworkPolicy: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, np) })
+	t.Cleanup(func() { deleteFixture(t, np) })
 
 	result := controller.RunBootstrapVerification(ctx, k8sClient)
 
 	npCheckPassed := false
 	for _, check := range result.Checks {
-		if check.Name == "NetworkPolicy" && check.Passed {
+		if check.Name == "NetworkPolicy/sidereal-system" && check.Passed {
 			npCheckPassed = true
 			break
 		}
@@ -103,11 +105,12 @@ func TestBootstrap_NetworkPolicyCheck(t *testing.T) {
 }
 
 func TestBootstrap_FailureCreatesAlert(t *testing.T) {
+	defer startControllers(t)()
 	// Run bootstrap without prerequisites - should fail.
 	result := controller.RunBootstrapVerification(ctx, k8sClient)
 
 	if result.Passed {
-		t.Skip("bootstrap unexpectedly passed (prerequisites may exist from other tests)")
+		t.Fatal("bootstrap should fail with prerequisites absent")
 	}
 
 	err := controller.HandleBootstrapFailure(ctx, k8sClient, result)

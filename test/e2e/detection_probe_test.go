@@ -13,6 +13,7 @@ import (
 )
 
 func TestDetectionProbe_RequiresAOAuthorization(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "det-noauth-"+uid)
 	createHMACRootSecret(t)
@@ -33,8 +34,11 @@ func TestDetectionProbe_RequiresAOAuthorization(t *testing.T) {
 		},
 	})
 
-	// Wait and verify no Job is created (no active AO authorization).
-	time.Sleep(5 * time.Second)
+	consistently(t, "unauthorized detection creates no Jobs", 5*time.Second, func() (bool, error) {
+		var current batchv1.JobList
+		err := k8sClient.List(ctx, &current, client.InNamespace(controller.SystemNamespace), client.MatchingLabels{controller.ProbeNameLabel: probe.Name})
+		return len(current.Items) == 0, err
+	})
 
 	var jobs batchv1.JobList
 	if err := k8sClient.List(ctx, &jobs,
@@ -50,6 +54,7 @@ func TestDetectionProbe_RequiresAOAuthorization(t *testing.T) {
 }
 
 func TestDetectionProbe_WithActiveAuthorization(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "det-auth-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -74,10 +79,12 @@ func TestDetectionProbe_WithActiveAuthorization(t *testing.T) {
 	if err := k8sClient.Create(ctx, auth); err != nil {
 		t.Fatalf("failed to create AO authorization: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, auth) })
+	t.Cleanup(func() { deleteFixture(t, auth) })
 
-	// Wait for authorization status to be computed.
-	time.Sleep(2 * time.Second)
+	eventually(t, "AO authorization active", 10*time.Second, func() (bool, error) {
+		err := k8sClient.Get(ctx, client.ObjectKeyFromObject(auth), auth)
+		return auth.Status.Active, err
+	})
 
 	probe := createProbe(t, &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{
@@ -110,6 +117,7 @@ func TestDetectionProbe_WithActiveAuthorization(t *testing.T) {
 }
 
 func TestDetectionProbe_Undetected(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "det-undet-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -133,9 +141,12 @@ func TestDetectionProbe_Undetected(t *testing.T) {
 	if err := k8sClient.Create(ctx, auth); err != nil {
 		t.Fatalf("failed to create AO authorization: %v", err)
 	}
-	t.Cleanup(func() { _ = k8sClient.Delete(ctx, auth) })
+	t.Cleanup(func() { deleteFixture(t, auth) })
 
-	time.Sleep(2 * time.Second)
+	eventually(t, "AO authorization active", 10*time.Second, func() (bool, error) {
+		err := k8sClient.Get(ctx, client.ObjectKeyFromObject(auth), auth)
+		return auth.Status.Active, err
+	})
 
 	probe := createProbe(t, &siderealv1alpha1.SiderealProbe{
 		ObjectMeta: metav1.ObjectMeta{

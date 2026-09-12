@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func TestResultReconciler_CreatesProbeResult(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "result-ok-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -57,9 +59,16 @@ func TestResultReconciler_CreatesProbeResult(t *testing.T) {
 	if result.Spec.Audit.ExportStatus != siderealv1alpha1.ExportStatusPending {
 		t.Errorf("expected export status Pending, got %s", result.Spec.Audit.ExportStatus)
 	}
+	eventually(t, "parent probe result summary", 10*time.Second, func() (bool, error) {
+		var current siderealv1alpha1.SiderealProbe
+		err := k8sClient.Get(ctx, client.ObjectKeyFromObject(probe), &current)
+		return current.Status.LastExecutedAt != nil && current.Status.LastOutcome == string(result.Spec.Result.Outcome) &&
+			len(current.Status.RecentResults) == 1 && current.Status.RecentResults[0].ResultName == result.Name, err
+	})
 }
 
 func TestResultReconciler_Idempotency(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "result-idem-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -83,8 +92,20 @@ func TestResultReconciler_Idempotency(t *testing.T) {
 
 	result := waitForProbeResult(t, probeID, 10*time.Second)
 
-	// Wait a bit and verify only one ProbeResult exists.
-	time.Sleep(2 * time.Second)
+	// Changing Job metadata triggers another result reconciliation.
+	var job batchv1.Job
+	if err := k8sClient.Get(ctx, client.ObjectKey{Name: "sidereal-probe-" + probeID[:8], Namespace: controller.SystemNamespace}, &job); err != nil {
+		t.Fatal(err)
+	}
+	job.Annotations["test.sidereal.cloud/reconcile"] = "again"
+	if err := k8sClient.Update(ctx, &job); err != nil {
+		t.Fatal(err)
+	}
+	consistently(t, "repeated reconciliation produces one result", 2*time.Second, func() (bool, error) {
+		var current siderealv1alpha1.SiderealProbeResultList
+		err := k8sClient.List(ctx, &current, client.MatchingLabels{controller.FingerprintLabel: probeID})
+		return len(current.Items) == 1, err
+	})
 
 	var results siderealv1alpha1.SiderealProbeResultList
 	if err := k8sClient.List(ctx, &results,

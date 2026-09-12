@@ -18,6 +18,7 @@ import (
 
 // SAP: TEST-SYS-02 (HMAC integrity)
 func TestHMACIntegrity_ValidSignature(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "hmac-valid-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -51,6 +52,7 @@ func TestHMACIntegrity_ValidSignature(t *testing.T) {
 
 // SAP: TEST-SYS-02 (HMAC tamper detection)
 func TestHMACIntegrity_TamperedResult(t *testing.T) {
+	defer startControllers(t)()
 	uid := uniqueID()
 	ns := createNamespace(t, "hmac-tamper-"+uid)
 	rootKey := createHMACRootSecret(t)
@@ -128,7 +130,6 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 
 	// Create a completed Job to trigger reconciliation.
 	ttl := int32(controller.JobTTLSeconds)
-	completionTime := metav1.Now()
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("sidereal-probe-%s", shortID),
@@ -146,24 +147,20 @@ func TestHMACIntegrity_TamperedResult(t *testing.T) {
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						{Name: "probe", Image: "ghcr.io/primaris-tech/sidereal-probe-go:latest"},
+						{Name: "probe", Image: testProbeImage},
 					},
 				},
 			},
-		},
-		Status: batchv1.JobStatus{
-			Conditions: []batchv1.JobCondition{
-				{Type: batchv1.JobComplete, Status: corev1.ConditionTrue},
-			},
-			CompletionTime: &completionTime,
 		},
 	}
 	if err := k8sClient.Create(ctx, job); err != nil {
 		t.Fatalf("failed to create Job: %v", err)
 	}
 	t.Cleanup(func() {
-		_ = k8sClient.Delete(ctx, job)
+		deleteFixture(t, job)
 	})
+
+	completeJob(t, job)
 
 	// Wait for the ProbeResult - should be TamperedResult.
 	result := waitForProbeResult(t, probeID, 10*time.Second)

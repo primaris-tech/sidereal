@@ -136,7 +136,7 @@ func (r *IncidentReconciler) buildIncident(
 			Namespace: result.Namespace,
 			Labels: map[string]string{
 				FingerprintLabel:     probeID,
-				ProbeProfileLabel:    string(probe.Spec.Profile),
+				ProbeProfileLabel:    ProbeProfileLabelValue(string(probe.Spec.Profile)),
 				TargetNamespaceLabel: result.Spec.Probe.TargetNamespace,
 			},
 		},
